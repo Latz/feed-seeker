@@ -14,12 +14,19 @@
  */
 
 import { parseHTML } from 'linkedom';
-import metaLinks, { type Feed } from './modules/metaLinks.js';
+import metaLinks, { type Feed, type MetaLinksInstance } from './modules/metaLinks.js';
 import checkAllAnchors from './modules/anchors.js';
 import blindSearch, { type BlindSearchFeed } from './modules/blindsearch.js';
 import deepSearch, { type DeepSearchOptions } from './modules/deepSearch.js';
 import EventEmitter from './modules/eventEmitter.js';
 import fetchWithTimeout from './modules/fetchWithTimeout.js';
+
+/**
+ * Minimal document interface for empty/mock document objects
+ */
+interface MinimalDocument {
+	querySelectorAll: (selector: string) => NodeListOf<Element> | never[];
+}
 
 /**
  * FeedScout options interface
@@ -63,12 +70,12 @@ function foundFeed(feeds: Feed[] | undefined): boolean {
  * const feeds = await scout.metaLinks();
  * console.log('Meta link feeds:', feeds);
  */
-export default class FeedScout extends EventEmitter {
+export default class FeedScout extends EventEmitter implements MetaLinksInstance {
 	site: string;
 	options: FeedScoutOptions;
 	initPromise: Promise<void> | null;
 	content?: string;
-	document?: Document;
+	document!: Document;
 
 	/**
 	 * Creates a new FeedScout instance
@@ -121,35 +128,37 @@ export default class FeedScout extends EventEmitter {
 							error: `HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`,
 						});
 						this.content = '';
-						this.document = { querySelectorAll: () => [] } as any;
+						this.document = { querySelectorAll: () => [] } as unknown as Document;
 						this.emit('initialized');
 						return;
 					}
 
 					this.content = await response.text();
 					const { document } = parseHTML(this.content);
-					this.document = document as any;
+					this.document = document;
 
 					this.emit('initialized');
-				} catch (error: any) {
+				} catch (error: unknown) {
+					const err = error instanceof Error ? error : new Error(String(error));
 					let errorMessage = `Failed to fetch ${this.site}`;
-					if (error.name === 'AbortError') {
+					if (err.name === 'AbortError') {
 						errorMessage += ': Request timed out';
 					} else {
-						errorMessage += `: ${error.message}`;
-						if (error.cause) {
-							errorMessage += ` (cause: ${error.cause.code || error.cause.message})`;
+						errorMessage += `: ${err.message}`;
+						const cause = (err as Error & { cause?: { code?: string; message?: string } }).cause;
+						if (cause) {
+							errorMessage += ` (cause: ${cause.code || cause.message})`;
 						}
 					}
 
 					this.emit('error', {
 						module: 'FeedScout',
 						error: errorMessage,
-						cause: error.cause,
+						cause: (err as Error & { cause?: unknown }).cause,
 					});
 
 					this.content = '';
-					this.document = { querySelectorAll: () => [] } as any;
+					this.document = { querySelectorAll: () => [] } as unknown as Document;
 					this.emit('initialized');
 				}
 			})();
@@ -169,7 +178,7 @@ export default class FeedScout extends EventEmitter {
 	 */
 	async metaLinks(): Promise<Feed[]> {
 		await this.initialize();
-		return metaLinks(this as any);
+		return metaLinks(this);
 	}
 
 	/**
@@ -183,7 +192,7 @@ export default class FeedScout extends EventEmitter {
 	 */
 	async checkAllAnchors(): Promise<Feed[]> {
 		await this.initialize();
-		return checkAllAnchors(this as any);
+		return checkAllAnchors(this);
 	}
 
 	/**
@@ -197,7 +206,7 @@ export default class FeedScout extends EventEmitter {
 	 */
 	async blindSearch(): Promise<BlindSearchFeed[]> {
 		await this.initialize();
-		return blindSearch(this as any);
+		return blindSearch(this);
 	}
 
 	/**
@@ -211,7 +220,7 @@ export default class FeedScout extends EventEmitter {
 	 */
 	async deepSearch(): Promise<Feed[]> {
 		await this.initialize();
-		const crawler = deepSearch(this.site, this.options, this as any);
+		const crawler = deepSearch(this.site, this.options, this);
 		return crawler;
 	}
 

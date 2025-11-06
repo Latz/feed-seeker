@@ -40,7 +40,7 @@ export interface Feed {
 export interface MetaLinksInstance extends FeedScoutInstance {
 	document: Document;
 	site: string;
-	emit: (event: string, data: any) => void;
+	emit: (event: string, data: unknown) => void;
 }
 
 /**
@@ -80,11 +80,12 @@ async function processLink(link: HTMLLinkElement, instance: MetaLinksInstance, f
 				return true; // maxFeeds reached
 			}
 		}
-	} catch (error: any) {
+	} catch (error: unknown) {
 		if (instance.options?.showErrors) {
+			const err = error instanceof Error ? error : new Error(String(error));
 			instance.emit('error', {
 				module: 'metalinks',
-				error: error.message,
+				error: err.message,
 				explanation:
 					'An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.',
 				suggestion:

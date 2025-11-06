@@ -1,6 +1,6 @@
 import { c as u, f as c } from "../checkFeed-CpnV4saY.js";
 import { parseHTML as f } from "linkedom";
-import n from "tldts";
+import d from "tldts";
 import { E as p } from "../eventEmitter-DCCreSTG.js";
 import { queue as g } from "async";
 function x(o) {
@@ -49,10 +49,10 @@ function x(o) {
   ].some((t) => o.endsWith(t));
 }
 class k extends p {
-  constructor(e, t = 3, r = 5, s = 1e3, i = !1, a = 5, h = 0, d = null) {
+  constructor(e, t = 3, r = 5, s = 1e3, i = !1, a = 5, h = 0, n = null) {
     super();
     const l = new URL(e);
-    this.startUrl = l.href, this.maxDepth = t, this.concurrency = r, this.maxLinks = s, this.mainDomain = n.getDomain(this.startUrl), this.checkForeignFeeds = i, this.maxErrors = a, this.maxFeeds = h, this.errorCount = 0, this.instance = d, this.queue = g(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((m) => {
+    this.startUrl = l.href, this.maxDepth = t, this.concurrency = r, this.maxLinks = s, this.mainDomain = d.getDomain(this.startUrl), this.checkForeignFeeds = i, this.maxErrors = a, this.maxFeeds = h, this.errorCount = 0, this.instance = n, this.queue = g(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((m) => {
       this.errorCount < this.maxErrors && (this.errorCount++, this.emit("error", {
         module: "deepSearch",
         error: `Async error: ${m}`,
@@ -80,7 +80,7 @@ class k extends p {
    */
   isValidUrl(e) {
     try {
-      const t = n.getDomain(e) == n.getDomain(this.startUrl), r = !x(e);
+      const t = d.getDomain(e) === d.getDomain(this.startUrl), r = !x(e);
       return t && r;
     } catch {
       return this.errorCount < this.maxErrors && (this.errorCount++, this.emit("error", {
@@ -151,7 +151,8 @@ class k extends p {
           }), !0;
       } else s || this.emit("log", { module: "deepSearch", url: e, depth: t + 1, feedCheck: { isFeed: !1 } });
     } catch (s) {
-      return this.handleFetchError(e, t + 1, `Error checking feed: ${s.message}`);
+      const i = s instanceof Error ? s : new Error(String(s));
+      return this.handleFetchError(e, t + 1, `Error checking feed: ${i.message}`);
     }
     return t + 1 <= this.maxDepth && this.isValidUrl(e) && this.queue.push({ url: e, depth: t + 1 }), !1;
   }
@@ -175,8 +176,8 @@ class k extends p {
     }
     const i = await s.text(), { document: a } = f(i);
     for (const h of a.querySelectorAll("a")) {
-      const d = new URL(h.href, this.startUrl).href;
-      if (await this.processLink(d, r)) break;
+      const n = new URL(h.href, this.startUrl).href;
+      if (await this.processLink(n, r)) break;
     }
   }
 }

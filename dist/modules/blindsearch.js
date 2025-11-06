@@ -423,11 +423,11 @@ function h(e, f) {
   const d = new URL(e).origin;
   let t = e;
   const s = [];
-  let r = "";
-  for (f && (r = new URL(e).search); t.length >= d.length; ) {
+  let a = "";
+  for (f && (a = new URL(e).search); t.length >= d.length; ) {
     const o = t.endsWith("/") ? t.slice(0, -1) : t;
-    u.forEach((a) => {
-      const n = r ? `${o}/${a}${r}` : `${o}/${a}`;
+    u.forEach((r) => {
+      const n = a ? `${o}/${r}${a}` : `${o}/${r}`;
       s.push(n);
     }), t = t.slice(0, t.lastIndexOf("/"));
   }
@@ -452,35 +452,36 @@ async function k(e) {
   return e.emit("end", { module: "blindsearch", feeds: s.feeds }), s.feeds;
 }
 async function y(e, f, d, t) {
-  const s = [], r = /* @__PURE__ */ new Set();
-  let o = !1, a = !1, n = 0;
-  for (; x(n, e.length, o, a, f); ) {
+  const s = [], a = /* @__PURE__ */ new Set();
+  let o = !1, r = !1, n = 0;
+  for (; x(n, e.length, o, r, f); ) {
     if (d > 0 && s.length >= d) {
       await l(t, s, d);
       break;
     }
-    const p = e[n], i = await w(p, t, r, s, o, a);
-    if (i.found && (o = i.rssFound, a = i.atomFound, d > 0 && s.length >= d)) {
+    const p = e[n], i = await w(p, t, a, s, o, r);
+    if (i.found && (o = i.rssFound, r = i.atomFound, d > 0 && s.length >= d)) {
       await l(t, s, d);
       break;
     }
     let m = s.length;
     t.emit("log", { module: "blindsearch", totalEndpoints: e.length, totalCount: n, feedsFound: m }), n++;
   }
-  return { feeds: s, rssFound: o, atomFound: a };
+  return { feeds: s, rssFound: o, atomFound: r };
 }
-async function w(e, f, d, t, s, r) {
+async function w(e, f, d, t, s, a) {
   try {
     const o = await c(e, "", f);
     if (o && !d.has(e)) {
       d.add(e);
-      const a = g(o, e, t, s, r);
-      return s = a.rssFound, r = a.atomFound, { found: !0, rssFound: s, atomFound: r };
+      const r = g(o, e, t, s, a);
+      return s = r.rssFound, a = r.atomFound, { found: !0, rssFound: s, atomFound: a };
     }
   } catch (o) {
-    await b(f, e, o);
+    const r = o instanceof Error ? o : new Error(String(o));
+    await b(f, e, r);
   }
-  return { found: !1, rssFound: s, atomFound: r };
+  return { found: !1, rssFound: s, atomFound: a };
 }
 async function l(e, f, d) {
   e.emit("log", {

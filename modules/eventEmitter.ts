@@ -13,7 +13,7 @@
 /**
  * Type definition for event listener functions
  */
-export type EventListener<T = any> = (...args: T[]) => void;
+export type EventListener = (...args: unknown[]) => void | Promise<void>;
 
 /**
  * Interface for wrapper functions that store a reference to the original listener
@@ -99,7 +99,7 @@ export default class EventEmitter {
 			throw new TypeError('Listener must be a function');
 		}
 
-		const onceWrapper: OnceWrapper = (...args: any[]) => {
+		const onceWrapper: OnceWrapper = (...args: unknown[]) => {
 			this.off(event, onceWrapper);
 			listener.apply(this, args);
 		};

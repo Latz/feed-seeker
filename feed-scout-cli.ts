@@ -5,6 +5,7 @@ import FeedScout, { type FeedScoutOptions } from './feed-scout.js';
 import { createRequire } from 'module';
 import { styleText } from 'node:util';
 import { type Feed } from './modules/metaLinks.js';
+import type { StartEventData, EndEventData, LogEventData } from './types/events.js';
 
 let counterLength = 0; // needed for fancy blindsearch log display
 
@@ -21,11 +22,13 @@ function displayBanner(): void {
 	console.log(`${bannerText}\n`);
 }
 
-function start(data: any): void {
+function start(...args: unknown[]): void {
+	const data = args[0] as StartEventData;
 	process.stdout.write(`Starting ${data.niceName} `);
 }
 
-function end(data: { feeds: Feed[] }): void {
+function end(...args: unknown[]): void {
+	const data = args[0] as EndEventData;
 	if (data.feeds.length === 0) {
 		process.stdout.write(styleText('yellow', ' No feeds found.\n'));
 	} else {
@@ -33,15 +36,18 @@ function end(data: { feeds: Feed[] }): void {
 	}
 }
 
-async function log(data: any): Promise<void> {
+async function log(...args: unknown[]): Promise<void> {
+	const data = args[0] as LogEventData;
 	if (data.module === 'metalinks') {
 		process.stdout.write('.');
 	}
 	if (data.module === 'blindsearch' || data.module === 'anchors') {
-		process.stdout.write(`\x1b[${counterLength}D`);
-		const counter = ` (${data.totalCount}/${data.totalEndpoints})`;
-		process.stdout.write(counter);
-		counterLength = counter.length;
+		if ('totalCount' in data && 'totalEndpoints' in data) {
+			process.stdout.write(`\x1b[${counterLength}D`);
+			const counter = ` (${data.totalCount}/${data.totalEndpoints})`;
+			process.stdout.write(counter);
+			counterLength = counter.length;
+		}
 	}
 }
 

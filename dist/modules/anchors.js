@@ -24,7 +24,7 @@ function p(e, r) {
     "feedproxy.google.com",
     "feeds2.feedburner.com"
   ];
-  return o.includes(t.hostname) || o.some((s) => t.hostname.endsWith("." + s));
+  return o.includes(t.hostname) || o.some((l) => t.hostname.endsWith("." + l));
 }
 function g(e) {
   if (e.options.followMetaRefresh && e.document && typeof e.document.querySelector == "function") {
@@ -59,23 +59,26 @@ function u(e, r, t) {
   return null;
 }
 async function U(e, r) {
-  const { instance: t, baseUrl: o, feedUrls: s } = r, n = u(e, o, t);
+  const { instance: t, baseUrl: o, feedUrls: l } = r, n = u(e, o, t);
   if (n)
     try {
-      const l = await d(n, "", t);
-      l && s.push({
+      const s = await d(n, "", t);
+      s && l.push({
         url: n,
         title: e.textContent?.trim() || null,
-        type: l.type,
-        feedTitle: l.title
+        type: s.type,
+        feedTitle: s.title
       });
-    } catch (l) {
-      t.options?.showErrors && t.emit("error", {
-        module: "anchors",
-        error: `Error checking feed at ${n}: ${l.message}`,
-        explanation: "An error occurred while trying to fetch and validate a potential feed URL found in an anchor tag. This could be due to network timeouts, server errors, or invalid feed content.",
-        suggestion: "Check if the URL is accessible and returns valid feed content. Network connectivity issues or server problems may cause this error."
-      });
+    } catch (s) {
+      if (t.options?.showErrors) {
+        const i = s instanceof Error ? s : new Error(String(s));
+        t.emit("error", {
+          module: "anchors",
+          error: `Error checking feed at ${n}: ${i.message}`,
+          explanation: "An error occurred while trying to fetch and validate a potential feed URL found in an anchor tag. This could be due to network timeouts, server errors, or invalid feed content.",
+          suggestion: "Check if the URL is accessible and returns valid feed content. Network connectivity issues or server problems may cause this error."
+        });
+      }
     }
 }
 async function f(e) {
@@ -85,21 +88,21 @@ async function f(e) {
     const a = u(i, r, e);
     a && p(a, r) && o.push(i);
   }
-  const s = e.options?.maxFeeds || 0, n = {
+  const l = e.options?.maxFeeds || 0, n = {
     instance: e,
     baseUrl: r,
     feedUrls: []
   };
-  let l = 1;
+  let s = 1;
   for (const i of o) {
-    if (s > 0 && n.feedUrls.length >= s) {
+    if (l > 0 && n.feedUrls.length >= l) {
       e.emit("log", {
         module: "anchors",
-        message: `Stopped due to reaching maximum feeds limit: ${n.feedUrls.length} feeds found (max ${s} allowed).`
+        message: `Stopped due to reaching maximum feeds limit: ${n.feedUrls.length} feeds found (max ${l} allowed).`
       });
       break;
     }
-    e.emit("log", { module: "anchors", totalCount: l++, totalEndpoints: o.length }), await U(i, n);
+    e.emit("log", { module: "anchors", totalCount: s++, totalEndpoints: o.length }), await U(i, n);
   }
   return n.feedUrls;
 }
