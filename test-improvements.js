@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * Smoke test to verify the improvements made to FeedScout
+ * Smoke test to verify the improvements made to FeedSeeker
  */
 
-import FeedScout from './dist/feed-scout.js';
+import FeedSeeker from './dist/feed-seeker.js';
 
-console.log('🧪 Testing FeedScout improvements...\n');
+console.log('🧪 Testing FeedSeeker improvements...\n');
 
 // Test 1: Input validation
 console.log('1️⃣  Testing input validation...');
 try {
-	new FeedScout(null);
+	new FeedSeeker(null);
 	console.log('   ❌ FAILED: Should throw error for null input');
 } catch (error) {
 	if (error.message.includes('non-empty string')) {
@@ -22,7 +22,7 @@ try {
 }
 
 try {
-	new FeedScout('');
+	new FeedSeeker('');
 	console.log('   ❌ FAILED: Should throw error for empty string');
 } catch (error) {
 	if (error.message.includes('non-empty string')) {
@@ -35,7 +35,7 @@ try {
 // Test 2: URL validation
 console.log('\n2️⃣  Testing URL validation...');
 try {
-	new FeedScout('not a valid url!!!');
+	new FeedSeeker('not a valid url!!!');
 	console.log('   ❌ FAILED: Should throw error for invalid URL');
 } catch (error) {
 	if (error.message.includes('Invalid URL')) {
@@ -47,7 +47,7 @@ try {
 
 // Test 3: Default timeout
 console.log('\n3️⃣  Testing default timeout...');
-const scout1 = new FeedScout('https://example.com');
+const scout1 = new FeedSeeker('https://example.com');
 if (scout1.options.timeout === 5) {
 	console.log('   ✅ PASSED: Default timeout is set to 5 seconds');
 } else {
@@ -56,7 +56,7 @@ if (scout1.options.timeout === 5) {
 
 // Test 4: Custom timeout
 console.log('\n4️⃣  Testing custom timeout...');
-const scout2 = new FeedScout('https://example.com', { timeout: 10 });
+const scout2 = new FeedSeeker('https://example.com', { timeout: 10 });
 if (scout2.options.timeout === 10) {
 	console.log('   ✅ PASSED: Custom timeout is preserved');
 } else {
@@ -65,7 +65,7 @@ if (scout2.options.timeout === 10) {
 
 // Test 5: Protocol handling
 console.log('\n5️⃣  Testing protocol handling...');
-const scout3 = new FeedScout('example.com');
+const scout3 = new FeedSeeker('example.com');
 if (scout3.site === 'https://example.com') {
 	console.log('   ✅ PASSED: Protocol auto-added correctly');
 } else {
@@ -74,14 +74,14 @@ if (scout3.site === 'https://example.com') {
 
 // Test 6: Trailing slash normalization
 console.log('\n6️⃣  Testing trailing slash normalization...');
-const scout4 = new FeedScout('https://example.com/');
+const scout4 = new FeedSeeker('https://example.com/');
 if (scout4.site === 'https://example.com') {
 	console.log('   ✅ PASSED: Trailing slash removed for root');
 } else {
 	console.log('   ❌ FAILED: Site is', scout4.site);
 }
 
-const scout5 = new FeedScout('https://example.com/path/');
+const scout5 = new FeedSeeker('https://example.com/path/');
 if (scout5.site === 'https://example.com/path/') {
 	console.log('   ✅ PASSED: Trailing slash kept for non-root paths');
 } else {
@@ -90,7 +90,7 @@ if (scout5.site === 'https://example.com/path/') {
 
 // Test 7: Event system
 console.log('\n7️⃣  Testing event system...');
-const scout6 = new FeedScout('https://example.com');
+const scout6 = new FeedSeeker('https://example.com');
 let eventFired = false;
 scout6.on('error', (data) => {
 	eventFired = true;

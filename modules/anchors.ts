@@ -94,7 +94,7 @@ function isAllowedDomain(url: string, baseUrl: URL): boolean {
 /**
  * Handles meta refresh redirects if present in the document.
  * It will fetch the content of the new URL and update the instance's document.
- * @param {MetaLinksInstance} instance - The FeedScout instance containing document and site info.
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance containing document and site info.
  */
 function handleMetaRefreshRedirect(instance: MetaLinksInstance): Promise<Feed[]> | null {
 	if (instance.options.followMetaRefresh) {
@@ -121,7 +121,7 @@ function handleMetaRefreshRedirect(instance: MetaLinksInstance): Promise<Feed[]>
  * Resolves the URL from an anchor element.
  * @param {HTMLAnchorElement} anchor - The anchor element.
  * @param {URL} baseUrl - The base URL for resolving relative paths.
- * @param {MetaLinksInstance} instance - The FeedScout instance for emitting errors.
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance for emitting errors.
  * @returns {string|null} The resolved URL or null if invalid.
  */
 function getUrlFromAnchor(anchor: HTMLAnchorElement, baseUrl: URL, instance: MetaLinksInstance): string | null {
@@ -203,7 +203,7 @@ async function processAnchor(anchor: HTMLAnchorElement, context: AnchorContext):
 
 /**
  * Checks all links on the page and verifies if they are feeds
- * @param {MetaLinksInstance} instance - The FeedScout instance containing document and site info
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance containing document and site info
  * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed URLs
  */
 async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
@@ -251,12 +251,12 @@ async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
 /**
  * Main function to analyze all anchor elements on a page for potential feed URLs
  * Processes anchors with memory optimization, domain filtering, and comprehensive validation
- * @param {MetaLinksInstance} instance - The FeedScout instance containing parsed HTML and configuration
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance containing parsed HTML and configuration
  * @returns {Promise<Feed[]>} Array of validated feed objects with url, title, and type properties
  * @throws {Error} When feed validation fails or network errors occur
  * @example
- * const feedScout = new FeedScout('https://example.com');
- * const feeds = await checkAllAnchors(feedScout);
+ * const feedSeeker = new FeedSeeker('https://example.com');
+ * const feeds = await checkAllAnchors(feedSeeker);
  * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
  */
 export default async function checkAllAnchors(instance: MetaLinksInstance): Promise<Feed[]> {

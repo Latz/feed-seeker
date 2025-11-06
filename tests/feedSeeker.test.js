@@ -1,17 +1,17 @@
 import { describe, it, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import FeedScout from '../feed-scout.js';
+import FeedSeeker from '../feed-seeker.js';
 import metaLinks from '../modules/metaLinks.js';
 import checkAllAnchors from '../modules/anchors.js';
 import blindSearch from '../modules/blindsearch.js';
 import deepSearch from '../modules/deepSearch.js';
 
 // Since we can't easily mock the imported modules, let's test the constructor and basic functionality
-describe('FeedScout Main Class', () => {
+describe('FeedSeeker Main Class', () => {
 	let fs;
 
 	beforeEach(() => {
-		fs = new FeedScout('https://example.com');
+		fs = new FeedSeeker('https://example.com');
 		// Mock the initialize method to prevent actual network calls
 		mock.method(fs, 'initialize', async () => {
 			fs.document = { querySelectorAll: () => [] }; // Provide a mock document
@@ -25,23 +25,23 @@ describe('FeedScout Main Class', () => {
 
 	describe('Constructor', () => {
 		it('should create instance with proper site normalization', () => {
-			const scout = new FeedScout('example.com');
+			const scout = new FeedSeeker('example.com');
 			assert.strictEqual(scout.site, 'https://example.com');
 		});
 
 		it('should handle URLs with protocol correctly', () => {
-			const scout = new FeedScout('https://example.com');
+			const scout = new FeedSeeker('https://example.com');
 			assert.strictEqual(scout.site, 'https://example.com');
 		});
 
 		it('should store options correctly', () => {
 			const options = { timeout: 10, maxFeeds: 5 };
-			const scout = new FeedScout('https://example.com', options);
+			const scout = new FeedSeeker('https://example.com', options);
 			assert.deepStrictEqual(scout.options, options);
 		});
 
 		it('should initialize with null initPromise', () => {
-			const scout = new FeedScout('https://example.com');
+			const scout = new FeedSeeker('https://example.com');
 			assert.strictEqual(scout.initPromise, null);
 		});
 	});
@@ -100,9 +100,9 @@ describe('FeedScout Main Class', () => {
 
 	describe('URL handling', () => {
 		it('should normalize different URL formats', () => {
-			const fs1 = new FeedScout('example.com');
-			const fs2 = new FeedScout('http://example.com');
-			const fs3 = new FeedScout('https://example.com/path');
+			const fs1 = new FeedSeeker('example.com');
+			const fs2 = new FeedSeeker('http://example.com');
+			const fs3 = new FeedSeeker('https://example.com/path');
 
 			assert.strictEqual(fs1.site, 'https://example.com');
 			assert.strictEqual(fs2.site, 'http://example.com');

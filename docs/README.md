@@ -1,9 +1,9 @@
-# Feed Scout
+# Feed Seeker
 
-[![npm version](https://badge.fury.io/js/feed-scout.svg)](https://badge.fury.io/js/feed-scout)
+[![npm version](https://badge.fury.io/js/feed-seeker.svg)](https://badge.fury.io/js/feed-seeker)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Feed Scout** is a powerful tool to discover RSS, Atom, and JSON feeds on any website. It uses multiple search strategies to find feeds that other tools might miss.
+**Feed Seeker** is a powerful tool to discover RSS, Atom, and JSON feeds on any website. It uses multiple search strategies to find feeds that other tools might miss.
 
 ## Features
 
@@ -15,16 +15,16 @@
 
 ## Installation
 
-Install Feed Scout globally to use it as a command-line tool:
+Install Feed Seeker globally to use it as a command-line tool:
 
 ```bash
-npm install -g feed-scout
+npm install -g feed-seeker
 ```
 
 Or install it locally in your project:
 
 ```bash
-npm install feed-scout
+npm install feed-seeker
 ```
 
 ## Usage
@@ -34,7 +34,7 @@ npm install feed-scout
 Find feeds for a website:
 
 ```bash
-feed-scout https://example.com
+feed-seeker https://example.com
 ```
 
 #### Options
@@ -52,35 +52,35 @@ feed-scout https://example.com
 
 ```bash
 # Basic usage
-feed-scout https://news.ycombinator.com
+feed-seeker https://news.ycombinator.com
 
 # Meta search only (fast)
-feed-scout -m https://github.com
+feed-seeker -m https://github.com
 
 # Enable deep search (thorough but slower)
-feed-scout -d https://nytimes.com
+feed-seeker -d https://nytimes.com
 
 # Set deep search depth
-feed-scout -d --depth 5 https://blog.example.com
+feed-seeker -d --depth 5 https://blog.example.com
 
 # Limit deep search to 500 links
-feed-scout -d --max-links 500 https://large-website.com
+feed-seeker -d --max-links 500 https://large-website.com
 
 # Set timeout for requests
-feed-scout --timeout 10 https://slow-website.com
+feed-seeker --timeout 10 https://slow-website.com
 
 # Keep query parameters when searching
-feed-scout --keep-query-params https://example.com?category=tech
+feed-seeker --keep-query-params https://example.com?category=tech
 ```
 
 ### Programmatic Usage
 
-You can also use Feed Scout programmatically in your Node.js applications:
+You can also use Feed Seeker programmatically in your Node.js applications:
 
 ```javascript
-import FeedScout from 'feed-scout';
+import FeedSeeker from 'feed-seeker';
 
-const feedFinder = new FeedScout('https://example.com');
+const feedFinder = new FeedSeeker('https://example.com');
 
 // Listen for events
 feedFinder.on('initialized', () => {
@@ -104,7 +104,7 @@ await feedFinder.metaLinks();
 
 ## How It Works
 
-Feed Scout uses multiple strategies to find feeds:
+Feed Seeker uses multiple strategies to find feeds:
 
 1. **Meta Search**: Looks for feed references in `<link>` tags in the HTML head
 2. **Anchor Search**: Searches for feed links in the page's anchor tags
@@ -113,7 +113,7 @@ Feed Scout uses multiple strategies to find feeds:
 
 ## API
 
-### `new FeedScout(site, options)`
+### `new FeedSeeker(site, options)`
 
 Creates a new instance of the feed finder.
 
@@ -148,4 +148,4 @@ Your Name <your.email@example.com>
 
 ## Support
 
-If you encounter any issues or have questions, please [file an issue](https://github.com/yourusername/feed-scout/issues) on GitHub.
+If you encounter any issues or have questions, please [file an issue](https://github.com/yourusername/feed-seeker/issues) on GitHub.

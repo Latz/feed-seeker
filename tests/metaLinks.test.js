@@ -4,8 +4,8 @@ import { parseHTML } from 'linkedom';
 import metaLinks from '../modules/metaLinks.js';
 import * as checkFeedModule from '../modules/checkFeed.js';
 
-// Create a mock FeedScout instance for testing
-class MockFeedScout {
+// Create a mock FeedSeeker instance for testing
+class MockFeedSeeker {
   constructor(site, options = {}) {
     this.site = site;
     this.options = options;
@@ -136,7 +136,7 @@ describe('metaLinks Module', () => {
       `;
       
       const { document } = parseHTML(html);
-      const mockInstance = new MockFeedScout('https://example.com');
+      const mockInstance = new MockFeedSeeker('https://example.com');
       mockInstance.document = document;
       
       // Mock the emit function to capture events
@@ -164,7 +164,7 @@ describe('metaLinks Module', () => {
       `;
       
       const { document } = parseHTML(html);
-      const mockInstance = new MockFeedScout('https://example.com');
+      const mockInstance = new MockFeedSeeker('https://example.com');
       mockInstance.document = document;
       
       // Mock the emit function
@@ -181,7 +181,7 @@ describe('metaLinks Module', () => {
       const html = '<!DOCTYPE html><html><head></head><body></body></html>';
       
       const { document } = parseHTML(html);
-      const mockInstance = new MockFeedScout('https://example.com');
+      const mockInstance = new MockFeedSeeker('https://example.com');
       mockInstance.document = document;
       
       mockInstance.emit = () => {};
@@ -204,7 +204,7 @@ describe('metaLinks Module', () => {
       `;
       
       const { document } = parseHTML(html);
-      const mockInstance = new MockFeedScout('https://example.com/path');
+      const mockInstance = new MockFeedSeeker('https://example.com/path');
       mockInstance.document = document;
       
       mockInstance.emit = () => {};

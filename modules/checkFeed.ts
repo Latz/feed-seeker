@@ -21,7 +21,7 @@ export interface FeedResult {
 	title: string | null;
 }
 
-export interface FeedScoutOptions {
+export interface FeedSeekerOptions {
 	timeout?: number;
 	maxFeeds?: number;
 	showErrors?: boolean;
@@ -39,8 +39,8 @@ export interface FeedScoutOptions {
 	maxErrors?: number;
 }
 
-export interface FeedScoutInstance {
-	options: FeedScoutOptions;
+export interface FeedSeekerInstance {
+	options: FeedSeekerOptions;
 	emit?: (event: string, data: unknown) => void;
 }
 
@@ -126,7 +126,7 @@ function cleanTitle(title: string | null): string | null {
  * Fetches content if not provided and uses pre-compiled regex patterns for efficient parsing
  * @param {string} url - The URL to check (must be a valid HTTP/HTTPS URL)
  * @param {string} [content=''] - The content to analyze (optional, will fetch if not provided)
- * @param {FeedScoutInstance} [instance] - The FeedScout instance with options
+ * @param {FeedSeekerInstance} [instance] - The FeedSeeker instance with options
  * @returns {Promise<FeedResult|null>} Feed object with type and title properties, or null if not a valid feed
  * @throws {Error} When network errors occur during content fetching
  * @example
@@ -143,7 +143,7 @@ function cleanTitle(title: string | null): string | null {
  * const result = await checkFeed('https://example.com/not-a-feed');
  * console.log(result); // null
  */
-export default async function checkFeed(url: string, content: string = '', instance?: FeedScoutInstance): Promise<FeedResult | null> {
+export default async function checkFeed(url: string, content: string = '', instance?: FeedSeekerInstance): Promise<FeedResult | null> {
 	// Check if URL pattern indicates this is likely an oEmbed endpoint
 	if (url.includes('/wp-json/oembed/') || url.includes('/oembed')) {
 		// WordPress oEmbed endpoints are not feeds

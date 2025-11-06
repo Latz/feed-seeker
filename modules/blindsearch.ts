@@ -349,7 +349,7 @@ const FEED_ENDPOINTS: string[] = [
 ];
 
 import checkFeed from './checkFeed.js';
-import { type FeedScoutInstance } from './checkFeed.js';
+import { type FeedSeekerInstance } from './checkFeed.js';
 import { type MetaLinksInstance, type Feed } from './metaLinks.js';
 
 /**
@@ -492,7 +492,7 @@ export default async function blindSearch(instance: MetaLinksInstance): Promise<
  * @param {string[]} endpointUrls - Array of URLs to check for feeds
  * @param {boolean} shouldCheckAll - Whether to check all URLs regardless of what's found
  * @param {number} maxFeeds - Maximum number of feeds to find (0 = no limit)
- * @param {MetaLinksInstance} instance - The FeedScout instance
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance
  * @returns {Promise<{feeds: BlindSearchFeed[], rssFound: boolean, atomFound: boolean}>} A promise that resolves to an object containing feeds, rssFound, and atomFound status
  */
 async function processFeeds(
@@ -542,7 +542,7 @@ async function processFeeds(
 /**
  * Processes a single feed URL
  * @param {string} url - The URL to process
- * @param {MetaLinksInstance} instance - The FeedScout instance
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance
  * @param {Set<string>} foundUrls - Set of already found URLs
  * @param {BlindSearchFeed[]} feeds - Array of found feeds
  * @param {boolean} rssFound - Whether an RSS feed has been found
@@ -581,7 +581,7 @@ async function processSingleFeedUrl(
 
 /**
  * Handles the case when maximum feeds limit is reached
- * @param {MetaLinksInstance} instance - The FeedScout instance
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance
  * @param {BlindSearchFeed[]} feeds - Array of found feeds
  * @param {number} maxFeeds - Maximum number of feeds allowed
  * @returns {Promise<void>}
@@ -599,7 +599,7 @@ async function handleMaxFeedsReached(
 
 /**
  * Handles errors that occur during feed checking
- * @param {MetaLinksInstance} instance - The FeedScout instance
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance
  * @param {string} url - The URL that caused the error
  * @param {Error} error - The error that occurred
  * @returns {Promise<void>}

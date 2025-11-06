@@ -1,8 +1,8 @@
 /**
- * @fileoverview Event type definitions for FeedScout
+ * @fileoverview Event type definitions for FeedSeeker
  *
  * This module defines discriminated union types for all events emitted
- * throughout the FeedScout application, providing type-safe event handling.
+ * throughout the FeedSeeker application, providing type-safe event handling.
  *
  * @module types/events
  * @version 1.0.0

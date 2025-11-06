@@ -194,7 +194,7 @@ async function F(o, e = {}, t = null) {
     e.maxFeeds || 0,
     // Maximum number of feeds before stopping (0 = no limit)
     t
-    // Pass the FeedScout instance to the crawler
+    // Pass the FeedSeeker instance to the crawler
   );
   return r.timeout = (e.timeout || 5) * 1e3, t && t.emit && (r.on("start", (s) => t.emit("start", s)), r.on("log", (s) => t.emit("log", s)), r.on("error", (s) => t.emit("error", s)), r.on("end", (s) => t.emit("end", s))), r.start(), await new Promise((s) => {
     r.queue.drain(() => {
