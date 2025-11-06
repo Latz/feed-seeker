@@ -46,25 +46,17 @@ export interface FeedScoutOptions extends DeepSearchOptions {
 }
 
 /**
- * Checks if any feeds were found in the provided array
- * @param {Feed[]} feeds - Array of feed objects to check
- * @returns {boolean} True if feeds exist and have a length greater than 0, false otherwise
- * @example
- * const feeds = [{ url: 'https://example.com/feed.xml', type: 'rss' }];
- * console.log(foundFeed(feeds)); // true
- */
-function foundFeed(feeds: Feed[] | undefined): boolean {
-	return feeds !== undefined && feeds.length > 0;
-}
-
-/**
  * Main FeedScout class for discovering RSS, Atom, and JSON feeds on websites
  *
  * @class FeedScout
  * @extends EventEmitter
+ * @fires FeedScout#initialized - Emitted when the instance has finished initializing
+ * @fires FeedScout#error - Emitted when an error occurs during initialization or search
+ * @fires FeedScout#end - Emitted when a search completes with results
  * @example
  * const scout = new FeedScout('https://example.com', { maxFeeds: 10 });
- * scout.on('start', (data) => console.log('Started:', data.niceName));
+ * scout.on('initialized', () => console.log('Initialization complete'));
+ * scout.on('error', (data) => console.error('Error:', data.error));
  * scout.on('end', (data) => console.log('Found feeds:', data.feeds));
  *
  * const feeds = await scout.metaLinks();
@@ -95,15 +87,32 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 	 */
 	constructor(site: string, options: FeedScoutOptions = {}) {
 		super();
+
+		// Validate site parameter
+		if (!site || typeof site !== 'string') {
+			throw new TypeError('site parameter must be a non-empty string');
+		}
+
 		// Add https:// if no protocol is specified
 		if (!site.includes('://')) {
 			site = `https://${site}`;
 		}
-		const urlObj = new URL(site);
+
+		// Validate URL format
+		let urlObj: URL;
+		try {
+			urlObj = new URL(site);
+		} catch (error) {
+			throw new TypeError(`Invalid URL: ${site}`);
+		}
+
 		// Normalize site link but remove trailing slash for root paths to prevent duplicate checks in path traversal
 		// For example: https://example.com/ should become https://example.com to avoid checking endpoints twice
 		this.site = urlObj.pathname === '/' ? urlObj.origin : urlObj.href;
-		this.options = options;
+		this.options = {
+			timeout: 5, // Default timeout of 5 seconds
+			...options
+		};
 		this.initPromise = null; // Store the initialization promise
 	}
 
@@ -120,7 +129,7 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 		if (this.initPromise === null) {
 			this.initPromise = (async () => {
 				try {
-					const response = await fetchWithTimeout(this.site, (this.options.timeout || 5) * 1000);
+					const response = await fetchWithTimeout(this.site, this.options.timeout! * 1000);
 
 					if (!response.ok) {
 						this.emit('error', {
@@ -226,11 +235,17 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 
 	/**
 	 * Starts a comprehensive feed search using multiple strategies
-	 * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of found feed objects
+	 * Automatically deduplicates feeds found by multiple strategies
+	 * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of unique found feed objects
+	 * @example
+	 * const scout = new FeedScout('https://example.com', { maxFeeds: 10 });
+	 * const feeds = await scout.startSearch();
+	 * console.log('All feeds:', feeds);
 	 */
 	async startSearch(): Promise<Array<Feed | BlindSearchFeed>> {
 		const { deepsearchOnly, metasearch, blindsearch, anchorsonly, deepsearch, all, maxFeeds } = this.options;
 
+		// Handle single strategy modes
 		if (deepsearchOnly) {
 			return this.deepSearch();
 		}
@@ -247,30 +262,47 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 			return this.checkAllAnchors();
 		}
 
-		let totalFeeds: Array<Feed | BlindSearchFeed> = [];
+		// Use Map for deduplication by URL
+		const feedMap = new Map<string, Feed | BlindSearchFeed>();
 		const searchStrategies = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
 
 		for (const strategy of searchStrategies) {
 			const feeds = await strategy.call(this);
 			if (feeds && feeds.length > 0) {
-				totalFeeds = totalFeeds.concat(feeds);
-				if (!all && maxFeeds && maxFeeds > 0 && totalFeeds.length >= maxFeeds) {
-					totalFeeds = totalFeeds.slice(0, maxFeeds);
+				// Add feeds to map, deduplicating by URL
+				for (const feed of feeds) {
+					if (!feedMap.has(feed.url)) {
+						feedMap.set(feed.url, feed);
+					}
+				}
+
+				// Check if we've reached maxFeeds limit
+				if (!all && maxFeeds && maxFeeds > 0 && feedMap.size >= maxFeeds) {
 					break;
 				}
 			}
 		}
 
-		if (deepsearch) {
-			if (!maxFeeds || totalFeeds.length < maxFeeds) {
-				const deepFeeds = await this.deepSearch();
-				if (deepFeeds && deepFeeds.length > 0) {
-					totalFeeds = totalFeeds.concat(deepFeeds);
-					if (maxFeeds && maxFeeds > 0 && totalFeeds.length > maxFeeds) {
-						totalFeeds = totalFeeds.slice(0, maxFeeds);
+		// Run deep search if enabled and we haven't reached the limit
+		if (deepsearch && (!maxFeeds || feedMap.size < maxFeeds)) {
+			const deepFeeds = await this.deepSearch();
+			if (deepFeeds && deepFeeds.length > 0) {
+				for (const feed of deepFeeds) {
+					if (!feedMap.has(feed.url)) {
+						feedMap.set(feed.url, feed);
+					}
+					// Stop if we've reached the limit
+					if (maxFeeds && maxFeeds > 0 && feedMap.size >= maxFeeds) {
+						break;
 					}
 				}
 			}
+		}
+
+		// Convert map to array and apply maxFeeds limit
+		let totalFeeds = Array.from(feedMap.values());
+		if (maxFeeds && maxFeeds > 0 && totalFeeds.length > maxFeeds) {
+			totalFeeds = totalFeeds.slice(0, maxFeeds);
 		}
 
 		this.emit('end', { module: 'all', feeds: totalFeeds });

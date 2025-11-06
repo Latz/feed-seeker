@@ -42,7 +42,11 @@
 		"test": "node tests/run-tests.js",
 		"test:unit": "node --test tests/*.test.js",
 		"build": "tsc && vite build",
-		"type-check": "tsc --noEmit"
+		"type-check": "tsc --noEmit",
+		"prebuild": "npm run type-check",
+		"dev": "tsc --watch",
+		"clean": "rm -rf dist",
+		"prepublishOnly": "npm run clean && npm run build && npm test"
 	},
 	"keywords": [
 		"rss",
