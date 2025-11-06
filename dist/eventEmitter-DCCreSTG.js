@@ -2,13 +2,14 @@ class o {
   /**
    * Private field storing event listeners using Map and Set for optimal performance
    * @private
-   * @type {Map<string, Set<EventListener>>}
+   * @type {Map<string, Set<Function>>}
    */
   #e = /* @__PURE__ */ new Map();
+  // Use private field and Map for better performance
   /**
    * Adds an event listener for the specified event
    * @param {string} event - The name of the event to listen for
-   * @param {EventListener} listener - The function to call when the event is emitted
+   * @param {Function} listener - The function to call when the event is emitted
    * @returns {EventEmitter} The instance for method chaining
    * @throws {TypeError} When listener is not a function
    * @example
@@ -26,7 +27,7 @@ class o {
    * Adds a one-time event listener for the specified event
    * The listener will be automatically removed after being called once
    * @param {string} event - The name of the event to listen for
-   * @param {EventListener} listener - The function to call when the event is emitted (will be removed after first call)
+   * @param {Function} listener - The function to call when the event is emitted (will be removed after first call)
    * @returns {EventEmitter} The instance for method chaining
    * @throws {TypeError} When listener is not a function
    * @example
@@ -71,7 +72,7 @@ class o {
   /**
    * Removes an event listener for the specified event
    * @param {string} event - The name of the event
-   * @param {EventListener} listener - The specific listener function to remove (must be same reference)
+   * @param {Function} listener - The specific listener function to remove (must be same reference)
    * @returns {EventEmitter} The instance for method chaining
    * @example
    * const handler = (data) => console.log(data);
@@ -92,6 +93,7 @@ class o {
   removeAllListeners(e) {
     return e ? this.#e.delete(e) : this.#e.clear(), this;
   }
+  // New utility methods
   /**
    * Returns the number of listeners for a specific event
    * @param {string} event - The name of the event
@@ -110,5 +112,5 @@ class o {
   }
 }
 export {
-  o as default
+  o as E
 };

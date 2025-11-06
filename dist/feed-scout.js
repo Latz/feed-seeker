@@ -1,24 +1,13 @@
 #!/usr/bin/env node
-import { parseHTML as e } from "linkedom";
-import s from "./modules/metaLinks.js";
-import r from "./modules/anchors.js";
-import n from "./modules/blindsearch.js";
-import o from "./modules/deepSearch.js";
-import h from "./modules/eventEmitter.js";
-import c from "./modules/fetchWithTimeout.js";
-class y extends h {
+import { parseHTML as u } from "linkedom";
+import { m, c as d, b as f, d as p } from "./deepSearch-CydTS8TB.js";
+import { E as S } from "./eventEmitter-DCCreSTG.js";
+import { f as y } from "./checkFeed-CpnV4saY.js";
+class z extends S {
   /**
    * Creates a new FeedScout instance
    * @param {string} site - The website URL to search for feeds (protocol optional, defaults to https://)
-   * @param {object} [options={}] - Configuration options for the search
-   * @param {number} [options.maxFeeds=0] - Maximum number of feeds to find (0 = no limit)
-   * @param {number} [options.timeout=5] - Request timeout in seconds
-   * @param {number} [options.depth=3] - Maximum crawling depth for deep search
-   * @param {number} [options.maxLinks=1000] - Maximum links to process in deep search
-   * @param {boolean} [options.all=false] - Whether to find all feeds or stop after finding one of each type
-   * @param {boolean} [options.keepQueryParams=false] - Whether to preserve query parameters in URLs
-   * @param {boolean} [options.checkForeignFeeds=false] - Whether to check feeds on foreign domains
-   * @param {boolean} [options.showErrors=false] - Whether to emit error events
+   * @param {FeedScoutOptions} [options={}] - Configuration options for the search
    * @throws {TypeError} When site parameter is not provided or invalid
    * @example
    * // Basic usage
@@ -31,8 +20,10 @@ class y extends h {
    *   all: true
    * });
    */
-  constructor(i, t = {}) {
-    super(), i.includes("://") || (i = `https://${i}`), this.site = new URL(i).href, this.options = t, this.initPromise = null;
+  constructor(t, i = {}) {
+    super(), t.includes("://") || (t = `https://${t}`);
+    const r = new URL(t);
+    this.site = r.pathname === "/" ? r.origin : r.href, this.options = i, this.initPromise = null;
   }
   /**
    * Initializes the FeedScout instance by fetching the site content and parsing the HTML
@@ -46,69 +37,105 @@ class y extends h {
   async initialize() {
     return this.initPromise === null && (this.initPromise = (async () => {
       try {
-        const i = await c(this.site);
-        if (!i) {
-          this.emit("error", `Failed to fetch ${this.site}`), this.content = "", this.document = { querySelectorAll: () => [] }, this.emit("initialized");
+        const t = await y(this.site, (this.options.timeout || 5) * 1e3);
+        if (!t.ok) {
+          this.emit("error", {
+            module: "FeedScout",
+            error: `HTTP error while fetching ${this.site}: ${t.status} ${t.statusText}`
+          }), this.content = "", this.document = { querySelectorAll: () => [] }, this.emit("initialized");
           return;
         }
-        this.content = await i.text();
-        const { document: t } = e(this.content);
-        this.document = t, this.emit("initialized");
-      } catch (i) {
-        this.emit(`Error fetching ${this.site}:`, i), this.content = "", this.document = { querySelectorAll: () => [] }, this.emit("initialized");
+        this.content = await t.text();
+        const { document: i } = u(this.content);
+        this.document = i, this.emit("initialized");
+      } catch (t) {
+        let i = `Failed to fetch ${this.site}`;
+        t.name === "AbortError" ? i += ": Request timed out" : (i += `: ${t.message}`, t.cause && (i += ` (cause: ${t.cause.code || t.cause.message})`)), this.emit("error", {
+          module: "FeedScout",
+          error: i,
+          cause: t.cause
+        }), this.content = "", this.document = { querySelectorAll: () => [] }, this.emit("initialized");
       }
     })()), this.initPromise;
   }
-  // initialize
   /**
    * Searches for feeds using meta links in the page (link tags in head)
    * This method looks for <link> elements with feed-related type attributes
-   * @returns {Promise<Array<object>>} A promise that resolves to an array of found feed objects
+   * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
    * @throws {Error} When initialization fails or network errors occur
    * @example
    * const feeds = await scout.metaLinks();
    * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
    */
   async metaLinks() {
-    return await this.initialize(), s(this);
+    return await this.initialize(), m(this);
   }
   /**
    * Searches for feeds by checking all anchor links on the page
    * This method analyzes all <a> elements for potential feed URLs
-   * @returns {Promise<Array<object>>} A promise that resolves to an array of found feed objects
+   * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
    * @throws {Error} When initialization fails or network errors occur
    * @example
    * const feeds = await scout.checkAllAnchors();
    * console.log(feeds); // [{ url: '...', title: '...', type: 'atom' }]
    */
   async checkAllAnchors() {
-    return await this.initialize(), r(this);
+    return await this.initialize(), d(this);
   }
   /**
    * Performs a blind search for common feed endpoints
    * This method tries common feed paths like /feed, /rss, /atom.xml, etc.
-   * @returns {Promise<Array<object>>} A promise that resolves to an array of found feed objects
+   * @returns {Promise<BlindSearchFeed[]>} A promise that resolves to an array of found feed objects
    * @throws {Error} When network errors occur during endpoint testing
    * @example
    * const feeds = await scout.blindSearch();
    * console.log(feeds); // [{ url: '...', feedType: 'rss', title: '...' }]
    */
   async blindSearch() {
-    return await this.initialize(), n(this);
+    return await this.initialize(), f(this);
   }
   /**
    * Performs a deep search by crawling the website
    * This method recursively crawls pages to find feeds, respecting depth and link limits
-   * @returns {Promise<Array<object>>} A promise that resolves to an array of found feed objects
+   * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
    * @throws {Error} When network errors occur during crawling
    * @example
    * const feeds = await scout.deepSearch();
    * console.log(feeds); // [{ url: '...', type: 'json', title: '...' }]
    */
   async deepSearch() {
-    return await this.initialize(), o(this.site, this.options, this);
+    return await this.initialize(), p(this.site, this.options, this);
+  }
+  /**
+   * Starts a comprehensive feed search using multiple strategies
+   * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of found feed objects
+   */
+  async startSearch() {
+    const { deepsearchOnly: t, metasearch: i, blindsearch: r, anchorsonly: c, deepsearch: h, all: o, maxFeeds: s } = this.options;
+    if (t)
+      return this.deepSearch();
+    if (i)
+      return this.metaLinks();
+    if (r)
+      return this.blindSearch();
+    if (c)
+      return this.checkAllAnchors();
+    let e = [];
+    const l = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
+    for (const n of l) {
+      const a = await n.call(this);
+      if (a && a.length > 0 && (e = e.concat(a), !o && s && s > 0 && e.length >= s)) {
+        e = e.slice(0, s);
+        break;
+      }
+    }
+    if (h && (!s || e.length < s)) {
+      const n = await this.deepSearch();
+      n && n.length > 0 && (e = e.concat(n), s && s > 0 && e.length > s && (e = e.slice(0, s)));
+    }
+    return this.emit("end", { module: "all", feeds: e }), e;
   }
 }
 export {
-  y as default
+  z as default
 };

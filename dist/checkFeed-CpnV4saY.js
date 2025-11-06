@@ -1,4 +1,27 @@
-const s = {
+async function T(e, t = 5e3) {
+  const s = new AbortController(), r = s.signal, i = setTimeout(() => s.abort(), t), c = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+    Connection: "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Cache-Control": "max-age=0"
+  };
+  try {
+    const l = await fetch(e, {
+      signal: r,
+      headers: c
+    });
+    return clearTimeout(i), l;
+  } catch (l) {
+    throw clearTimeout(i), l;
+  }
+}
+const n = {
   // CDATA processing - matches XML CDATA sections: <![CDATA[content]]>
   // Used to extract clean text content from feeds that wrap content in CDATA
   CDATA: /<!\[CDATA\[(.*?)\]\]>/g,
@@ -39,59 +62,59 @@ const s = {
     TITLE_CONTENT: /<title>([\s\S]*?)<\/title>/i
   }
 };
-function c(e) {
-  return e.replace(s.CDATA, "$1");
+function a(e) {
+  return e.replace(n.CDATA, "$1");
 }
-function l(e) {
+function o(e) {
   return e && e.replace(/\s+/g, " ").trim();
 }
-async function N(e, t = "") {
+async function N(e, t = "", s) {
   if (e.includes("/wp-json/oembed/") || e.includes("/oembed"))
     return null;
   if (!t) {
-    const n = await fetch(e);
-    if (!n.ok)
-      throw new Error(`Failed to fetch ${e}: ${n.status} ${n.statusText}`);
-    t = await n.text();
+    const i = await T(e, s.options.timeout * 1e3);
+    if (!i.ok)
+      throw new Error(`Failed to fetch ${e}: ${i.status} ${i.statusText}`);
+    t = await i.text();
   }
-  return A(t) || o(t) || a(t) || null;
+  return A(t) || E(t) || S(t) || null;
 }
-function E(e) {
-  const t = s.RSS.CHANNEL_CONTENT.exec(e);
+function u(e) {
+  const t = n.RSS.CHANNEL_CONTENT.exec(e);
   if (t) {
-    const r = t[1], T = s.RSS.TITLE.exec(r);
-    return T ? l(c(T[1])) : null;
+    const i = t[1], c = n.RSS.TITLE.exec(i);
+    return c ? o(a(c[1])) : null;
   }
-  const i = s.RSS.TITLE.exec(e);
-  return i ? l(c(i[1])) : null;
+  const s = n.RSS.TITLE.exec(e);
+  return s ? o(a(s[1])) : null;
 }
 function A(e) {
-  if (s.RSS.VERSION.test(e)) {
-    const t = s.RSS.CHANNEL.test(e), i = s.RSS.ITEM.test(e), n = s.RSS.DESCRIPTION.test(e);
-    if (t && n && (i || s.RSS.CHANNEL_END.test(e)))
-      return { type: "rss", title: E(e) };
+  if (n.RSS.VERSION.test(e)) {
+    const t = n.RSS.CHANNEL.test(e), s = n.RSS.ITEM.test(e), r = n.RSS.DESCRIPTION.test(e);
+    if (t && r && (s || n.RSS.CHANNEL_END.test(e)))
+      return { type: "rss", title: u(e) };
   }
   return null;
 }
-function o(e) {
-  const t = s.ATOM.NAMESPACE_XMLNS.test(e) || s.ATOM.NAMESPACE_XMLNS_ATOM.test(e) || s.ATOM.NAMESPACE_ATOM_PREFIX.test(e);
-  if (s.ATOM.FEED_START.test(e) && t) {
-    const i = s.ATOM.ENTRY.test(e), n = s.ATOM.TITLE_TAG.test(e);
-    if (i && n) {
-      const r = s.ATOM.TITLE_CONTENT.exec(e);
-      return { type: "atom", title: r ? l(c(r[1])) : null };
+function E(e) {
+  const t = n.ATOM.NAMESPACE_XMLNS.test(e) || n.ATOM.NAMESPACE_XMLNS_ATOM.test(e) || n.ATOM.NAMESPACE_ATOM_PREFIX.test(e);
+  if (n.ATOM.FEED_START.test(e) && t) {
+    const s = n.ATOM.ENTRY.test(e), r = n.ATOM.TITLE_TAG.test(e);
+    if (s && r) {
+      const i = n.ATOM.TITLE_CONTENT.exec(e);
+      return { type: "atom", title: i ? o(a(i[1])) : null };
     }
   }
   return null;
 }
-function a(e) {
+function S(e) {
   try {
     const t = JSON.parse(e);
     if (t.type && ["rich", "video", "photo", "link"].includes(t.type) && (t.version === "1.0" || t.version === "2.0") || t.type && t.version && t.html)
       return null;
     if (t.version && typeof t.version == "string" && t.version.includes("jsonfeed") || t.items && Array.isArray(t.items) || t.feed_url) {
-      const i = t.title || t.name || null;
-      return { type: "json", title: l(i) };
+      const s = t.title || t.name || null;
+      return { type: "json", title: o(s) };
     }
     return null;
   } catch {
@@ -99,5 +122,6 @@ function a(e) {
   }
 }
 export {
-  N as c
+  N as c,
+  T as f
 };
