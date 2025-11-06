@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import blindSearch from '../modules/blindsearch.js';
 import * as checkFeedModule from '../modules/checkFeed.js';
 
-// Mock FeedScout instance for testing
-class MockFeedScout {
+// Mock FeedSeeker instance for testing
+class MockFeedSeeker {
 	constructor(site, options = {}) {
 		this.site = site;
 		this.options = options;
@@ -29,7 +29,7 @@ describe('Blind Search Module', () => {
 	let instance;
 
 	beforeEach(() => {
-		instance = new MockFeedScout('https://example.com/blog/posts');
+		instance = new MockFeedSeeker('https://example.com/blog/posts');
 		// Mock checkFeed to prevent network calls
 		mock.method(checkFeedModule, 'default', async url => {
 			if (url.includes('blog/feed')) {

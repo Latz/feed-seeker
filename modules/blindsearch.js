@@ -477,7 +477,7 @@ export default async function blindSearch(instance) {
  * @param {string[]} endpointUrls - Array of URLs to check for feeds
  * @param {boolean} shouldCheckAll - Whether to check all URLs regardless of what's found
  * @param {number} maxFeeds - Maximum number of feeds to find (0 = no limit)
- * @param {object} instance - The FeedScout instance
+ * @param {object} instance - The FeedSeeker instance
  * @returns {Promise<object>} A promise that resolves to an object containing feeds, rssFound, and atomFound status
  */
 async function processFeeds(endpointUrls, shouldCheckAll, maxFeeds, instance) {
@@ -522,7 +522,7 @@ async function processFeeds(endpointUrls, shouldCheckAll, maxFeeds, instance) {
 /**
  * Processes a single feed URL
  * @param {string} url - The URL to process
- * @param {object} instance - The FeedScout instance
+ * @param {object} instance - The FeedSeeker instance
  * @param {Set} foundUrls - Set of already found URLs
  * @param {Array} feeds - Array of found feeds
  * @param {boolean} rssFound - Whether an RSS feed has been found
@@ -554,7 +554,7 @@ async function processSingleFeedUrl(url, instance, foundUrls, feeds, rssFound, a
 
 /**
  * Handles the case when maximum feeds limit is reached
- * @param {object} instance - The FeedScout instance
+ * @param {object} instance - The FeedSeeker instance
  * @param {Array} feeds - Array of found feeds
  * @param {number} maxFeeds - Maximum number of feeds allowed
  * @returns {Promise<void>}
@@ -568,7 +568,7 @@ async function handleMaxFeedsReached(instance, feeds, maxFeeds) {
 
 /**
  * Handles errors that occur during feed checking
- * @param {object} instance - The FeedScout instance
+ * @param {object} instance - The FeedSeeker instance
  * @param {string} url - The URL that caused the error
  * @param {Error} error - The error that occurred
  * @returns {Promise<void>}

@@ -84,7 +84,7 @@ class Crawler extends EventEmitter {
 		this.maxErrors = maxErrors; // Maximum number of errors before stopping
 		this.maxFeeds = maxFeeds; // Maximum number of feeds to find before stopping
 		this.errorCount = 0; // Current error count
-		this.instance = instance; // Store the FeedScout instance
+		this.instance = instance; // Store the FeedSeeker instance
 		// Initialize async queue with concurrency control
 		// The queue processes crawlPage tasks with limited concurrency to prevent overwhelming the target server
 		// bind(this) ensures 'this' context is preserved when crawlPage is called by the queue
@@ -346,7 +346,7 @@ export default async function deepSearch(url, options = {}, instance = null) {
 		!!options.checkForeignFeeds, // Whether to check foreign domains for feeds
 		options.maxErrors || 5, // Maximum number of errors before stopping
 		options.maxFeeds || 0, // Maximum number of feeds before stopping (0 = no limit)
-		instance // Pass the FeedScout instance to the crawler
+		instance // Pass the FeedSeeker instance to the crawler
 	);
 	crawler.timeout = (options.timeout || 5) * 1000; // Convert seconds to milliseconds
 

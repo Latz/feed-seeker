@@ -29,7 +29,7 @@ import checkFeed from './checkFeed.js';
 /**
  * Processes a link element to check if it's a feed and adds it to the feeds array.
  * @param {HTMLLinkElement} link - The link element to process.
- * @param {object} instance - The FeedScout instance.
+ * @param {object} instance - The FeedSeeker instance.
  * @param {Array<object>} feeds - The array of found feeds.
  * @param {Set<string>} foundUrls - A set of URLs that have already been added.
  * @returns {Promise<boolean>} A promise that resolves to true if the maxFeeds limit is reached, false otherwise.
@@ -82,7 +82,7 @@ async function processLink(link, instance, feeds, foundUrls) {
 /**
  * Searches for feeds using meta links in the page head section
  * Analyzes <link> elements with feed-related rel and type attributes
- * @param {object} instance - The FeedScout instance containing parsed HTML and options
+ * @param {object} instance - The FeedSeeker instance containing parsed HTML and options
  * @param {object} instance.document - Parsed HTML document from linkedom
  * @param {string} instance.site - Base site URL for resolving relative links
  * @param {object} instance.options - Configuration options including maxFeeds
@@ -90,8 +90,8 @@ async function processLink(link, instance, feeds, foundUrls) {
  * @returns {Promise<Array<object>>} Array of found feed objects with url, title, and type properties
  * @throws {Error} When feed validation fails or network errors occur
  * @example
- * const feedScout = new FeedScout('https://example.com');
- * const feeds = await metaLinks(feedScout);
+ * const feedSeeker = new FeedSeeker('https://example.com');
+ * const feeds = await metaLinks(feedSeeker);
  * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
  */
 export default async function metaLinks(instance) {

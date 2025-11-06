@@ -1,4 +1,4 @@
-# Feed Scout API - Technical Documentation
+# Feed Seeker API - Technical Documentation
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@
 
 ## Overview
 
-Feed Scout is a comprehensive Node.js library for discovering RSS, Atom, and JSON feeds on websites. It employs multiple search strategies and provides a robust event-driven API for real-time feedback during the discovery process.
+Feed Seeker is a comprehensive Node.js library for discovering RSS, Atom, and JSON feeds on websites. It employs multiple search strategies and provides a robust event-driven API for real-time feedback during the discovery process.
 
 ### Key Features
 
@@ -31,7 +31,7 @@ Feed Scout is a comprehensive Node.js library for discovering RSS, Atom, and JSO
 ### Core Components
 
 ```
-FeedScout (Main Class)
+FeedSeeker (Main Class)
 ├── EventEmitter (Base Class)
 ├── Search Modules
 │   ├── metaLinks.js      - HTML meta tag analysis
@@ -43,7 +43,7 @@ FeedScout (Main Class)
 │   ├── fetchWithTimeout.js - HTTP client
 │   └── eventEmitter.js   - Event system
 └── CLI Interface
-    └── feed-scout-cli.js - Command-line tool
+    └── feed-seeker-cli.js - Command-line tool
 ```
 
 ### Data Flow
@@ -56,14 +56,14 @@ FeedScout (Main Class)
 
 ## Core API
 
-### FeedScout Class
+### FeedSeeker Class
 
 The main class that orchestrates feed discovery operations.
 
 #### Constructor
 
 ```javascript
-new FeedScout(site, options)
+new FeedSeeker(site, options)
 ```
 
 **Parameters:**
@@ -635,9 +635,9 @@ setTimeout(() => controller.abort(), timeout);
 ### Basic Usage
 
 ```javascript
-import FeedScout from 'feed-scout';
+import FeedSeeker from 'feed-seeker';
 
-const feedScout = new FeedScout('https://example.com');
+const feedScout = new FeedSeeker('https://example.com');
 
 // Event listeners
 feedScout.on('initialized', () => {
@@ -685,7 +685,7 @@ const options = {
   keepQueryParams: true
 };
 
-const feedScout = new FeedScout('https://news-site.com', options);
+const feedScout = new FeedSeeker('https://news-site.com', options);
 
 // Comprehensive search
 const allFeeds = [];
@@ -715,7 +715,7 @@ console.log(`Total unique feeds found: ${uniqueFeeds.length}`);
 ### Error Handling Integration
 
 ```javascript
-const feedScout = new FeedScout('https://problematic-site.com');
+const feedScout = new FeedSeeker('https://problematic-site.com');
 
 let errorCount = 0;
 const maxErrors = 3;
@@ -751,8 +751,8 @@ try {
 
 ```javascript
 // Import individual modules
-import metaLinks from 'feed-scout/metaLinks';
-import checkFeed from 'feed-scout/checkFeed';
+import metaLinks from 'feed-seeker/metaLinks';
+import checkFeed from 'feed-seeker/checkFeed';
 
 // Create minimal instance
 const instance = {
@@ -788,7 +788,7 @@ async function fetchWithTimeout(url, timeout = 5000) {
 
   // Custom headers for better compatibility
   const headers = {
-    'User-Agent': 'Feed-Scout/1.0 (+https://github.com/user/feed-scout)',
+    'User-Agent': 'Feed-Scout/1.0 (+https://github.com/user/feed-seeker)',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.5',
     'Accept-Encoding': 'gzip, deflate',
@@ -809,7 +809,7 @@ async function fetchWithTimeout(url, timeout = 5000) {
 
 ### Request Headers Strategy
 
-- **User-Agent**: Identifies as Feed Scout to avoid bot blocking
+- **User-Agent**: Identifies as Feed Seeker to avoid bot blocking
 - **Accept**: Prioritizes HTML/XML content types
 - **Cache-Control**: Ensures fresh content retrieval
 - **Accept-Encoding**: Supports compression for efficiency
@@ -1155,9 +1155,9 @@ describe('checkFeed Module', () => {
 });
 
 // Integration tests for full workflows
-describe('FeedScout Integration', () => {
+describe('FeedSeeker Integration', () => {
   it('should handle complete discovery workflow', async () => {
-    const feedScout = new FeedScout('https://example.com');
+    const feedScout = new FeedSeeker('https://example.com');
     const feeds = await feedScout.metaLinks();
     assert.ok(Array.isArray(feeds));
   });
@@ -1169,7 +1169,7 @@ describe('FeedScout Integration', () => {
 ```javascript
 // Network error simulation
 it('should handle network timeouts gracefully', async () => {
-  const feedScout = new FeedScout('https://timeout-test.com', { timeout: 1 });
+  const feedScout = new FeedSeeker('https://timeout-test.com', { timeout: 1 });
 
   let errorEmitted = false;
   feedScout.on('error', () => { errorEmitted = true; });
@@ -1290,4 +1290,4 @@ class RateLimiter {
 }
 ```
 
-This comprehensive technical documentation covers all aspects of the Feed Scout API, from basic usage to advanced integration patterns, performance optimization, testing strategies, and deployment considerations. The library provides a robust, event-driven approach to feed discovery with extensive configuration options and error handling capabilities.
+This comprehensive technical documentation covers all aspects of the Feed Seeker API, from basic usage to advanced integration patterns, performance optimization, testing strategies, and deployment considerations. The library provides a robust, event-driven approach to feed discovery with extensive configuration options and error handling capabilities.

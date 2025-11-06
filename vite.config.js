@@ -5,7 +5,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        index: resolve(__dirname, 'feed-scout.js'),
+        index: resolve(__dirname, 'feed-seeker.js'),
         'modules/metaLinks': resolve(__dirname, 'modules/metaLinks.js'),
         'modules/anchors': resolve(__dirname, 'modules/anchors.js'),
         'modules/blindsearch': resolve(__dirname, 'modules/blindsearch.js'),
@@ -13,10 +13,10 @@ export default defineConfig({
         'modules/eventEmitter': resolve(__dirname, 'modules/eventEmitter.js'),
         'modules/fetchWithTimeout': resolve(__dirname, 'modules/fetchWithTimeout.js')
       },
-      name: 'FeedScout',
+      name: 'FeedSeeker',
       fileName: (format, entryName) => {
         if (entryName === 'index') {
-          return `feed-scout.${format === 'es' ? 'js' : 'cjs'}`;
+          return `feed-seeker.${format === 'es' ? 'js' : 'cjs'}`;
         }
         return `${entryName}.${format === 'es' ? 'js' : 'cjs'}`;
       },

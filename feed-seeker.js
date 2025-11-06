@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * @fileoverview FeedScout - A comprehensive RSS, Atom, and JSON feed discovery tool
+ * @fileoverview FeedSeeker - A comprehensive RSS, Atom, and JSON feed discovery tool
  *
- * This module provides the main FeedScout class for discovering feeds on websites
+ * This module provides the main FeedSeeker class for discovering feeds on websites
  * through multiple search strategies including meta links, anchor analysis,
  * blind search, and deep crawling.
  *
- * @module FeedScout
+ * @module FeedSeeker
  * @version 1.0.0
  * @author latz
  * @since 1.0.0
@@ -38,21 +38,21 @@ function foundFeed(feeds) {
 // ---------------------------------------------------------------------------------------
 
 /**
- * Main FeedScout class for discovering RSS, Atom, and JSON feeds on websites
+ * Main FeedSeeker class for discovering RSS, Atom, and JSON feeds on websites
  *
- * @class FeedScout
+ * @class FeedSeeker
  * @extends EventEmitter
  * @example
- * const scout = new FeedScout('https://example.com', { maxFeeds: 10 });
+ * const scout = new FeedSeeker('https://example.com', { maxFeeds: 10 });
  * scout.on('start', (data) => console.log('Started:', data.niceName));
  * scout.on('end', (data) => console.log('Found feeds:', data.feeds));
  *
  * const feeds = await scout.metaLinks();
  * console.log('Meta link feeds:', feeds);
  */
-export default class FeedScout extends EventEmitter {
+export default class FeedSeeker extends EventEmitter {
 	/**
-	 * Creates a new FeedScout instance
+	 * Creates a new FeedSeeker instance
 	 * @param {string} site - The website URL to search for feeds (protocol optional, defaults to https://)
 	 * @param {object} [options={}] - Configuration options for the search
 	 * @param {number} [options.maxFeeds=0] - Maximum number of feeds to find (0 = no limit)
@@ -66,10 +66,10 @@ export default class FeedScout extends EventEmitter {
 	 * @throws {TypeError} When site parameter is not provided or invalid
 	 * @example
 	 * // Basic usage
-	 * const scout = new FeedScout('example.com');
+	 * const scout = new FeedSeeker('example.com');
 	 *
 	 * // With options
-	 * const scout = new FeedScout('https://blog.example.com', {
+	 * const scout = new FeedSeeker('https://blog.example.com', {
 	 *   maxFeeds: 5,
 	 *   timeout: 10,
 	 *   all: true
@@ -90,7 +90,7 @@ export default class FeedScout extends EventEmitter {
 	}
 
 	/**
-	 * Initializes the FeedScout instance by fetching the site content and parsing the HTML
+	 * Initializes the FeedSeeker instance by fetching the site content and parsing the HTML
 	 * This method is called automatically by other methods and caches the result
 	 * @returns {Promise<void>} A promise that resolves when the initialization is complete
 	 * @throws {Error} When the site cannot be fetched or parsed
@@ -106,7 +106,7 @@ export default class FeedScout extends EventEmitter {
 
 					if (!response.ok) {
 						this.emit('error', {
-							module: 'FeedScout',
+							module: 'FeedSeeker',
 							error: `HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`,
 						});
 						this.content = '';
@@ -132,7 +132,7 @@ export default class FeedScout extends EventEmitter {
 					}
 
 					this.emit('error', {
-						module: 'FeedScout',
+						module: 'FeedSeeker',
 						error: errorMessage,
 						cause: error.cause,
 					});

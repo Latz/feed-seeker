@@ -96,7 +96,7 @@ function isAllowedDomain(url, baseUrl) {
 /**
  * Handles meta refresh redirects if present in the document.
  * It will fetch the content of the new URL and update the instance's document.
- * @param {object} instance - The FeedScout instance containing document and site info.
+ * @param {object} instance - The FeedSeeker instance containing document and site info.
  */
 function handleMetaRefreshRedirect(instance) {
 	if (instance.options.followMetaRefresh) {
@@ -123,7 +123,7 @@ function handleMetaRefreshRedirect(instance) {
  * Resolves the URL from an anchor element.
  * @param {HTMLAnchorElement} anchor - The anchor element.
  * @param {URL} baseUrl - The base URL for resolving relative paths.
- * @param {object} instance - The FeedScout instance for emitting errors.
+ * @param {object} instance - The FeedSeeker instance for emitting errors.
  * @returns {string|null} The resolved URL or null if invalid.
  */
 function getUrlFromAnchor(anchor, baseUrl, instance) {
@@ -195,7 +195,7 @@ async function processAnchor(anchor, context) {
 
 /**
  * Checks all links on the page and verifies if they are feeds
- * @param {object} instance - The FeedScout instance containing document and site info
+ * @param {object} instance - The FeedSeeker instance containing document and site info
  * @returns {Promise<Array>} A promise that resolves to an array of found feed URLs
  */
 async function checkAnchors(instance) {
@@ -243,7 +243,7 @@ async function checkAnchors(instance) {
 /**
  * Main function to analyze all anchor elements on a page for potential feed URLs
  * Processes anchors with memory optimization, domain filtering, and comprehensive validation
- * @param {object} instance - The FeedScout instance containing parsed HTML and configuration
+ * @param {object} instance - The FeedSeeker instance containing parsed HTML and configuration
  * @param {object} instance.document - Parsed HTML document from linkedom
  * @param {string} instance.site - Base site URL for resolving relative links and domain filtering
  * @param {object} instance.options - Configuration options including maxFeeds and domain restrictions
@@ -251,8 +251,8 @@ async function checkAnchors(instance) {
  * @returns {Promise<Array<object>>} Array of validated feed objects with url, title, and type properties
  * @throws {Error} When feed validation fails or network errors occur
  * @example
- * const feedScout = new FeedScout('https://example.com');
- * const feeds = await checkAllAnchors(feedScout);
+ * const feedSeeker = new FeedSeeker('https://example.com');
+ * const feeds = await checkAllAnchors(feedSeeker);
  * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
  */
 export default async function checkAllAnchors(instance) {

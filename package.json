@@ -1,14 +1,14 @@
 {
-	"name": "feed-scout",
+	"name": "feed-seeker",
 	"version": "1.0.0",
-	"description": "Feed Scout - Find RSS, Atom, and JSON feeds on any website with support for preserving query parameters",
-	"main": "dist/feed-scout.cjs",
-	"module": "dist/feed-scout.js",
+	"description": "Feed Seeker - Find RSS, Atom, and JSON feeds on any website with support for preserving query parameters",
+	"main": "dist/feed-seeker.cjs",
+	"module": "dist/feed-seeker.js",
 	"type": "module",
 	"exports": {
 		".": {
-			"import": "./dist/feed-scout.js",
-			"require": "./dist/feed-scout.cjs"
+			"import": "./dist/feed-seeker.js",
+			"require": "./dist/feed-seeker.cjs"
 		},
 		"./metaLinks": {
 			"import": "./dist/modules/metaLinks.js",
@@ -58,12 +58,12 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/yourusername/feed-scout.git"
+		"url": "https://github.com/yourusername/feed-seeker.git"
 	},
 	"bugs": {
-		"url": "https://github.com/yourusername/feed-scout/issues"
+		"url": "https://github.com/yourusername/feed-seeker/issues"
 	},
-	"homepage": "https://github.com/yourusername/feed-scout#readme",
+	"homepage": "https://github.com/yourusername/feed-seeker#readme",
 	"dependencies": {
 		"async": "^3.2.6",
 		"chalk": "^5.6.2",

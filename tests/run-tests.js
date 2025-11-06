@@ -10,7 +10,7 @@ const defaultTestFiles = [
 	'./tests/deepSearch.test.js',
 	'./tests/metaLinks.test.js',
 	'./tests/fetchWithTimeout.test.js',
-	'./tests/feed-scout-cli.test.js',
+	'./tests/feed-seeker-cli.test.js',
 ];
 
 const testFiles = args.length > 0 ? args : defaultTestFiles;

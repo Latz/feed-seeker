@@ -1,5 +1,5 @@
 import { Command, Option } from 'commander';
-import FeedScout from './feed-scout.js';
+import FeedSeeker from './feed-seeker.js';
 import { createRequire } from 'module';
 import { styleText } from 'node:util';
 
@@ -45,7 +45,7 @@ async function log(data) {
 // -------------------------------------------------------------------------------------------------------
 
 function initializeFeedFinder(site, options) {
-	const FeedFinder = new FeedScout(site, options);
+	const FeedFinder = new FeedSeeker(site, options);
 	FeedFinder.site = site;
 	FeedFinder.options = options;
 
@@ -81,7 +81,7 @@ async function getFeeds(site, options) {
 displayBanner();
 
 const program = new Command();
-program.name(`feed-scout`).description('Find RSS, Atom, and JSON feeds on any website with FeedScout.');
+program.name(`feed-seeker`).description('Find RSS, Atom, and JSON feeds on any website with FeedSeeker.');
 program
 	.command('version')
 	.description('Get version')
