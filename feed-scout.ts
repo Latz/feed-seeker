@@ -1,0 +1,270 @@
+#!/usr/bin/env node
+
+/**
+ * @fileoverview FeedScout - A comprehensive RSS, Atom, and JSON feed discovery tool
+ *
+ * This module provides the main FeedScout class for discovering feeds on websites
+ * through multiple search strategies including meta links, anchor analysis,
+ * blind search, and deep crawling.
+ *
+ * @module FeedScout
+ * @version 1.0.0
+ * @author latz
+ * @since 1.0.0
+ */
+
+import { parseHTML } from 'linkedom';
+import metaLinks, { type Feed } from './modules/metaLinks.js';
+import checkAllAnchors from './modules/anchors.js';
+import blindSearch, { type BlindSearchFeed } from './modules/blindsearch.js';
+import deepSearch, { type DeepSearchOptions } from './modules/deepSearch.js';
+import EventEmitter from './modules/eventEmitter.js';
+import fetchWithTimeout from './modules/fetchWithTimeout.js';
+
+/**
+ * FeedScout options interface
+ */
+export interface FeedScoutOptions extends DeepSearchOptions {
+	maxFeeds?: number;
+	timeout?: number;
+	all?: boolean;
+	keepQueryParams?: boolean;
+	showErrors?: boolean;
+	followMetaRefresh?: boolean;
+	deepsearchOnly?: boolean;
+	metasearch?: boolean;
+	blindsearch?: boolean;
+	anchorsonly?: boolean;
+	deepsearch?: boolean;
+}
+
+/**
+ * Checks if any feeds were found in the provided array
+ * @param {Feed[]} feeds - Array of feed objects to check
+ * @returns {boolean} True if feeds exist and have a length greater than 0, false otherwise
+ * @example
+ * const feeds = [{ url: 'https://example.com/feed.xml', type: 'rss' }];
+ * console.log(foundFeed(feeds)); // true
+ */
+function foundFeed(feeds: Feed[] | undefined): boolean {
+	return feeds !== undefined && feeds.length > 0;
+}
+
+/**
+ * Main FeedScout class for discovering RSS, Atom, and JSON feeds on websites
+ *
+ * @class FeedScout
+ * @extends EventEmitter
+ * @example
+ * const scout = new FeedScout('https://example.com', { maxFeeds: 10 });
+ * scout.on('start', (data) => console.log('Started:', data.niceName));
+ * scout.on('end', (data) => console.log('Found feeds:', data.feeds));
+ *
+ * const feeds = await scout.metaLinks();
+ * console.log('Meta link feeds:', feeds);
+ */
+export default class FeedScout extends EventEmitter {
+	site: string;
+	options: FeedScoutOptions;
+	initPromise: Promise<void> | null;
+	content?: string;
+	document?: Document;
+
+	/**
+	 * Creates a new FeedScout instance
+	 * @param {string} site - The website URL to search for feeds (protocol optional, defaults to https://)
+	 * @param {FeedScoutOptions} [options={}] - Configuration options for the search
+	 * @throws {TypeError} When site parameter is not provided or invalid
+	 * @example
+	 * // Basic usage
+	 * const scout = new FeedScout('example.com');
+	 *
+	 * // With options
+	 * const scout = new FeedScout('https://blog.example.com', {
+	 *   maxFeeds: 5,
+	 *   timeout: 10,
+	 *   all: true
+	 * });
+	 */
+	constructor(site: string, options: FeedScoutOptions = {}) {
+		super();
+		// Add https:// if no protocol is specified
+		if (!site.includes('://')) {
+			site = `https://${site}`;
+		}
+		const urlObj = new URL(site);
+		// Normalize site link but remove trailing slash for root paths to prevent duplicate checks in path traversal
+		// For example: https://example.com/ should become https://example.com to avoid checking endpoints twice
+		this.site = urlObj.pathname === '/' ? urlObj.origin : urlObj.href;
+		this.options = options;
+		this.initPromise = null; // Store the initialization promise
+	}
+
+	/**
+	 * Initializes the FeedScout instance by fetching the site content and parsing the HTML
+	 * This method is called automatically by other methods and caches the result
+	 * @returns {Promise<void>} A promise that resolves when the initialization is complete
+	 * @throws {Error} When the site cannot be fetched or parsed
+	 * @private
+	 * @example
+	 * await scout.initialize(); // Usually called automatically
+	 */
+	async initialize(): Promise<void> {
+		if (this.initPromise === null) {
+			this.initPromise = (async () => {
+				try {
+					const response = await fetchWithTimeout(this.site, (this.options.timeout || 5) * 1000);
+
+					if (!response.ok) {
+						this.emit('error', {
+							module: 'FeedScout',
+							error: `HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`,
+						});
+						this.content = '';
+						this.document = { querySelectorAll: () => [] } as any;
+						this.emit('initialized');
+						return;
+					}
+
+					this.content = await response.text();
+					const { document } = parseHTML(this.content);
+					this.document = document as any;
+
+					this.emit('initialized');
+				} catch (error: any) {
+					let errorMessage = `Failed to fetch ${this.site}`;
+					if (error.name === 'AbortError') {
+						errorMessage += ': Request timed out';
+					} else {
+						errorMessage += `: ${error.message}`;
+						if (error.cause) {
+							errorMessage += ` (cause: ${error.cause.code || error.cause.message})`;
+						}
+					}
+
+					this.emit('error', {
+						module: 'FeedScout',
+						error: errorMessage,
+						cause: error.cause,
+					});
+
+					this.content = '';
+					this.document = { querySelectorAll: () => [] } as any;
+					this.emit('initialized');
+				}
+			})();
+		}
+
+		return this.initPromise;
+	}
+
+	/**
+	 * Searches for feeds using meta links in the page (link tags in head)
+	 * This method looks for <link> elements with feed-related type attributes
+	 * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
+	 * @throws {Error} When initialization fails or network errors occur
+	 * @example
+	 * const feeds = await scout.metaLinks();
+	 * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
+	 */
+	async metaLinks(): Promise<Feed[]> {
+		await this.initialize();
+		return metaLinks(this as any);
+	}
+
+	/**
+	 * Searches for feeds by checking all anchor links on the page
+	 * This method analyzes all <a> elements for potential feed URLs
+	 * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
+	 * @throws {Error} When initialization fails or network errors occur
+	 * @example
+	 * const feeds = await scout.checkAllAnchors();
+	 * console.log(feeds); // [{ url: '...', title: '...', type: 'atom' }]
+	 */
+	async checkAllAnchors(): Promise<Feed[]> {
+		await this.initialize();
+		return checkAllAnchors(this as any);
+	}
+
+	/**
+	 * Performs a blind search for common feed endpoints
+	 * This method tries common feed paths like /feed, /rss, /atom.xml, etc.
+	 * @returns {Promise<BlindSearchFeed[]>} A promise that resolves to an array of found feed objects
+	 * @throws {Error} When network errors occur during endpoint testing
+	 * @example
+	 * const feeds = await scout.blindSearch();
+	 * console.log(feeds); // [{ url: '...', feedType: 'rss', title: '...' }]
+	 */
+	async blindSearch(): Promise<BlindSearchFeed[]> {
+		await this.initialize();
+		return blindSearch(this as any);
+	}
+
+	/**
+	 * Performs a deep search by crawling the website
+	 * This method recursively crawls pages to find feeds, respecting depth and link limits
+	 * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
+	 * @throws {Error} When network errors occur during crawling
+	 * @example
+	 * const feeds = await scout.deepSearch();
+	 * console.log(feeds); // [{ url: '...', type: 'json', title: '...' }]
+	 */
+	async deepSearch(): Promise<Feed[]> {
+		await this.initialize();
+		const crawler = deepSearch(this.site, this.options, this as any);
+		return crawler;
+	}
+
+	/**
+	 * Starts a comprehensive feed search using multiple strategies
+	 * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of found feed objects
+	 */
+	async startSearch(): Promise<Array<Feed | BlindSearchFeed>> {
+		const { deepsearchOnly, metasearch, blindsearch, anchorsonly, deepsearch, all, maxFeeds } = this.options;
+
+		if (deepsearchOnly) {
+			return this.deepSearch();
+		}
+
+		if (metasearch) {
+			return this.metaLinks();
+		}
+
+		if (blindsearch) {
+			return this.blindSearch();
+		}
+
+		if (anchorsonly) {
+			return this.checkAllAnchors();
+		}
+
+		let totalFeeds: Array<Feed | BlindSearchFeed> = [];
+		const searchStrategies = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
+
+		for (const strategy of searchStrategies) {
+			const feeds = await strategy.call(this);
+			if (feeds && feeds.length > 0) {
+				totalFeeds = totalFeeds.concat(feeds);
+				if (!all && maxFeeds && maxFeeds > 0 && totalFeeds.length >= maxFeeds) {
+					totalFeeds = totalFeeds.slice(0, maxFeeds);
+					break;
+				}
+			}
+		}
+
+		if (deepsearch) {
+			if (!maxFeeds || totalFeeds.length < maxFeeds) {
+				const deepFeeds = await this.deepSearch();
+				if (deepFeeds && deepFeeds.length > 0) {
+					totalFeeds = totalFeeds.concat(deepFeeds);
+					if (maxFeeds && maxFeeds > 0 && totalFeeds.length > maxFeeds) {
+						totalFeeds = totalFeeds.slice(0, maxFeeds);
+					}
+				}
+			}
+		}
+
+		this.emit('end', { module: 'all', feeds: totalFeeds });
+		return totalFeeds;
+	}
+}

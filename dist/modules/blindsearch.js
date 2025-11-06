@@ -1,5 +1,5 @@
-import { c as m } from "../checkFeed-DT9wDtY8.js";
-const c = [
+import { c } from "../checkFeed-CpnV4saY.js";
+const u = [
   // Standard RSS/Atom paths (most common)
   "&_rss=1",
   // eBay-style query parameter feeds
@@ -419,87 +419,83 @@ const c = [
   "xenforo/feed"
   // XenForo forums
 ];
-function u(e, f) {
-  const t = new URL(e).origin;
-  let s = e;
-  const d = [];
+function h(e, f) {
+  const d = new URL(e).origin;
+  let t = e;
+  const s = [];
   let r = "";
-  for (f && (r = new URL(e).search); s.length >= t.length; ) {
-    const a = s.endsWith("/") ? s.slice(0, -1) : s;
-    c.forEach((o) => {
-      const n = r ? `${a}/${o}${r}` : `${a}/${o}`;
-      d.push(n);
-    }), s = s.slice(0, s.lastIndexOf("/"));
+  for (f && (r = new URL(e).search); t.length >= d.length; ) {
+    const o = t.endsWith("/") ? t.slice(0, -1) : t;
+    u.forEach((a) => {
+      const n = r ? `${o}/${a}${r}` : `${o}/${a}`;
+      s.push(n);
+    }), t = t.slice(0, t.lastIndexOf("/"));
   }
-  return d;
+  return s;
 }
-function h(e, f, t, s, d) {
-  return e.type === "rss" ? s = !0 : e.type === "atom" && (d = !0), t.push({
+function g(e, f, d, t, s) {
+  return e.type === "rss" ? t = !0 : e.type === "atom" && (s = !0), d.push({
     url: f,
     feedType: e.type,
-    title: e.title
-  }), { rssFound: s, atomFound: d };
+    title: e.title,
+    type: e.type,
+    feedTitle: e.title
+  }), { rssFound: t, atomFound: s };
 }
-function g(e, f, t, s, d) {
-  return e < f && !(!d && t && s);
+function x(e, f, d, t, s) {
+  return e < f && !(!s && d && t);
 }
-async function v(e) {
-  e.emit("start", { module: "blindsearch", niceName: "Blind search" });
-  const f = u(e.site, e.options?.keepQueryParams || !1);
-  e.emit("log", {
-    module: "blindsearch",
-    totalCount: f.length
-  });
-  const t = e.options?.all || !1, s = e.options?.maxFeeds || 0, d = await x(f, t, s, e);
-  return e.emit("end", { module: "blindsearch", feeds: d.feeds }), d.feeds;
+async function k(e) {
+  const f = h(e.site, e.options?.keepQueryParams || !1);
+  e.emit("start", { module: "blindsearch", niceName: "Blind search", endpointUrls: f.length });
+  const d = e.options?.all || !1, t = e.options?.maxFeeds || 0, s = await y(f, d, t, e);
+  return e.emit("end", { module: "blindsearch", feeds: s.feeds }), s.feeds;
 }
-async function x(e, f, t, s) {
-  const d = [], r = /* @__PURE__ */ new Set();
-  let a = !1, o = !1, n = 0;
-  for (; g(n, e.length, a, o, f); ) {
-    if (t > 0 && d.length >= t) {
-      await l(s, d, t);
+async function y(e, f, d, t) {
+  const s = [], r = /* @__PURE__ */ new Set();
+  let o = !1, a = !1, n = 0;
+  for (; x(n, e.length, o, a, f); ) {
+    if (d > 0 && s.length >= d) {
+      await l(t, s, d);
       break;
     }
-    const p = e[n], i = await y(p, s, r, d, a, o);
-    if (i.found && (a = i.rssFound, o = i.atomFound, t > 0 && d.length >= t)) {
-      await l(s, d, t);
+    const p = e[n], i = await w(p, t, r, s, o, a);
+    if (i.found && (o = i.rssFound, a = i.atomFound, d > 0 && s.length >= d)) {
+      await l(t, s, d);
       break;
     }
-    s.emit("log", { module: "blindsearch", url: !0 }), n++;
+    let m = s.length;
+    t.emit("log", { module: "blindsearch", totalEndpoints: e.length, totalCount: n, feedsFound: m }), n++;
   }
-  return { feeds: d, rssFound: a, atomFound: o };
+  return { feeds: s, rssFound: o, atomFound: a };
 }
-async function y(e, f, t, s, d, r, a) {
+async function w(e, f, d, t, s, r) {
   try {
-    const o = await m(e);
-    if (o && !t.has(e)) {
-      t.add(e);
-      const n = h(o, e, s, d, r);
-      return d = n.rssFound, r = n.atomFound, f.emit("log", {
-        module: "blindsearch",
-        foundFeedsCount: s.length
-      }), { found: !0, rssFound: d, atomFound: r };
+    const o = await c(e, "", f);
+    if (o && !d.has(e)) {
+      d.add(e);
+      const a = g(o, e, t, s, r);
+      return s = a.rssFound, r = a.atomFound, { found: !0, rssFound: s, atomFound: r };
     }
   } catch (o) {
-    await w(f, e, o);
+    await b(f, e, o);
   }
-  return { found: !1, rssFound: d, atomFound: r };
+  return { found: !1, rssFound: s, atomFound: r };
 }
-async function l(e, f, t) {
+async function l(e, f, d) {
   e.emit("log", {
     module: "blindsearch",
-    message: `Stopped due to reaching maximum feeds limit: ${f.length} feeds found (max ${t} allowed).`
+    message: `Stopped due to reaching maximum feeds limit: ${f.length} feeds found (max ${d} allowed).`
   });
 }
-async function w(e, f, t) {
+async function b(e, f, d) {
   e.options?.showErrors && e.emit("error", {
     module: "blindsearch",
-    error: `Error fetching ${f}: ${t.message}`,
+    error: `Error fetching ${f}: ${d.message}`,
     explanation: "An error occurred while trying to fetch a potential feed URL during blind search. This could be due to network timeouts, server errors, 404 not found, or invalid content.",
     suggestion: "This is normal during blind search as many URLs are tested. The search will continue with other potential feed endpoints."
   });
 }
 export {
-  v as default
+  k as default
 };

@@ -1,10 +1,9 @@
-import { c as f } from "../checkFeed-DT9wDtY8.js";
-import { parseHTML as g } from "linkedom";
-import c from "tldts";
-import x from "./eventEmitter.js";
-import { queue as k } from "async";
-import w from "./fetchWithTimeout.js";
-function U(h) {
+import { c as u, f as c } from "../checkFeed-CpnV4saY.js";
+import { parseHTML as f } from "linkedom";
+import n from "tldts";
+import { E as p } from "../eventEmitter-DCCreSTG.js";
+import { queue as g } from "async";
+function x(o) {
   return [
     ".zip",
     ".rar",
@@ -47,13 +46,13 @@ function U(h) {
     ".ogg",
     ".ogv",
     ".ogx"
-  ].some((t) => h.endsWith(t));
+  ].some((t) => o.endsWith(t));
 }
-class S extends x {
-  constructor(r, t = 3, e = 5, s = 1e3, o = !1, l = 5, u = 0) {
+class k extends p {
+  constructor(e, t = 3, r = 5, s = 1e3, i = !1, a = 5, h = 0, d = null) {
     super();
-    const n = new URL(r);
-    this.startUrl = n.href, this.maxDepth = t, this.concurrency = e, this.maxLinks = s, this.mainDomain = c.getDomain(this.startUrl), this.checkForeignFeeds = o, this.maxErrors = l, this.maxFeeds = u, this.errorCount = 0, this.queue = k(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((m, i) => {
+    const l = new URL(e);
+    this.startUrl = l.href, this.maxDepth = t, this.concurrency = r, this.maxLinks = s, this.mainDomain = n.getDomain(this.startUrl), this.checkForeignFeeds = i, this.maxErrors = a, this.maxFeeds = h, this.errorCount = 0, this.instance = d, this.queue = g(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((m) => {
       this.errorCount < this.maxErrors && (this.errorCount++, this.emit("error", {
         module: "deepSearch",
         error: `Async error: ${m}`,
@@ -65,34 +64,28 @@ class S extends x {
       })));
     });
   }
-  // constructor
   /**
    * Starts the crawling process
-   * @returns {Array} Array of found feeds
+   * @returns {Feed[]} Array of found feeds
    */
   start() {
     return this.queue.push({ url: this.startUrl, depth: 0 }), this.emit("start", { module: "deepSearch", niceName: "Deep search" }), this.queue.drain(() => {
       this.emit("end", { module: "deepSearch", feeds: this.feeds, visitedUrls: this.visitedUrls.size });
     }), this.feeds;
   }
-  // ----------------------------------------------------------------------------------
-  // Check if url is
-  // * valid
-  // * from same domain
-  // * not visited before
   /**
    * Checks if a URL is valid (same domain, not excluded file type)
    * @param {string} url - The URL to validate
    * @returns {boolean} True if the URL is valid, false otherwise
    */
-  isValidUrl(r) {
+  isValidUrl(e) {
     try {
-      const t = c.getDomain(r) == c.getDomain(this.startUrl), e = !U(r);
-      return t && e;
+      const t = n.getDomain(e) == n.getDomain(this.startUrl), r = !x(e);
+      return t && r;
     } catch {
       return this.errorCount < this.maxErrors && (this.errorCount++, this.emit("error", {
         module: "deepSearch",
-        error: `Invalid URL: ${r}`,
+        error: `Invalid URL: ${e}`,
         explanation: "A URL encountered during crawling could not be parsed or validated. This may be due to malformed URL syntax or unsupported URL schemes.",
         suggestion: "This is usually caused by broken links on the website. The crawler will skip this URL and continue with others."
       }), this.errorCount >= this.maxErrors && (this.queue.kill(), this.emit("log", {
@@ -101,137 +94,113 @@ class S extends x {
       }))), !1;
     }
   }
-  // ----------------------------------------------------------------------------------
   /**
-   * Crawls a single page, extracting links and checking for feeds
-   * @param {object} task - The task object containing the URL and depth
-   * @param {string} task.url - The URL to crawl
-   * @param {number} task.depth - The current depth of crawling
-   * @returns {Promise<void>} A promise that resolves when the page has been crawled
+   * Handles pre-crawl checks and validations for a given URL.
+   * @param {string} url - The URL to check.
+   * @param {number} depth - The current crawl depth.
+   * @returns {boolean} True if the crawl should continue, false otherwise.
+   * @private
    */
-  async crawlPage(r) {
-    let { url: t, depth: e } = r;
-    if (e > this.maxDepth || this.visitedUrls.has(t)) return;
-    if (this.visitedUrls.size + this.queue.length() >= this.maxLinks) {
-      this.maxLinksReachedMessageEmitted || (this.emit("log", {
+  shouldCrawl(e, t) {
+    return t > this.maxDepth || this.visitedUrls.has(e) ? !1 : this.visitedUrls.size >= this.maxLinks ? (this.maxLinksReachedMessageEmitted || (this.emit("log", {
+      module: "deepSearch",
+      message: `Max links limit of ${this.maxLinks} reached. Stopping deep search.`
+    }), this.maxLinksReachedMessageEmitted = !0), !1) : this.isValidUrl(e);
+  }
+  /**
+   * Handles fetch errors and increments the error counter.
+   * @param {string} url - The URL that failed to fetch.
+   * @param {number} depth - The crawl depth at which the error occurred.
+   * @param {string} error - The error message.
+   * @returns {boolean} True if the crawl should stop, false otherwise.
+   * @private
+   */
+  handleFetchError(e, t, r) {
+    return this.errorCount < this.maxErrors && (this.errorCount++, this.emit("log", { module: "deepSearch", url: e, depth: t, error: r }), this.errorCount >= this.maxErrors) ? (this.queue.kill(), this.emit("log", {
+      module: "deepSearch",
+      message: `Stopped due to ${this.errorCount} errors (max ${this.maxErrors} allowed).`
+    }), !0) : !1;
+  }
+  /**
+   * Processes a single link found on a page, checking if it's a feed.
+   * @param {string} url - The absolute URL of the link to process.
+   * @param {number} depth - The current crawl depth.
+   * @returns {Promise<boolean>} True if the crawl should stop, false otherwise.
+   * @private
+   */
+  async processLink(e, t) {
+    if (this.visitedUrls.has(e)) return !1;
+    if (this.visitedUrls.size >= this.maxLinks)
+      return this.maxLinksReachedMessageEmitted || (this.emit("log", {
         module: "deepSearch",
         message: `Max links limit of ${this.maxLinks} reached. Stopping deep search.`
-      }), this.maxLinksReachedMessageEmitted = !0);
-      return;
-    }
-    if (!this.isValidUrl(t)) return;
-    this.visitedUrls.add(t);
-    const o = await w(t, this.timeout);
-    if (!o) {
-      this.errorCount < this.maxErrors && (this.errorCount++, this.emit("log", {
-        module: "deepSearch",
-        url: t,
-        depth: e,
-        error: "Failed to fetch URL - timeout or network error"
-      }), this.errorCount >= this.maxErrors && (this.queue.kill(), this.emit("log", {
-        module: "deepSearch",
-        message: `Stopped due to ${this.errorCount} errors (max ${this.maxErrors} allowed).`
-      })));
-      return;
-    }
-    if (!o.ok) {
-      this.errorCount < this.maxErrors && (this.errorCount++, this.emit("log", {
-        module: "deepSearch",
-        url: t,
-        depth: e,
-        error: `HTTP ${o.status} ${o.statusText}`
-      }), this.errorCount >= this.maxErrors && (this.queue.kill(), this.emit("log", {
-        module: "deepSearch",
-        message: `Stopped due to ${this.errorCount} errors (max ${this.maxErrors} allowed).`
-      })));
-      return;
-    }
-    const l = await o.text(), { document: u } = g(l);
-    let n = u.querySelectorAll("a");
-    for (let m of n) {
-      let i = new URL(m.href, this.startUrl).href;
-      if (this.visitedUrls.has(i)) continue;
-      if (this.visitedUrls.size + this.queue.length() >= this.maxLinks) {
-        this.maxLinksReachedMessageEmitted || (this.emit("log", {
+      }), this.maxLinksReachedMessageEmitted = !0), !0;
+    if (!(this.isValidUrl(e) || this.checkForeignFeeds)) return !1;
+    try {
+      const s = await u(e, "", this.instance || void 0);
+      if (s && !this.feeds.some((i) => i.url === e)) {
+        if (this.feeds.push({ url: e, type: s.type, title: s.title, feedTitle: s.title }), this.emit("log", {
           module: "deepSearch",
-          message: `Max links limit of ${this.maxLinks} reached. Stopping deep search.`
-        }), this.maxLinksReachedMessageEmitted = !0);
-        break;
-      }
-      try {
-        if (this.isValidUrl(i) || this.checkForeignFeeds) {
-          const d = await f(i);
-          if (d) {
-            if (!this.feeds.some((p) => p.url === i) && (this.feeds.push({
-              url: i,
-              type: d.type,
-              title: d.title
-            }), this.emit("log", {
-              module: "deepSearch",
-              url: i,
-              depth: e + 1,
-              feedCheck: { isFeed: !0, type: d.type }
-            }), this.maxFeeds > 0 && this.feeds.length >= this.maxFeeds)) {
-              this.queue.kill(), this.emit("log", {
-                module: "deepSearch",
-                message: `Stopped due to reaching maximum feeds limit: ${this.feeds.length} feeds found (max ${this.maxFeeds} allowed).`
-              });
-              break;
-            }
-          } else
-            this.emit("log", {
-              module: "deepSearch",
-              url: i,
-              depth: e + 1,
-              feedCheck: { isFeed: !1 }
-            });
-        } else
-          continue;
-      } catch (a) {
-        if (this.errorCount < this.maxErrors) {
-          if (this.errorCount++, this.emit("error", {
+          url: e,
+          depth: t + 1,
+          feedCheck: { isFeed: !0, type: s.type }
+        }), this.maxFeeds > 0 && this.feeds.length >= this.maxFeeds)
+          return this.queue.kill(), this.emit("log", {
             module: "deepSearch",
-            error: `Error checking feed ${i}: ${a.message}`,
-            explanation: "An error occurred while trying to fetch and validate a potential feed URL discovered during deep crawling. This could be due to network timeouts, server errors, or invalid feed content.",
-            suggestion: "Check if the URL is accessible and returns valid content. Network issues or server problems may cause this error. The crawler will continue with other URLs."
-          }), this.emit("log", {
-            module: "deepSearch",
-            url: i,
-            depth: e + 1,
-            error: `Error checking feed: ${a.message}`
-          }), this.errorCount >= this.maxErrors) {
-            this.queue.kill(), this.emit("log", {
-              module: "deepSearch",
-              message: `Stopped due to ${this.errorCount} errors (max ${this.maxErrors} allowed).`
-            });
-            break;
-          }
-        } else
-          break;
-      }
-      e + 1 <= this.maxDepth && this.isValidUrl(i) && this.visitedUrls.size + this.queue.length() < this.maxLinks && this.queue.push({ url: i, depth: e + 1 });
+            message: `Stopped due to reaching maximum feeds limit: ${this.feeds.length} feeds found (max ${this.maxFeeds} allowed).`
+          }), !0;
+      } else s || this.emit("log", { module: "deepSearch", url: e, depth: t + 1, feedCheck: { isFeed: !1 } });
+    } catch (s) {
+      return this.handleFetchError(e, t + 1, `Error checking feed: ${s.message}`);
+    }
+    return t + 1 <= this.maxDepth && this.isValidUrl(e) && this.queue.push({ url: e, depth: t + 1 }), !1;
+  }
+  /**
+   * Crawls a single page, extracting links and checking for feeds
+   * @param {CrawlTask} task - The task object containing the URL and depth
+   * @returns {Promise<void>} A promise that resolves when the page has been crawled
+   */
+  async crawlPage(e) {
+    let { url: t, depth: r } = e;
+    if (!this.shouldCrawl(t, r)) return;
+    this.visitedUrls.add(t);
+    const s = await c(t, this.timeout);
+    if (!s) {
+      this.handleFetchError(t, r, "Failed to fetch URL - timeout or network error");
+      return;
+    }
+    if (!s.ok) {
+      this.handleFetchError(t, r, `HTTP ${s.status} ${s.statusText}`);
+      return;
+    }
+    const i = await s.text(), { document: a } = f(i);
+    for (const h of a.querySelectorAll("a")) {
+      const d = new URL(h.href, this.startUrl).href;
+      if (await this.processLink(d, r)) break;
     }
   }
 }
-async function R(h, r = {}, t = null) {
-  const e = new S(
-    h,
-    r.depth || 3,
+async function F(o, e = {}, t = null) {
+  const r = new k(
+    o,
+    e.depth || 3,
     5,
-    r.maxLinks || 1e3,
-    !!r.checkForeignFeeds,
+    e.maxLinks || 1e3,
+    !!e.checkForeignFeeds,
     // Whether to check foreign domains for feeds
-    r.maxErrors || 5,
+    e.maxErrors || 5,
     // Maximum number of errors before stopping
-    r.maxFeeds || 0
+    e.maxFeeds || 0,
     // Maximum number of feeds before stopping (0 = no limit)
+    t
+    // Pass the FeedScout instance to the crawler
   );
-  return e.timeout = (r.timeout || 5) * 1e3, t && (e.on("start", (s) => t.emit("start", s)), e.on("log", (s) => t.emit("log", s)), e.on("error", (s) => t.emit("error", s)), e.on("end", (s) => t.emit("end", s))), e.start(), await new Promise((s) => {
-    e.queue.drain(() => {
+  return r.timeout = (e.timeout || 5) * 1e3, t && t.emit && (r.on("start", (s) => t.emit("start", s)), r.on("log", (s) => t.emit("log", s)), r.on("error", (s) => t.emit("error", s)), r.on("end", (s) => t.emit("end", s))), r.start(), await new Promise((s) => {
+    r.queue.drain(() => {
       s();
     });
-  }), e.feeds;
+  }), r.feeds;
 }
 export {
-  R as default
+  F as default
 };

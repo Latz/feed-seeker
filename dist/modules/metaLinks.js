@@ -1,96 +1,50 @@
-import { c as s } from "../checkFeed-DT9wDtY8.js";
-function d(e) {
-  return e && e.replace(/\s+/g, " ").trim();
+import { c as f } from "../checkFeed-CpnV4saY.js";
+function d(t) {
+  return t ? t.replace(/\s+/g, " ").trim() : null;
 }
-async function k(e) {
-  e.emit("start", { module: "metalinks", niceName: "Meta links" });
-  let l = [];
-  const o = e.options?.maxFeeds || 0, m = ["feed+json", "rss+xml", "atom+xml", "xml", "rdf+xml"];
-  for (const r of m) {
-    e.emit("log", { module: "metalinks", feedType: r });
-    for (let i of e.document.querySelectorAll(`link[type="application/${r}"]`)) {
-      const n = new URL(i.href, e.site).href;
-      try {
-        const t = await s(n);
-        if (t && (l.push({
-          url: n,
-          // make relative path absolute
-          title: d(i.title),
-          type: t.type,
-          // Use the type detected by checkFeed
-          feedTitle: t.title
-          // Include the feed's own title
-        }), o > 0 && l.length >= o))
-          return e.emit("log", {
-            module: "metalinks",
-            message: `Stopped due to reaching maximum feeds limit: ${l.length} feeds found (max ${o} allowed).`
-          }), l;
-      } catch (t) {
-        e.emit("error", { module: "metalinks", error: t.message });
-      }
-    }
+async function i(t, e, l, s) {
+  const n = e.options?.maxFeeds || 0;
+  if (!t.href) return !1;
+  const o = new URL(t.href, e.site).href;
+  if (s.has(o)) return !1;
+  e.emit("log", { module: "metalinks" });
+  try {
+    const r = await f(o, "", e);
+    if (r && (l.push({
+      url: o,
+      title: d(t.title),
+      type: r.type,
+      feedTitle: r.title
+    }), s.add(o), n > 0 && l.length >= n))
+      return e.emit("log", {
+        module: "metalinks",
+        message: `Stopped due to reaching maximum feeds limit: ${l.length} feeds found (max ${n} allowed).`
+      }), !0;
+  } catch (r) {
+    e.options?.showErrors && e.emit("error", {
+      module: "metalinks",
+      error: r.message,
+      explanation: "An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.",
+      suggestion: "Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links."
+    });
   }
-  const f = e.document.querySelectorAll(
-    'link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="xml"], link[rel="alternate"][type*="atom"], link[rel="alternate"][type*="json"]'
-  );
-  for (let r of f) {
-    const i = new URL(r.href, e.site).href;
-    if (!l.some((t) => t.url === i))
-      try {
-        const t = await s(i);
-        if (t && (l.push({
-          url: i,
-          title: d(r.title),
-          type: t.type,
-          // Use the type detected by checkFeed
-          feedTitle: t.title
-          // Include the feed's own title
-        }), o > 0 && l.length >= o))
-          return e.emit("log", {
-            module: "metalinks",
-            message: `Stopped due to reaching maximum feeds limit: ${l.length} feeds found (max ${o} allowed).`
-          }), l;
-      } catch (t) {
-        e.emit("error", {
-          module: "metalinks",
-          error: t.message,
-          explanation: "An error occurred while trying to fetch and validate a feed URL found in an alternate meta link. This could be due to network issues, server problems, or invalid feed content.",
-          suggestion: "Check if the alternate link URL is accessible and returns valid feed content. The search will continue with other meta links."
-        });
-      }
+  return !1;
+}
+async function p(t) {
+  t.emit("start", { module: "metalinks", niceName: "Meta links" });
+  const e = [], l = /* @__PURE__ */ new Set(), n = ["feed+json", "rss+xml", "atom+xml", "xml", "rdf+xml"].map((r) => `link[type="application/${r}"]`).join(", ");
+  for (const r of t.document.querySelectorAll(n))
+    if (await i(r, t, e, l)) return e;
+  const o = 'link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="xml"], link[rel="alternate"][type*="atom"], link[rel="alternate"][type*="json"]';
+  for (const r of t.document.querySelectorAll(o))
+    if (await i(r, t, e, l)) return e;
+  for (const r of t.document.querySelectorAll('link[rel="alternate"]')) {
+    const a = ["/rss", "/feed", "/atom", ".rss", ".atom", ".xml", ".json"];
+    if (r.href && a.some((m) => r.href.toLowerCase().includes(m)) && await i(r, t, e, l))
+      return e;
   }
-  const u = e.document.querySelectorAll('link[rel="alternate"]');
-  for (let r of u) {
-    const i = ["/rss", "/feed", "/atom", ".rss", ".atom", ".xml", ".json"];
-    if (r.href && i.some((t) => r.href.toLowerCase().includes(t))) {
-      const t = new URL(r.href, e.site).href;
-      if (!l.some((a) => a.url === t))
-        try {
-          const a = await s(t);
-          if (a && (l.push({
-            url: t,
-            title: d(r.title),
-            type: a.type,
-            // Use the type detected by checkFeed
-            feedTitle: a.title
-            // Include the feed's own title
-          }), o > 0 && l.length >= o))
-            return e.emit("log", {
-              module: "metalinks",
-              message: `Stopped due to reaching maximum feeds limit: ${l.length} feeds found (max ${o} allowed).`
-            }), l;
-        } catch (a) {
-          e.emit("error", {
-            module: "metalinks",
-            error: a.message,
-            explanation: "An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.",
-            suggestion: "Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links."
-          });
-        }
-    }
-  }
-  return e.emit("end", { module: "metalinks", feeds: l }), l;
+  return t.emit("end", { module: "metalinks", feeds: e }), e;
 }
 export {
-  k as default
+  p as default
 };
