@@ -6,7 +6,7 @@ import tldts from 'tldts';
 import EventEmitter from './eventEmitter.js';
 import { queue, QueueObject } from 'async';
 import fetchWithTimeout from './fetchWithTimeout.js';
-import { type FeedScoutInstance } from './checkFeed.js';
+import { type FeedSeekerInstance } from './checkFeed.js';
 import { type Feed } from './metaLinks.js';
 
 /**
@@ -96,7 +96,7 @@ class Crawler extends EventEmitter {
 	maxErrors: number;
 	maxFeeds: number;
 	errorCount: number;
-	instance: FeedScoutInstance | null;
+	instance: FeedSeekerInstance | null;
 	queue: QueueObject<CrawlTask>;
 	visitedUrls: Set<string>;
 	timeout: number;
@@ -111,7 +111,7 @@ class Crawler extends EventEmitter {
 		checkForeignFeeds: boolean = false,
 		maxErrors: number = 5,
 		maxFeeds: number = 0,
-		instance: FeedScoutInstance | null = null
+		instance: FeedSeekerInstance | null = null
 	) {
 		super();
 		const absoluteStartUrl = new URL(startUrl);
@@ -124,7 +124,7 @@ class Crawler extends EventEmitter {
 		this.maxErrors = maxErrors; // Maximum number of errors before stopping
 		this.maxFeeds = maxFeeds; // Maximum number of feeds to find before stopping
 		this.errorCount = 0; // Current error count
-		this.instance = instance; // Store the FeedScout instance
+		this.instance = instance; // Store the FeedSeeker instance
 		// Initialize async queue with concurrency control
 		// The queue processes crawlPage tasks with limited concurrency to prevent overwhelming the target server
 		// bind(this) ensures 'this' context is preserved when crawlPage is called by the queue
@@ -375,13 +375,13 @@ class Crawler extends EventEmitter {
  * Performs a deep search for feeds by crawling a website
  * @param {string} url - The starting URL to crawl
  * @param {DeepSearchOptions} options - Search options
- * @param {FeedScoutInstance | null} instance - The FeedScout instance
+ * @param {FeedSeekerInstance | null} instance - The FeedSeeker instance
  * @returns {Promise<Feed[]>} Array of found feeds
  */
 export default async function deepSearch(
 	url: string,
 	options: DeepSearchOptions = {},
-	instance: FeedScoutInstance | null = null
+	instance: FeedSeekerInstance | null = null
 ): Promise<Feed[]> {
 	const crawler = new Crawler(
 		url,
@@ -391,7 +391,7 @@ export default async function deepSearch(
 		!!options.checkForeignFeeds, // Whether to check foreign domains for feeds
 		options.maxErrors || 5, // Maximum number of errors before stopping
 		options.maxFeeds || 0, // Maximum number of feeds before stopping (0 = no limit)
-		instance // Pass the FeedScout instance to the crawler
+		instance // Pass the FeedSeeker instance to the crawler
 	);
 	crawler.timeout = (options.timeout || 5) * 1000; // Convert seconds to milliseconds
 

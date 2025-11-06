@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * @fileoverview FeedScout - A comprehensive RSS, Atom, and JSON feed discovery tool
+ * @fileoverview FeedSeeker - A comprehensive RSS, Atom, and JSON feed discovery tool
  *
- * This module provides the main FeedScout class for discovering feeds on websites
+ * This module provides the main FeedSeeker class for discovering feeds on websites
  * through multiple search strategies including meta links, anchor analysis,
  * blind search, and deep crawling.
  *
- * @module FeedScout
+ * @module FeedSeeker
  * @version 1.0.0
  * @author latz
  * @since 1.0.0
@@ -29,9 +29,9 @@ interface MinimalDocument {
 }
 
 /**
- * FeedScout options interface
+ * FeedSeeker options interface
  */
-export interface FeedScoutOptions extends DeepSearchOptions {
+export interface FeedSeekerOptions extends DeepSearchOptions {
 	maxFeeds?: number;
 	timeout?: number;
 	all?: boolean;
@@ -46,46 +46,46 @@ export interface FeedScoutOptions extends DeepSearchOptions {
 }
 
 /**
- * Main FeedScout class for discovering RSS, Atom, and JSON feeds on websites
+ * Main FeedSeeker class for discovering RSS, Atom, and JSON feeds on websites
  *
- * @class FeedScout
+ * @class FeedSeeker
  * @extends EventEmitter
- * @fires FeedScout#initialized - Emitted when the instance has finished initializing
- * @fires FeedScout#error - Emitted when an error occurs during initialization or search
- * @fires FeedScout#end - Emitted when a search completes with results
+ * @fires FeedSeeker#initialized - Emitted when the instance has finished initializing
+ * @fires FeedSeeker#error - Emitted when an error occurs during initialization or search
+ * @fires FeedSeeker#end - Emitted when a search completes with results
  * @example
- * const scout = new FeedScout('https://example.com', { maxFeeds: 10 });
- * scout.on('initialized', () => console.log('Initialization complete'));
- * scout.on('error', (data) => console.error('Error:', data.error));
- * scout.on('end', (data) => console.log('Found feeds:', data.feeds));
+ * const seeker = new FeedSeeker('https://example.com', { maxFeeds: 10 });
+ * seeker.on('initialized', () => console.log('Initialization complete'));
+ * seeker.on('error', (data) => console.error('Error:', data.error));
+ * seeker.on('end', (data) => console.log('Found feeds:', data.feeds));
  *
- * const feeds = await scout.metaLinks();
+ * const feeds = await seeker.metaLinks();
  * console.log('Meta link feeds:', feeds);
  */
-export default class FeedScout extends EventEmitter implements MetaLinksInstance {
+export default class FeedSeeker extends EventEmitter implements MetaLinksInstance {
 	site: string;
-	options: FeedScoutOptions;
+	options: FeedSeekerOptions;
 	initPromise: Promise<void> | null;
 	content?: string;
 	document!: Document;
 
 	/**
-	 * Creates a new FeedScout instance
+	 * Creates a new FeedSeeker instance
 	 * @param {string} site - The website URL to search for feeds (protocol optional, defaults to https://)
-	 * @param {FeedScoutOptions} [options={}] - Configuration options for the search
+	 * @param {FeedSeekerOptions} [options={}] - Configuration options for the search
 	 * @throws {TypeError} When site parameter is not provided or invalid
 	 * @example
 	 * // Basic usage
-	 * const scout = new FeedScout('example.com');
+	 * const seeker = new FeedSeeker('example.com');
 	 *
 	 * // With options
-	 * const scout = new FeedScout('https://blog.example.com', {
+	 * const seeker = new FeedSeeker('https://blog.example.com', {
 	 *   maxFeeds: 5,
 	 *   timeout: 10,
 	 *   all: true
 	 * });
 	 */
-	constructor(site: string, options: FeedScoutOptions = {}) {
+	constructor(site: string, options: FeedSeekerOptions = {}) {
 		super();
 
 		// Validate site parameter
@@ -117,13 +117,13 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 	}
 
 	/**
-	 * Initializes the FeedScout instance by fetching the site content and parsing the HTML
+	 * Initializes the FeedSeeker instance by fetching the site content and parsing the HTML
 	 * This method is called automatically by other methods and caches the result
 	 * @returns {Promise<void>} A promise that resolves when the initialization is complete
 	 * @throws {Error} When the site cannot be fetched or parsed
 	 * @private
 	 * @example
-	 * await scout.initialize(); // Usually called automatically
+	 * await seeker.initialize(); // Usually called automatically
 	 */
 	async initialize(): Promise<void> {
 		if (this.initPromise === null) {
@@ -133,7 +133,7 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 
 					if (!response.ok) {
 						this.emit('error', {
-							module: 'FeedScout',
+							module: 'FeedSeeker',
 							error: `HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`,
 						});
 						this.content = '';
@@ -161,7 +161,7 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 					}
 
 					this.emit('error', {
-						module: 'FeedScout',
+						module: 'FeedSeeker',
 						error: errorMessage,
 						cause: (err as Error & { cause?: unknown }).cause,
 					});
@@ -182,7 +182,7 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 	 * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
 	 * @throws {Error} When initialization fails or network errors occur
 	 * @example
-	 * const feeds = await scout.metaLinks();
+	 * const feeds = await seeker.metaLinks();
 	 * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
 	 */
 	async metaLinks(): Promise<Feed[]> {
@@ -196,7 +196,7 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 	 * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
 	 * @throws {Error} When initialization fails or network errors occur
 	 * @example
-	 * const feeds = await scout.checkAllAnchors();
+	 * const feeds = await seeker.checkAllAnchors();
 	 * console.log(feeds); // [{ url: '...', title: '...', type: 'atom' }]
 	 */
 	async checkAllAnchors(): Promise<Feed[]> {
@@ -210,7 +210,7 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 	 * @returns {Promise<BlindSearchFeed[]>} A promise that resolves to an array of found feed objects
 	 * @throws {Error} When network errors occur during endpoint testing
 	 * @example
-	 * const feeds = await scout.blindSearch();
+	 * const feeds = await seeker.blindSearch();
 	 * console.log(feeds); // [{ url: '...', feedType: 'rss', title: '...' }]
 	 */
 	async blindSearch(): Promise<BlindSearchFeed[]> {
@@ -224,7 +224,7 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 	 * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
 	 * @throws {Error} When network errors occur during crawling
 	 * @example
-	 * const feeds = await scout.deepSearch();
+	 * const feeds = await seeker.deepSearch();
 	 * console.log(feeds); // [{ url: '...', type: 'json', title: '...' }]
 	 */
 	async deepSearch(): Promise<Feed[]> {
@@ -238,8 +238,8 @@ export default class FeedScout extends EventEmitter implements MetaLinksInstance
 	 * Automatically deduplicates feeds found by multiple strategies
 	 * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of unique found feed objects
 	 * @example
-	 * const scout = new FeedScout('https://example.com', { maxFeeds: 10 });
-	 * const feeds = await scout.startSearch();
+	 * const seeker = new FeedSeeker('https://example.com', { maxFeeds: 10 });
+	 * const feeds = await seeker.startSearch();
 	 * console.log('All feeds:', feeds);
 	 */
 	async startSearch(): Promise<Array<Feed | BlindSearchFeed>> {

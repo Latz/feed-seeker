@@ -11,7 +11,7 @@
  * @since 1.0.0
  */
 
-import checkFeed, { type FeedScoutInstance } from './checkFeed.js';
+import checkFeed, { type FeedSeekerInstance } from './checkFeed.js';
 
 /**
  * Cleans titles by removing excessive whitespace and newlines
@@ -35,9 +35,9 @@ export interface Feed {
 }
 
 /**
- * Extended FeedScout instance for metaLinks
+ * Extended FeedSeeker instance for metaLinks
  */
-export interface MetaLinksInstance extends FeedScoutInstance {
+export interface MetaLinksInstance extends FeedSeekerInstance {
 	document: Document;
 	site: string;
 	emit: (event: string, data: unknown) => void;
@@ -46,7 +46,7 @@ export interface MetaLinksInstance extends FeedScoutInstance {
 /**
  * Processes a link element to check if it's a feed and adds it to the feeds array.
  * @param {HTMLLinkElement} link - The link element to process.
- * @param {MetaLinksInstance} instance - The FeedScout instance.
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance.
  * @param {Array<Feed>} feeds - The array of found feeds.
  * @param {Set<string>} foundUrls - A set of URLs that have already been added.
  * @returns {Promise<boolean>} A promise that resolves to true if the maxFeeds limit is reached, false otherwise.
@@ -100,12 +100,12 @@ async function processLink(link: HTMLLinkElement, instance: MetaLinksInstance, f
 /**
  * Searches for feeds using meta links in the page head section
  * Analyzes <link> elements with feed-related rel and type attributes
- * @param {MetaLinksInstance} instance - The FeedScout instance containing parsed HTML and options
+ * @param {MetaLinksInstance} instance - The FeedSeeker instance containing parsed HTML and options
  * @returns {Promise<Array<Feed>>} Array of found feed objects with url, title, and type properties
  * @throws {Error} When feed validation fails or network errors occur
  * @example
- * const feedScout = new FeedScout('https://example.com');
- * const feeds = await metaLinks(feedScout);
+ * const feedSeeker = new FeedSeeker('https://example.com');
+ * const feeds = await metaLinks(feedSeeker);
  * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
  */
 export default async function metaLinks(instance: MetaLinksInstance): Promise<Feed[]> {

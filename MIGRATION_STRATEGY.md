@@ -12,7 +12,7 @@ The project has been partially converted to TypeScript, resulting in duplicate `
 
 ### Issues Addressed
 
-The TypeScript version (`feed-scout.ts`) includes these critical fixes:
+The TypeScript version (`feed-seeker.ts`) includes these critical fixes:
 
 1. ✅ **Removed unused `foundFeed()` function**
 2. ✅ **Added input validation** for site parameter (null/undefined checks)
@@ -41,9 +41,9 @@ The TypeScript version (`feed-scout.ts`) includes these critical fixes:
 
 ```bash
 # Legacy JavaScript source files (no longer needed - replaced by TS compilation)
-rm feed-scout.js
-rm feed-scout-cli.js
-rm feed-scout-cli.old.js
+rm feed-seeker.js
+rm feed-seeker-cli.js
+rm feed-seeker-cli.old.js
 rm modules/*.js  # Except compiled output in dist/
 
 # Keep these JavaScript files:
@@ -142,7 +142,7 @@ mv tests/*.test.js tests/*.test.ts
 
 ```bash
 # Remove duplicate JavaScript source files
-git rm feed-scout.js feed-scout-cli.js feed-scout-cli.old.js
+git rm feed-seeker.js feed-seeker-cli.js feed-seeker-cli.old.js
 git rm modules/*.js
 
 # Keep test files and configs

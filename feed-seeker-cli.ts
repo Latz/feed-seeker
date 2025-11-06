@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command, Option } from 'commander';
-import FeedScout, { type FeedScoutOptions } from './feed-scout.js';
+import FeedSeeker, { type FeedSeekerOptions } from './feed-seeker.js';
 import { createRequire } from 'module';
 import { styleText } from 'node:util';
 import { type Feed } from './modules/metaLinks.js';
@@ -51,8 +51,8 @@ async function log(...args: unknown[]): Promise<void> {
 	}
 }
 
-function initializeFeedFinder(site: string, options: FeedScoutOptions): FeedScout {
-	const FeedFinder = new FeedScout(site, options);
+function initializeFeedFinder(site: string, options: FeedSeekerOptions): FeedSeeker {
+	const FeedFinder = new FeedSeeker(site, options);
 	FeedFinder.site = site;
 	FeedFinder.options = options;
 
@@ -63,7 +63,7 @@ function initializeFeedFinder(site: string, options: FeedScoutOptions): FeedScou
 	return FeedFinder;
 }
 
-async function getFeeds(site: string, options: FeedScoutOptions): Promise<Feed[]> {
+async function getFeeds(site: string, options: FeedSeekerOptions): Promise<Feed[]> {
 	// Add https:// if no protocol is specified
 	if (!site.includes('://')) {
 		site = `https://${site}`;
@@ -93,7 +93,7 @@ interface ExtendedCommand extends Command {
 displayBanner();
 
 const program: ExtendedCommand = new Command();
-program.name(`feed-scout`).description('Find RSS, Atom, and JSON feeds on any website with FeedScout.');
+program.name(`feed-seeker`).description('Find RSS, Atom, and JSON feeds on any website with FeedSeeker.');
 program
 	.command('version')
 	.description('Get version')

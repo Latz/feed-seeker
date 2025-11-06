@@ -1,10 +1,10 @@
-# Feed Scout - The Ultimate Feed Discovery Library
+# Feed Seeker - The Ultimate Feed Discovery Library
 
 **🔍 Discover RSS, Atom, and JSON feeds on any website with ease**
 
-Feed Scout is a powerful, intelligent Node.js library that automatically discovers feeds using multiple advanced strategies. Whether you're building a news aggregator, podcast directory, or content monitoring system, Feed Scout finds feeds that others miss.
+Feed Seeker is a powerful, intelligent Node.js library that automatically discovers feeds using multiple advanced strategies. Whether you're building a news aggregator, podcast directory, or content monitoring system, Feed Seeker finds feeds that others miss.
 
-## ✨ Why Choose Feed Scout?
+## ✨ Why Choose Feed Seeker?
 
 ### 🚀 **Multiple Discovery Strategies**
 - **Meta Tag Analysis** - Lightning-fast HTML `<link>` tag scanning
@@ -32,13 +32,13 @@ Feed Scout is a powerful, intelligent Node.js library that automatically discove
 ## 📦 Quick Start
 
 ```bash
-npm install feed-scout
+npm install feed-seeker
 ```
 
 ```javascript
-import FeedScout from 'feed-scout';
+import FeedSeeker from 'feed-seeker';
 
-const feedScout = new FeedScout('https://techcrunch.com');
+const feedScout = new FeedSeeker('https://techcrunch.com');
 const feeds = await feedScout.metaLinks();
 
 console.log(`Found ${feeds.length} feeds:`);
@@ -51,7 +51,7 @@ feeds.forEach(feed => {
 
 ### News Aggregator
 ```javascript
-const feedScout = new FeedScout('https://arstechnica.com', {
+const feedScout = new FeedSeeker('https://arstechnica.com', {
   timeout: 10,
   maxFeeds: 5
 });
@@ -69,7 +69,7 @@ feeds.forEach(feed => {
 
 ### Podcast Directory
 ```javascript
-const feedScout = new FeedScout('https://gimletmedia.com', {
+const feedScout = new FeedSeeker('https://gimletmedia.com', {
   deepsearch: true,
   depth: 3,
   maxLinks: 1000
@@ -89,7 +89,7 @@ app.post('/api/discover-feeds', async (req, res) => {
   const { url } = req.body;
   
   try {
-    const feedScout = new FeedScout(url, { timeout: 10 });
+    const feedScout = new FeedSeeker(url, { timeout: 10 });
     const feeds = await feedScout.metaLinks();
     
     res.json({
@@ -121,13 +121,13 @@ const options = {
   all: false              // Find all feeds (no early termination)
 };
 
-const feedScout = new FeedScout('https://example.com', options);
+const feedScout = new FeedSeeker('https://example.com', options);
 ```
 
 ## 📊 Event-Driven Progress Tracking
 
 ```javascript
-const feedScout = new FeedScout('https://news-site.com');
+const feedScout = new FeedSeeker('https://news-site.com');
 
 feedScout.on('start', (data) => {
   console.log(`🚀 Starting ${data.niceName}`);
@@ -193,22 +193,22 @@ const feeds = await feedScout.blindSearch();
 
 ```bash
 # Quick discovery
-feed-scout https://example.com
+feed-seeker https://example.com
 
 # Meta search only (fastest)
-feed-scout -m https://blog.example.com
+feed-seeker -m https://blog.example.com
 
 # Deep search with custom depth
-feed-scout -d --depth 4 --max-feeds 10 https://news-site.com
+feed-seeker -d --depth 4 --max-feeds 10 https://news-site.com
 
 # Comprehensive search with all strategies
-feed-scout --all --timeout 15 https://complex-site.com
+feed-seeker --all --timeout 15 https://complex-site.com
 ```
 
-## 🏆 Why Feed Scout Stands Out
+## 🏆 Why Feed Seeker Stands Out
 
 ### **Comprehensive Coverage**
-Most feed discovery tools only check obvious locations. Feed Scout uses four different strategies and tests hundreds of potential endpoints, finding feeds that others miss.
+Most feed discovery tools only check obvious locations. Feed Seeker uses four different strategies and tests hundreds of potential endpoints, finding feeds that others miss.
 
 ### **Production Ready**
 Built with real-world challenges in mind - handles timeouts, errors, malformed content, and anti-bot protection gracefully.
@@ -227,16 +227,16 @@ Includes 142+ comprehensive tests covering edge cases, error conditions, and int
 
 ## 🤝 Contributing
 
-Feed Scout is actively maintained and welcomes contributions. Whether it's bug reports, feature requests, or code contributions, we appreciate your help in making Feed Scout better.
+Feed Seeker is actively maintained and welcomes contributions. Whether it's bug reports, feature requests, or code contributions, we appreciate your help in making Feed Seeker better.
 
 ## 📄 License
 
-MIT License - Use Feed Scout in your commercial and open-source projects.
+MIT License - Use Feed Seeker in your commercial and open-source projects.
 
 ---
 
-**⭐ Star us on GitHub if Feed Scout helps your project!**
+**⭐ Star us on GitHub if Feed Seeker helps your project!**
 
-**🐛 Found a bug or have a feature request? [Open an issue](https://github.com/user/feed-scout/issues)**
+**🐛 Found a bug or have a feature request? [Open an issue](https://github.com/user/feed-seeker/issues)**
 
 **💬 Questions? Check our [documentation](./API_REFERENCE.md) or start a discussion**
