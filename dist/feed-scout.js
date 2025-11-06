@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { parseHTML as u } from "linkedom";
-import { m, c as d, b as f, d as p } from "./deepSearch-CydTS8TB.js";
+import { parseHTML as d } from "linkedom";
+import { m as f, c as p, b as y, d as w } from "./deepSearch-CydTS8TB.js";
 import { E as S } from "./eventEmitter-DCCreSTG.js";
 import { f as g } from "./checkFeed-CpnV4saY.js";
-class z extends S {
+class $ extends S {
   /**
    * Creates a new FeedScout instance
    * @param {string} site - The website URL to search for feeds (protocol optional, defaults to https://)
@@ -20,10 +20,21 @@ class z extends S {
    *   all: true
    * });
    */
-  constructor(t, i = {}) {
-    super(), t.includes("://") || (t = `https://${t}`);
-    const s = new URL(t);
-    this.site = s.pathname === "/" ? s.origin : s.href, this.options = i, this.initPromise = null;
+  constructor(e, s = {}) {
+    if (super(), !e || typeof e != "string")
+      throw new TypeError("site parameter must be a non-empty string");
+    e.includes("://") || (e = `https://${e}`);
+    let i;
+    try {
+      i = new URL(e);
+    } catch {
+      throw new TypeError(`Invalid URL: ${e}`);
+    }
+    this.site = i.pathname === "/" ? i.origin : i.href, this.options = {
+      timeout: 5,
+      // Default timeout of 5 seconds
+      ...s
+    }, this.initPromise = null;
   }
   /**
    * Initializes the FeedScout instance by fetching the site content and parsing the HTML
@@ -37,31 +48,31 @@ class z extends S {
   async initialize() {
     return this.initPromise === null && (this.initPromise = (async () => {
       try {
-        const t = await g(this.site, (this.options.timeout || 5) * 1e3);
-        if (!t.ok) {
+        const e = await g(this.site, this.options.timeout * 1e3);
+        if (!e.ok) {
           this.emit("error", {
             module: "FeedScout",
-            error: `HTTP error while fetching ${this.site}: ${t.status} ${t.statusText}`
+            error: `HTTP error while fetching ${this.site}: ${e.status} ${e.statusText}`
           }), this.content = "", this.document = { querySelectorAll: () => [] }, this.emit("initialized");
           return;
         }
-        this.content = await t.text();
-        const { document: i } = u(this.content);
-        this.document = i, this.emit("initialized");
-      } catch (t) {
-        const i = t instanceof Error ? t : new Error(String(t));
-        let s = `Failed to fetch ${this.site}`;
-        if (i.name === "AbortError")
-          s += ": Request timed out";
+        this.content = await e.text();
+        const { document: s } = d(this.content);
+        this.document = s, this.emit("initialized");
+      } catch (e) {
+        const s = e instanceof Error ? e : new Error(String(e));
+        let i = `Failed to fetch ${this.site}`;
+        if (s.name === "AbortError")
+          i += ": Request timed out";
         else {
-          s += `: ${i.message}`;
-          const n = i.cause;
-          n && (s += ` (cause: ${n.code || n.message})`);
+          i += `: ${s.message}`;
+          const a = s.cause;
+          a && (i += ` (cause: ${a.code || a.message})`);
         }
         this.emit("error", {
           module: "FeedScout",
-          error: s,
-          cause: i.cause
+          error: i,
+          cause: s.cause
         }), this.content = "", this.document = { querySelectorAll: () => [] }, this.emit("initialized");
       }
     })()), this.initPromise;
@@ -76,7 +87,7 @@ class z extends S {
    * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
    */
   async metaLinks() {
-    return await this.initialize(), m(this);
+    return await this.initialize(), f(this);
   }
   /**
    * Searches for feeds by checking all anchor links on the page
@@ -88,7 +99,7 @@ class z extends S {
    * console.log(feeds); // [{ url: '...', title: '...', type: 'atom' }]
    */
   async checkAllAnchors() {
-    return await this.initialize(), d(this);
+    return await this.initialize(), p(this);
   }
   /**
    * Performs a blind search for common feed endpoints
@@ -100,7 +111,7 @@ class z extends S {
    * console.log(feeds); // [{ url: '...', feedType: 'rss', title: '...' }]
    */
   async blindSearch() {
-    return await this.initialize(), f(this);
+    return await this.initialize(), y(this);
   }
   /**
    * Performs a deep search by crawling the website
@@ -112,38 +123,49 @@ class z extends S {
    * console.log(feeds); // [{ url: '...', type: 'json', title: '...' }]
    */
   async deepSearch() {
-    return await this.initialize(), p(this.site, this.options, this);
+    return await this.initialize(), w(this.site, this.options, this);
   }
   /**
    * Starts a comprehensive feed search using multiple strategies
-   * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of found feed objects
+   * Automatically deduplicates feeds found by multiple strategies
+   * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of unique found feed objects
+   * @example
+   * const scout = new FeedScout('https://example.com', { maxFeeds: 10 });
+   * const feeds = await scout.startSearch();
+   * console.log('All feeds:', feeds);
    */
   async startSearch() {
-    const { deepsearchOnly: t, metasearch: i, blindsearch: s, anchorsonly: n, deepsearch: o, all: h, maxFeeds: r } = this.options;
-    if (t)
+    const { deepsearchOnly: e, metasearch: s, blindsearch: i, anchorsonly: a, deepsearch: l, all: u, maxFeeds: t } = this.options;
+    if (e)
       return this.deepSearch();
-    if (i)
-      return this.metaLinks();
     if (s)
+      return this.metaLinks();
+    if (i)
       return this.blindSearch();
-    if (n)
+    if (a)
       return this.checkAllAnchors();
-    let e = [];
-    const l = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
-    for (const a of l) {
-      const c = await a.call(this);
-      if (c && c.length > 0 && (e = e.concat(c), !h && r && r > 0 && e.length >= r)) {
-        e = e.slice(0, r);
-        break;
+    const r = /* @__PURE__ */ new Map(), m = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
+    for (const c of m) {
+      const n = await c.call(this);
+      if (n && n.length > 0) {
+        for (const h of n)
+          r.has(h.url) || r.set(h.url, h);
+        if (!u && t && t > 0 && r.size >= t)
+          break;
       }
     }
-    if (o && (!r || e.length < r)) {
-      const a = await this.deepSearch();
-      a && a.length > 0 && (e = e.concat(a), r && r > 0 && e.length > r && (e = e.slice(0, r)));
+    if (l && (!t || r.size < t)) {
+      const c = await this.deepSearch();
+      if (c && c.length > 0) {
+        for (const n of c)
+          if (r.has(n.url) || r.set(n.url, n), t && t > 0 && r.size >= t)
+            break;
+      }
     }
-    return this.emit("end", { module: "all", feeds: e }), e;
+    let o = Array.from(r.values());
+    return t && t > 0 && o.length > t && (o = o.slice(0, t)), this.emit("end", { module: "all", feeds: o }), o;
   }
 }
 export {
-  z as default
+  $ as default
 };
