@@ -571,8 +571,9 @@ async function processSingleFeedUrl(
 
 			return { found: true, rssFound, atomFound };
 		}
-	} catch (error: any) {
-		await handleFeedError(instance, url, error);
+	} catch (error: unknown) {
+		const err = error instanceof Error ? error : new Error(String(error));
+		await handleFeedError(instance, url, err);
 	}
 
 	return { found: false, rssFound, atomFound };

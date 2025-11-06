@@ -2,7 +2,7 @@
 import { parseHTML as u } from "linkedom";
 import { m, c as d, b as f, d as p } from "./deepSearch-CydTS8TB.js";
 import { E as S } from "./eventEmitter-DCCreSTG.js";
-import { f as y } from "./checkFeed-CpnV4saY.js";
+import { f as g } from "./checkFeed-CpnV4saY.js";
 class z extends S {
   /**
    * Creates a new FeedScout instance
@@ -22,8 +22,8 @@ class z extends S {
    */
   constructor(t, i = {}) {
     super(), t.includes("://") || (t = `https://${t}`);
-    const r = new URL(t);
-    this.site = r.pathname === "/" ? r.origin : r.href, this.options = i, this.initPromise = null;
+    const s = new URL(t);
+    this.site = s.pathname === "/" ? s.origin : s.href, this.options = i, this.initPromise = null;
   }
   /**
    * Initializes the FeedScout instance by fetching the site content and parsing the HTML
@@ -37,7 +37,7 @@ class z extends S {
   async initialize() {
     return this.initPromise === null && (this.initPromise = (async () => {
       try {
-        const t = await y(this.site, (this.options.timeout || 5) * 1e3);
+        const t = await g(this.site, (this.options.timeout || 5) * 1e3);
         if (!t.ok) {
           this.emit("error", {
             module: "FeedScout",
@@ -49,11 +49,19 @@ class z extends S {
         const { document: i } = u(this.content);
         this.document = i, this.emit("initialized");
       } catch (t) {
-        let i = `Failed to fetch ${this.site}`;
-        t.name === "AbortError" ? i += ": Request timed out" : (i += `: ${t.message}`, t.cause && (i += ` (cause: ${t.cause.code || t.cause.message})`)), this.emit("error", {
+        const i = t instanceof Error ? t : new Error(String(t));
+        let s = `Failed to fetch ${this.site}`;
+        if (i.name === "AbortError")
+          s += ": Request timed out";
+        else {
+          s += `: ${i.message}`;
+          const n = i.cause;
+          n && (s += ` (cause: ${n.code || n.message})`);
+        }
+        this.emit("error", {
           module: "FeedScout",
-          error: i,
-          cause: t.cause
+          error: s,
+          cause: i.cause
         }), this.content = "", this.document = { querySelectorAll: () => [] }, this.emit("initialized");
       }
     })()), this.initPromise;
@@ -111,27 +119,27 @@ class z extends S {
    * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of found feed objects
    */
   async startSearch() {
-    const { deepsearchOnly: t, metasearch: i, blindsearch: r, anchorsonly: c, deepsearch: h, all: o, maxFeeds: s } = this.options;
+    const { deepsearchOnly: t, metasearch: i, blindsearch: s, anchorsonly: n, deepsearch: o, all: h, maxFeeds: r } = this.options;
     if (t)
       return this.deepSearch();
     if (i)
       return this.metaLinks();
-    if (r)
+    if (s)
       return this.blindSearch();
-    if (c)
+    if (n)
       return this.checkAllAnchors();
     let e = [];
     const l = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
-    for (const n of l) {
-      const a = await n.call(this);
-      if (a && a.length > 0 && (e = e.concat(a), !o && s && s > 0 && e.length >= s)) {
-        e = e.slice(0, s);
+    for (const a of l) {
+      const c = await a.call(this);
+      if (c && c.length > 0 && (e = e.concat(c), !h && r && r > 0 && e.length >= r)) {
+        e = e.slice(0, r);
         break;
       }
     }
-    if (h && (!s || e.length < s)) {
-      const n = await this.deepSearch();
-      n && n.length > 0 && (e = e.concat(n), s && s > 0 && e.length > s && (e = e.slice(0, s)));
+    if (o && (!r || e.length < r)) {
+      const a = await this.deepSearch();
+      a && a.length > 0 && (e = e.concat(a), r && r > 0 && e.length > r && (e = e.slice(0, r)));
     }
     return this.emit("end", { module: "all", feeds: e }), e;
   }

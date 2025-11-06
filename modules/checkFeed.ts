@@ -22,13 +22,26 @@ export interface FeedResult {
 }
 
 export interface FeedScoutOptions {
-	timeout: number;
-	[key: string]: any;
+	timeout?: number;
+	maxFeeds?: number;
+	showErrors?: boolean;
+	all?: boolean;
+	keepQueryParams?: boolean;
+	followMetaRefresh?: boolean;
+	deepsearchOnly?: boolean;
+	metasearch?: boolean;
+	blindsearch?: boolean;
+	anchorsonly?: boolean;
+	deepsearch?: boolean;
+	depth?: number;
+	maxLinks?: number;
+	checkForeignFeeds?: boolean;
+	maxErrors?: number;
 }
 
 export interface FeedScoutInstance {
 	options: FeedScoutOptions;
-	emit?: (event: string, data: any) => void;
+	emit?: (event: string, data: unknown) => void;
 }
 
 // Pre-compiled regex patterns for all feed detection and processing
@@ -142,7 +155,8 @@ export default async function checkFeed(url: string, content: string = '', insta
 		if (!instance) {
 			throw new Error('Instance parameter is required when content is not provided');
 		}
-		const response = await fetchWithTimeout(url, instance.options.timeout * 1000);
+		const timeout = (instance.options.timeout || 5) * 1000;
+		const response = await fetchWithTimeout(url, timeout);
 		if (!response.ok) {
 			throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
 		}
@@ -269,7 +283,7 @@ function checkJson(content: string): FeedResult | null {
 			return { type: 'json', title: cleanTitle(title) };
 		}
 		return null;
-	} catch (e) {
+	} catch (error: unknown) {
 		return null;
 	}
 }

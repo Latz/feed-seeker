@@ -191,14 +191,14 @@ class Crawler extends EventEmitter {
 			// Domain comparison using tldts.getDomain() to extract the registrable domain
 			// Example: both "blog.example.com" and "www.example.com" return "example.com"
 			// This allows crawling subdomains of the same site while blocking external domains
-			const sameDomain = tldts.getDomain(url) == tldts.getDomain(this.startUrl);
+			const sameDomain = tldts.getDomain(url) === tldts.getDomain(this.startUrl);
 
 			// File type filtering prevents downloading large binary files (images, videos, archives)
 			// See excludedFile() function for the complete list of blocked extensions
 			const notExcludedFile = !excludedFile(url);
 
 			return sameDomain && notExcludedFile;
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// URL parsing can fail for malformed URLs - handle gracefully
 			// Only process if we haven't reached the error limit yet
 			if (this.errorCount < this.maxErrors) {
@@ -327,8 +327,9 @@ class Crawler extends EventEmitter {
 			} else if (!feedResult) {
 				this.emit('log', { module: 'deepSearch', url, depth: depth + 1, feedCheck: { isFeed: false } });
 			}
-		} catch (error: any) {
-			return this.handleFetchError(url, depth + 1, `Error checking feed: ${error.message}`);
+		} catch (error: unknown) {
+			const err = error instanceof Error ? error : new Error(String(error));
+			return this.handleFetchError(url, depth + 1, `Error checking feed: ${err.message}`);
 		}
 
 		if (depth + 1 <= this.maxDepth && this.isValidUrl(url)) {

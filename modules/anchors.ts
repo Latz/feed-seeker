@@ -23,7 +23,7 @@ import { type Feed, type MetaLinksInstance } from './metaLinks.js';
 function parseUrlSafely(url: string, base?: string | URL): URL | null {
 	try {
 		return new URL(url, base);
-	} catch (e) {
+	} catch (error: unknown) {
 		return null;
 	}
 }
@@ -186,11 +186,12 @@ async function processAnchor(anchor: HTMLAnchorElement, context: AnchorContext):
 				feedTitle: feedResult.title,
 			});
 		}
-	} catch (error: any) {
+	} catch (error: unknown) {
 		if (instance.options?.showErrors) {
+			const err = error instanceof Error ? error : new Error(String(error));
 			instance.emit('error', {
 				module: 'anchors',
-				error: `Error checking feed at ${urlToCheck}: ${error.message}`,
+				error: `Error checking feed at ${urlToCheck}: ${err.message}`,
 				explanation:
 					'An error occurred while trying to fetch and validate a potential feed URL found in an anchor tag. This could be due to network timeouts, server errors, or invalid feed content.',
 				suggestion:
