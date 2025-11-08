@@ -1,7 +1,7 @@
 import { c as u, f as c } from "../checkFeed-CpnV4saY.js";
 import { parseHTML as f } from "linkedom";
 import d from "tldts";
-import { E as p } from "../eventEmitter-DCCreSTG.js";
+import { E as p } from "../eventEmitter-DY9PbUaY.js";
 import { queue as g } from "async";
 function x(o) {
   return [
