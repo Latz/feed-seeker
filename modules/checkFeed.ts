@@ -37,6 +37,7 @@ export interface FeedSeekerOptions {
 	maxLinks?: number;
 	checkForeignFeeds?: boolean;
 	maxErrors?: number;
+	requestDelay?: number; // Delay in milliseconds between requests for rate limiting (default: 0)
 }
 
 export interface FeedSeekerInstance {
