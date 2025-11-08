@@ -7,6 +7,11 @@ import { styleText } from 'node:util';
 import { type Feed } from './modules/metaLinks.js';
 import type { StartEventData, EndEventData, LogEventData } from './types/events.js';
 
+// CLI-specific options that extend FeedSeekerOptions
+interface CLIOptions extends FeedSeekerOptions {
+	displayErrors?: boolean;
+}
+
 let counterLength = 0; // needed for fancy blindsearch log display
 
 // Create a gradient banner with tagline
@@ -110,27 +115,75 @@ program
 	.option('-a, --anchorsonly', 'Anchors search only')
 	.option('-d, --deepsearch', 'Enable deep search')
 	.option('--deepsearch-only', 'Deep search only')
-	.option('--depth <number>', 'Depth of deep search', '3')
-	.option('--max-links <number>', 'Maximum number of links to process during deep search', '1000')
-	.option('--timeout <seconds>', 'Timeout for fetch requests in seconds', '5')
+	.option('--depth <number>', 'Depth of deep search', (val: string): number => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 1) {
+			throw new Error('Depth must be a positive number (minimum 1)');
+		}
+		return num;
+	}, 3)
+	.option('--max-links <number>', 'Maximum number of links to process during deep search', (val: string): number => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 1) {
+			throw new Error('Max links must be a positive number (minimum 1)');
+		}
+		return num;
+	}, 1000)
+	.option('--timeout <seconds>', 'Timeout for fetch requests in seconds', (val: string): number => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 1) {
+			throw new Error('Timeout must be a positive number (minimum 1 second)');
+		}
+		return num;
+	}, 5)
 	.option('--keep-query-params', 'Keep query parameters from the original URL when searching')
 	.option('--check-foreign-feeds', "Check if foreign domain URLs are feeds (but don't crawl them)")
-	.option('--max-errors <number>', 'Stop after a certain number of errors', '5')
-	.option('--max-feeds <number>', 'Stop search after finding a certain number of feeds', '0')
+	.option('--max-errors <number>', 'Stop after a certain number of errors', (val: string): number => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 0) {
+			throw new Error('Max errors must be a non-negative number');
+		}
+		return num;
+	}, 5)
+	.option('--max-feeds <number>', 'Stop search after finding a certain number of feeds', (val: string): number => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 0) {
+			throw new Error('Max feeds must be a non-negative number');
+		}
+		return num;
+	}, 0)
 	.description('Find feeds for site\n')
-	.action(async (site: string, options: FeedScoutOptions) => {
+	.action(async (site: string, options: CLIOptions) => {
 		if (!site) {
 			program.help();
-		} else {
+			process.exit(0);
+		}
+		try {
 			// Store the result directly on the program object
 			program.feeds = await getFeeds(site, options);
+		} catch (error) {
+			if (options.displayErrors) {
+				console.error('\nError details:', error);
+			} else {
+				const err = error as Error;
+				console.error(styleText('red', `\nError: ${err.message}`));
+			}
+			process.exit(1);
 		}
 	});
 
 // add hidden option '--display-errors' to program
 program.addOption(new Option('--display-errors', 'Display errors').hideHelp());
 
-// exceute program
-program.parseAsync(process.argv).then(() => {
-	console.log(program.feeds);
-});
+// execute program
+program.parseAsync(process.argv)
+	.then(() => {
+		if (program.feeds !== undefined) {
+			console.log(program.feeds);
+		}
+	})
+	.catch((error) => {
+		const err = error as Error;
+		console.error(styleText('red', `\nError: ${err.message}`));
+		process.exit(1);
+	});
