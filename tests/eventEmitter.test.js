@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import EventEmitter from '../modules/eventEmitter.js';
+import EventEmitter from '../modules/eventEmitter.ts';
 
 describe('EventEmitter Module', () => {
   let emitter;

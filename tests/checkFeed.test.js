@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import checkFeed from '../modules/checkFeed.js';
+import checkFeed from '../modules/checkFeed.ts';
 
 
 // Since the module doesn't export helper functions, we need to test checkFeed 
@@ -168,7 +168,7 @@ describe('checkFeed Module', () => {
 </rss>`;
 
       const result = await checkFeed('https://example.com/feed.xml', rssContentWithCDATA);
-      
+
       assert.ok(result);
       assert.strictEqual(result.type, 'rss');
       // Should handle CDATA and special characters properly
@@ -189,11 +189,130 @@ describe('checkFeed Module', () => {
 </rss>`;
 
       const result = await checkFeed('https://example.com/feed.xml', rssContent);
-      
+
       assert.ok(result);
       assert.strictEqual(result.type, 'rss');
       // Title should be cleaned of excessive whitespace
       assert.strictEqual(result.title, 'Title with excessive whitespace');
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle empty content', async () => {
+      const result = await checkFeed('https://example.com/feed.xml', '');
+      assert.strictEqual(result, null);
+    });
+
+    it('should handle malformed XML', async () => {
+      const malformedXml = `<?xml version="1.0"?><rss><unclosed>`;
+      const result = await checkFeed('https://example.com/feed.xml', malformedXml);
+
+      // Should either return null or handle gracefully
+      assert.ok(result === null || typeof result === 'object');
+    });
+
+    it('should handle feeds without titles', async () => {
+      const noTitleFeed = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<description>Feed without title</description>
+<item>
+<title>Sample Item</title>
+</item>
+</channel>
+</rss>`;
+
+      const result = await checkFeed('https://example.com/feed.xml', noTitleFeed);
+
+      assert.ok(result);
+      assert.strictEqual(result.type, 'rss');
+    });
+
+    it('should handle very large feed content', async () => {
+      // Create a feed with many items
+      const items = Array.from({ length: 100 }, (_, i) => `
+<item>
+<title>Item ${i}</title>
+<description>Description ${i}</description>
+</item>`).join('');
+
+      const largeFeed = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>Large Feed</title>
+<description>Feed with many items</description>
+${items}
+</channel>
+</rss>`;
+
+      const result = await checkFeed('https://example.com/feed.xml', largeFeed);
+
+      assert.ok(result);
+      assert.strictEqual(result.type, 'rss');
+      assert.strictEqual(result.title, 'Large Feed');
+    });
+
+    it('should handle JSON feed with minimal properties', async () => {
+      const minimalJson = JSON.stringify({
+        version: "https://jsonfeed.org/version/1",
+        title: "Minimal Feed"
+      });
+
+      const result = await checkFeed('https://example.com/feed.json', minimalJson);
+
+      assert.ok(result);
+      assert.strictEqual(result.type, 'json');
+      assert.strictEqual(result.title, 'Minimal Feed');
+    });
+
+    it('should handle feeds with special characters in URLs', async () => {
+      const rssContent = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>Test Feed</title>
+<link>https://example.com/blog?category=tech&amp;lang=en</link>
+<item>
+<title>Sample Item</title>
+</item>
+</channel>
+</rss>`;
+
+      const result = await checkFeed('https://example.com/feed.xml?format=rss', rssContent);
+
+      assert.ok(result);
+      assert.strictEqual(result.type, 'rss');
+    });
+  });
+
+  describe('Multiple Feed Formats', () => {
+    it('should distinguish between RSS and Atom', async () => {
+      const rss = `<?xml version="1.0"?><rss version="2.0"><channel><title>RSS</title><item><title>Item</title></item></channel></rss>`;
+      const atom = `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title>Atom</title><entry><title>Entry</title></entry></feed>`;
+
+      const rssResult = await checkFeed('https://example.com/rss.xml', rss);
+      const atomResult = await checkFeed('https://example.com/atom.xml', atom);
+
+      assert.strictEqual(rssResult.type, 'rss');
+      assert.strictEqual(atomResult.type, 'atom');
+    });
+
+    it('should handle feeds with namespaces', async () => {
+      const rssWithNamespace = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel>
+<title>Namespaced Feed</title>
+<item>
+<title>Item with namespace</title>
+<content:encoded><![CDATA[<p>HTML content</p>]]></content:encoded>
+</item>
+</channel>
+</rss>`;
+
+      const result = await checkFeed('https://example.com/feed.xml', rssWithNamespace);
+
+      assert.ok(result);
+      assert.strictEqual(result.type, 'rss');
+      assert.strictEqual(result.title, 'Namespaced Feed');
     });
   });
 });

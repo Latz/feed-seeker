@@ -1,10 +1,10 @@
 import { describe, it, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import FeedSeeker from '../feed-seeker.js';
-import metaLinks from '../modules/metaLinks.js';
-import checkAllAnchors from '../modules/anchors.js';
-import blindSearch from '../modules/blindsearch.js';
-import deepSearch from '../modules/deepSearch.js';
+import FeedSeeker from '../feed-seeker.ts';
+import metaLinks from '../modules/metaLinks.ts';
+import checkAllAnchors from '../modules/anchors.ts';
+import blindSearch from '../modules/blindsearch.ts';
+import deepSearch from '../modules/deepSearch.ts';
 
 // Since we can't easily mock the imported modules, let's test the constructor and basic functionality
 describe('FeedSeeker Main Class', () => {

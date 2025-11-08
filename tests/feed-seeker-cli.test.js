@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { run } from '../feed-seeker-cli.js';
-import FeedSeeker from '../feed-seeker.js';
+import { run } from '../feed-seeker-cli.ts';
+import FeedSeeker from '../feed-seeker.ts';
 
 describe('FeedSeeker CLI', () => {
 	let mockFeedSeekerInstance;
