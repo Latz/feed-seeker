@@ -38,6 +38,8 @@ export interface FeedSeekerOptions {
 	checkForeignFeeds?: boolean;
 	maxErrors?: number;
 	requestDelay?: number; // Delay in milliseconds between requests for rate limiting (default: 0)
+	searchMode?: 'fast' | 'standard' | 'exhaustive'; // Blind search thoroughness: fast (~25 endpoints), standard (~150 endpoints), exhaustive (~350+ endpoints)
+	concurrency?: number; // Number of concurrent requests for blind search (default: 3)
 }
 
 export interface FeedSeekerInstance {
