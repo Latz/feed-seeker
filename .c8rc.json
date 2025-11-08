@@ -1,0 +1,27 @@
+{
+  "all": true,
+  "src": ["modules", "."],
+  "include": [
+    "**/*.ts",
+    "**/*.js"
+  ],
+  "exclude": [
+    "tests/**",
+    "dist/**",
+    "node_modules/**",
+    "coverage/**",
+    "**/*.d.ts",
+    "vite.config.js",
+    "**/*.test.js",
+    "**/*.test.ts"
+  ],
+  "reporter": [
+    "text",
+    "html",
+    "lcov"
+  ],
+  "lines": 80,
+  "statements": 80,
+  "functions": 80,
+  "branches": 70
+}

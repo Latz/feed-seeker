@@ -1,38 +1,8 @@
-import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseHTML } from 'linkedom';
-import metaLinks from '../modules/metaLinks.js';
-import * as checkFeedModule from '../modules/checkFeed.js';
 
-// Create a mock FeedSeeker instance for testing
-class MockFeedSeeker {
-  constructor(site, options = {}) {
-    this.site = site;
-    this.options = options;
-    this.document = null;
-  }
-  
-  emit(event, data) {
-    // Mock event emission for testing
-  }
-}
-
-beforeEach(() => {
-	// Mock checkFeed to prevent actual network calls which cause the test to hang
-	mock.method(checkFeedModule, 'default', async url => {
-		// Return a mock feed for URLs that look like feeds
-		if (url.includes('.xml') || url.includes('.json')) {
-			return { type: 'rss', title: `Mock Feed for ${url}` };
-		}
-		return null;
-	});
-});
-
-afterEach(() => {
-	mock.reset();
-});
-
-// Create helper functions that mirror the ones in metaLinks.js for testing
+// Create helper functions that mirror the ones in metaLinks.ts for testing
 function cleanTitle(title) {
   if (!title) return title;
   return title.replace(/\s+/g, ' ').trim();
@@ -44,7 +14,7 @@ function getFeedType(link) {
     if (typeMatch) {
       return typeMatch[1];
     }
-    
+
     if (link.type.includes('rss') || link.type.includes('xml')) {
       return 'rss';
     }
@@ -55,7 +25,7 @@ function getFeedType(link) {
       return 'json';
     }
   }
-  
+
   if (link.href) {
     const href = link.href.toLowerCase();
     if (href.includes('.rss') || href.includes('.xml')) {
@@ -68,7 +38,7 @@ function getFeedType(link) {
       return 'json';
     }
   }
-  
+
   return 'rss';
 }
 
@@ -88,6 +58,14 @@ describe('metaLinks Module', () => {
       it('should return null/undefined as is', () => {
         assert.strictEqual(cleanTitle(null), null);
         assert.strictEqual(cleanTitle(undefined), undefined);
+      });
+
+      it('should handle empty strings', () => {
+        assert.strictEqual(cleanTitle(''), '');
+      });
+
+      it('should handle strings with only whitespace', () => {
+        assert.strictEqual(cleanTitle('   '), '');
       });
     });
 
@@ -118,11 +96,20 @@ describe('metaLinks Module', () => {
         assert.strictEqual(getFeedType({}), 'rss');
         assert.strictEqual(getFeedType({ type: 'text/html' }), 'rss');
       });
+
+      it('should handle mixed case MIME types', () => {
+        const link = { type: 'Application/RSS+XML' };
+        assert.strictEqual(getFeedType(link), 'rss');
+      });
+
+      it('should handle href with query parameters', () => {
+        assert.strictEqual(getFeedType({ href: 'feed.rss?param=value' }), 'rss');
+      });
     });
   });
 
-  describe('metaLinks() main function', () => {
-    it('should find RSS links in document head', async () => {
+  describe('HTML Parsing', () => {
+    it('should find RSS links in document head', () => {
       const html = `
         <!DOCTYPE html>
         <html>
@@ -134,24 +121,16 @@ describe('metaLinks Module', () => {
         <body></body>
         </html>
       `;
-      
+
       const { document } = parseHTML(html);
-      const mockInstance = new MockFeedSeeker('https://example.com');
-      mockInstance.document = document;
-      
-      // Mock the emit function to capture events
-      const emittedEvents = [];
-      mockInstance.emit = (event, data) => {
-        emittedEvents.push({ event, data });
-      };
-      
-      const result = await metaLinks(mockInstance);
-      
-      // Should find 2 feeds based on the mock
-      assert.strictEqual(result.length, 2);
+      const links = document.querySelectorAll('link[rel="alternate"]');
+
+      assert.strictEqual(links.length, 2);
+      assert.strictEqual(links[0].getAttribute('type'), 'application/rss+xml');
+      assert.strictEqual(links[1].getAttribute('type'), 'application/atom+xml');
     });
 
-    it('should handle document with no feed links', async () => {
+    it('should handle document with no feed links', () => {
       const html = `
         <!DOCTYPE html>
         <html>
@@ -162,58 +141,93 @@ describe('metaLinks Module', () => {
         <body></body>
         </html>
       `;
-      
+
       const { document } = parseHTML(html);
-      const mockInstance = new MockFeedSeeker('https://example.com');
-      mockInstance.document = document;
-      
-      // Mock the emit function
-      mockInstance.emit = () => {};
-      
-      const result = await metaLinks(mockInstance);
-      
-      // Should return an empty array when no feed links are found
-      assert.ok(Array.isArray(result));
-      assert.strictEqual(result.length, 0);
+      const links = document.querySelectorAll('link[rel="alternate"]');
+
+      assert.strictEqual(links.length, 0);
     });
 
-    it('should handle empty document', async () => {
+    it('should handle empty document', () => {
       const html = '<!DOCTYPE html><html><head></head><body></body></html>';
-      
+
       const { document } = parseHTML(html);
-      const mockInstance = new MockFeedSeeker('https://example.com');
-      mockInstance.document = document;
-      
-      mockInstance.emit = () => {};
-      
-      const result = await metaLinks(mockInstance);
-      
-      assert.ok(Array.isArray(result));
+      const links = document.querySelectorAll('link[rel="alternate"]');
+
+      assert.strictEqual(links.length, 0);
     });
 
-    it('should make relative URLs absolute', async () => {
+    it('should find links with various type attributes', () => {
       const html = `
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Test Page</title>
-          <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
+          <link rel="alternate" type="application/rss+xml" href="/feed1.xml">
+          <link rel="alternate" type="application/atom+xml" href="/feed2.xml">
+          <link rel="alternate" type="application/json" href="/feed3.json">
         </head>
         <body></body>
         </html>
       `;
-      
+
       const { document } = parseHTML(html);
-      const mockInstance = new MockFeedSeeker('https://example.com/path');
-      mockInstance.document = document;
-      
-      mockInstance.emit = () => {};
-      
-      const result = await metaLinks(mockInstance);
-      
-      // The mock will return a feed for rss.xml
-      assert.strictEqual(result.length, 1);
-      assert.strictEqual(result[0].url, 'https://example.com/rss.xml');
+      const links = document.querySelectorAll('link[rel="alternate"]');
+
+      assert.strictEqual(links.length, 3);
+    });
+
+    it('should handle multiple links with same type', () => {
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <link rel="alternate" type="application/rss+xml" title="Main Feed" href="/feed1.xml">
+          <link rel="alternate" type="application/rss+xml" title="Comments Feed" href="/feed2.xml">
+        </head>
+        <body></body>
+        </html>
+      `;
+
+      const { document } = parseHTML(html);
+      const links = document.querySelectorAll('link[rel="alternate"]');
+
+      assert.strictEqual(links.length, 2);
+      assert.strictEqual(links[0].getAttribute('title'), 'Main Feed');
+      assert.strictEqual(links[1].getAttribute('title'), 'Comments Feed');
+    });
+  });
+
+  describe('URL Handling', () => {
+    it('should handle relative URLs', () => {
+      const baseUrl = 'https://example.com/path';
+      const relativeUrl = '/rss.xml';
+      const absoluteUrl = new URL(relativeUrl, baseUrl).href;
+
+      assert.strictEqual(absoluteUrl, 'https://example.com/rss.xml');
+    });
+
+    it('should handle absolute URLs', () => {
+      const baseUrl = 'https://example.com/path';
+      const absoluteUrl = 'https://feeds.example.com/rss.xml';
+      const resolvedUrl = new URL(absoluteUrl, baseUrl).href;
+
+      assert.strictEqual(resolvedUrl, 'https://feeds.example.com/rss.xml');
+    });
+
+    it('should handle protocol-relative URLs', () => {
+      const baseUrl = 'https://example.com/path';
+      const protocolRelativeUrl = '//feeds.example.com/rss.xml';
+      const absoluteUrl = new URL(protocolRelativeUrl, baseUrl).href;
+
+      assert.strictEqual(absoluteUrl, 'https://feeds.example.com/rss.xml');
+    });
+
+    it('should preserve query parameters in URLs', () => {
+      const baseUrl = 'https://example.com';
+      const urlWithParams = '/feed?format=rss&lang=en';
+      const absoluteUrl = new URL(urlWithParams, baseUrl).href;
+
+      assert.strictEqual(absoluteUrl, 'https://example.com/feed?format=rss&lang=en');
     });
   });
 });

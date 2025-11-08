@@ -1,7 +1,7 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import tldts from 'tldts';
-import EventEmitter from '../modules/eventEmitter.js';
+import EventEmitter from '../modules/eventEmitter.ts';
 
 // Replicate internal functions and classes from deepSearch.js for testing
 
