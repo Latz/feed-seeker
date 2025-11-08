@@ -1,75 +1,208 @@
 /**
- * Common feed endpoint paths to try during the blind search
- * This comprehensive list is based on analysis of popular websites and feed standards
- * Ordered roughly by frequency of use, with most common patterns first
- * @type {string[]}
+ * Constants for blind search configuration
  */
-const FEED_ENDPOINTS: string[] = [
-	// Standard RSS/Atom paths (most common)
-	'&_rss=1', // eBay-style query parameter feeds
-	'.atom', // Atom extension feeds
-	'.json', // JSON Feed format
-	'.rss', // Reddit-style extension feeds
-	'.xml', // Generic XML feeds
-	'atom', // Atom feed endpoint
-	'atom.xml', // Standard Atom filename
-	'atom/index.xml', // Atom directory index
-	'feed', // Generic feed endpoint (very common)
-	'feed.atom', // Atom with feed prefix
-	'feed.json', // JSON Feed format
-	'feed.rss', // RSS with feed prefix
-	'feed.xml', // Generic feed XML
-	'feeds', // Plural feeds directory
-	'feeds/', // Feeds directory with trailing slash
-	'index.atom', // Index-style Atom
-	'index.rss', // Index-style RSS
-	'index.xml', // Generic index XML
-	'rss', // Simple RSS directory
-	'rss/', // RSS directory with trailing slash
-	'rss.xml', // Most commonly used RSS filename
-	'rss/index.xml', // RSS directory index
-	'rss/news/rss.xml', // News-specific RSS path
-	'rss/rss.php', // PHP-generated RSS
-	'rssfeed.rdf', // RDF-based RSS feeds
-	'rssfeed.xml', // Descriptive RSS filename
-	'syndication/', // Syndication directory
+const DEFAULT_MAX_FEEDS = 0; // 0 means no limit
+const DEFAULT_REQUEST_DELAY = 0; // 0 means no delay (in milliseconds)
+const DEFAULT_CONCURRENCY = 3; // Number of concurrent requests to make
+const DEFAULT_SEARCH_MODE = 'standard'; // Default search thoroughness
 
-	// Blog platform specific paths
-	'blog-feed.xml', // WIX sites
-	'blog/atom',
+/**
+ * Security and resource limits
+ */
+const MAX_URL_LENGTH = 2083; // Maximum safe URL length (IE limit, widely accepted standard)
+const MAX_CONCURRENCY = 10; // Maximum concurrent requests to prevent resource exhaustion
+const MIN_CONCURRENCY = 1; // Minimum concurrent requests
+const MAX_GENERATED_URLS = 10000; // Maximum number of URLs to generate (prevent memory exhaustion)
+const MAX_REQUEST_DELAY = 60000; // Maximum delay between requests (60 seconds)
+
+/**
+ * Essential feed endpoints - highest probability of success
+ * These are the most common feed paths found across the web
+ * Fast mode: checks only these endpoints (~25 patterns)
+ */
+const ESSENTIAL_ENDPOINTS: string[] = [
+	// Most common standard paths (highest success rate)
+	'feed',
+	'rss',
+	'atom',
+	'feed.xml',
+	'rss.xml',
+	'atom.xml',
+	'index.xml',
+	'feeds',
+	'.rss',
+	'.atom',
+	'.xml',
+
+	// WordPress (extremely common CMS)
+	'?feed=rss2',
+	'?feed=atom',
+	'feed/rss/',
+	'feed/atom/',
+
+	// Blog platforms
 	'blog/feed',
-	'blog/feeds',
 	'blog/rss',
-	'blog?format=rss', // Squarespace
+
+	// Common variations
+	'feed.json',
+	'rss.php',
+	'feed.php',
+	'news/rss',
+	'latest/feed',
+
+	// Query parameters
+	'?format=rss',
+	'?format=feed',
+];
+
+/**
+ * Standard feed endpoints - commonly used patterns
+ * Standard mode: checks essential + standard endpoints (~100 patterns)
+ */
+const STANDARD_ENDPOINTS: string[] = [
+	// Extended standard paths
+	'rssfeed.xml',
+	'feed.rss',
+	'feed.atom',
+	'feeds/',
+	'rss/',
+	'index.rss',
+	'index.atom',
+	'rss/index.xml',
+	'atom/index.xml',
+	'syndication/',
+	'rssfeed.rdf',
+	'&_rss=1',
+
+	// Blog platforms
+	'blog/atom',
+	'blog/feeds',
+	'blog?format=rss',
+	'blog-feed.xml',
 	'weblog/atom',
 	'weblog/rss',
 
-	// WordPress specific paths
-	'?feed=atom',
-	'?feed=rss2',
-	'?format=feed', // Joomla
-	'feed/atom/',
+	// WordPress extended
+	'?format=feed',
 	'feed/rdf/',
-	'feed/rss/',
 	'feed/rss2/',
-	'index.php?format=feed', // Joomla
 	'wp-atom.php',
 	'wp-feed.php',
 	'wp-rdf.php',
 	'wp-rss.php',
 	'wp-rss2.php',
+	'index.php?format=feed',
 
-	// News sites and publications
+	// News and articles
 	'articles/feed',
 	'atom/news/',
 	'latest.rss',
-	'latest/feed',
 	'news.xml',
 	'news/atom',
-	'news/rss',
 	'rss/articles/',
 	'rss/latest/',
 	'rss/news/',
+	'rss/news/rss.xml',
+	'rss/rss.php',
+
+	// API style
+	'api/feed',
+	'api/rss',
+	'api/atom',
+	'api/rss.xml',
+	'api/feed.xml',
+	'api/v1/feed',
+	'api/v2/feed',
+	'v1/feed',
+	'v2/feed',
+
+	// CMS and frameworks
+	'feed.aspx',
+	'rss.aspx',
+	'rss.cfm',
+	'feed.jsp',
+	'feed.pl',
+	'feed.py',
+	'feed.rb',
+	'feed/atom',
+	'feed/rdf',
+	'feed/atom.rss',
+	'feed/atom.xml',
+	'feed/rss.xml',
+	'feed/rss2',
+	'posts.rss',
+
+	// Static site generators
+	'_site/feed.xml',
+	'build/feed.xml',
+	'dist/feed.xml',
+	'out/feed.xml',
+
+	// Query parameters
+	'?atom=1',
+	'?rss=1',
+	'?feed=atom',
+	'?feed=rss',
+	'?format=atom',
+	'?output=rss',
+	'?output=atom',
+	'?type=rss',
+	'?type=atom',
+	'?view=feed',
+	'?view=rss',
+];
+
+/**
+ * Comprehensive feed endpoints - exhaustive search
+ * Exhaustive mode: checks all endpoints including niche and specialized patterns (~350+ patterns)
+ */
+const COMPREHENSIVE_ENDPOINTS: string[] = [
+	// Custom and alternative paths
+	'atomfeed',
+	'jsonfeed',
+	'newsfeed',
+	'rssfeed',
+	'feeds.json',
+	'feeds.php',
+	'feeds.xml',
+	'.json',
+	'.opml',
+	'.rdf',
+	'opml',
+	'opml/',
+	'rdf',
+	'rdf/',
+
+	// Additional modern formats
+	'feed.cml',
+	'feed.csv',
+	'feed.txt',
+	'feed.yaml',
+	'feed.yml',
+
+	// Complex query parameters
+	'?download=atom',
+	'?download=rss',
+	'?export=atom',
+	'?export=rss',
+	'?syndicate=atom',
+	'?syndicate=rss',
+
+	// Specialized CMS paths
+	'export/rss.xml',
+	'extern.php?action=feed&type=atom',
+	'external?type=rss2',
+	'index.php?action=.xml;type=rss',
+	'public/feed.xml',
+	'spip.php?page=backend',
+	'spip.php?page=backend-breve',
+	'spip.php?page=backend-sites',
+	'syndicate/rss.xml',
+	'syndication.php',
+	'xml',
+	'sitenews',
+	'api/mobile/feed',
 
 	// E-commerce and product feeds
 	'catalog.xml', // product catalogs
@@ -133,31 +266,6 @@ const FEED_ENDPOINTS: string[] = [
 	'newsletter/feed',
 	'subscription/feed',
 
-	// Custom and alternative paths
-	'atomfeed',
-	'jsonfeed',
-	'newsfeed',
-	'rssfeed',
-
-	// API style feeds
-	'api/atom',
-	'api/feed',
-	'api/mobile/feed',
-	'api/rss',
-	'api/rss.xml', // API endpoints
-	'api/v1/feed',
-	'api/v2/feed',
-	'v1/feed',
-	'v2/feed',
-
-	// Legacy and alternative extensions
-	'.opml',
-	'.rdf',
-	'opml',
-	'opml/',
-	'rdf',
-	'rdf/',
-
 	// Category and tag feeds
 	'category/*/feed',
 	'tag/*/feed',
@@ -180,9 +288,8 @@ const FEED_ENDPOINTS: string[] = [
 	'announcements/feed',
 	'changelog/feed',
 	'press/feed',
-	'releases/feed',
-	'revisions/feed',
 	'updates/feed',
+	'revisions/feed',
 
 	// Mobile and app feeds
 	'app/feed',
@@ -214,139 +321,161 @@ const FEED_ENDPOINTS: string[] = [
 	'everything/feed',
 
 	// International variations
-	'actualites/feed', // French news
-	'nachrichten/feed', // German news
-	'nieuws/feed', // Dutch news
-	'noticias/feed', // Spanish news
-	'novosti/feed', // Russian news
-
-	// Query parameter based feeds
-	'?atom=1',
-	'?download=atom',
-	'?download=rss',
-	'?export=atom',
-	'?export=rss',
-	'?feed=atom',
-	'?feed=rss',
-	'?format=atom',
-	'?format=feed',
-	'?format=rss',
-	'?output=atom',
-	'?output=rss',
-	'?rss=1',
-	'?syndicate=atom',
-	'?syndicate=rss',
-	'?type=atom',
-	'?type=rss',
-	'?view=feed',
-	'?view=rss',
-
-	// Other existing paths from original list
-	'export/rss.xml', // export directories
-	'extern.php?action=feed&type=atom',
-	'external?type=rss2',
-	'feed.aspx', // ASP.NET feeds
-	'feed.cml', // Wix, Weflow
-	'feed/atom',
-	'feed/atom.rss',
-	'feed/atom.xml',
-	'feed/rdf',
-	'feed/rss.xml',
-	'feed/rss2',
-	'index.php?action=.xml;type=rss',
-	'posts.rss',
-	'public/feed.xml', // public feeds
-	'rss.aspx', // ASP.NET sites
-	'rss.cfm', // ColdFusion sites
-	'rss.php',
-	'sitenews',
-	'spip.php?page=backend',
-	'spip.php?page=backend-breve',
-	'spip.php?page=backend-sites',
-	'syndicate/rss.xml',
-	'syndication.php',
-	'xml',
-
-	// Additional modern feed endpoints
-	'feed.jsp', // Java Server Pages feeds
-	'feed.php', // PHP-generated feeds
-	'feed.pl', // Perl feeds
-	'feed.py', // Python feeds
-	'feed.rb', // Ruby feeds
-	'feeds.json', // JSON feeds directory
-	'feeds.php', // PHP feeds directory
-	'feeds.xml', // XML feeds directory
-
-	// Static site generators
-	'_site/feed.xml', // Jekyll default
-	'build/feed.xml', // React build
-	'dist/feed.xml', // Build output
-	'out/feed.xml', // Next.js output
+	'actualites/feed',
+	'nachrichten/feed',
+	'nieuws/feed',
+	'noticias/feed',
+	'novosti/feed',
 
 	// Headless CMS feeds
-	'api/feed.xml', // Headless CMS
-	'cms/feed', // CMS endpoints
-	'contentful/feed', // Contentful
-	'sanity/feed', // Sanity CMS
-	'strapi/feed', // Strapi CMS
+	'cms/feed',
+	'contentful/feed',
+	'sanity/feed',
+	'strapi/feed',
 
 	// Documentation feeds
-	'docs/feed', // Documentation feeds
+	'docs/feed',
 	'documentation/feed',
 	'help/feed',
-	'kb/feed', // Knowledge base
+	'kb/feed',
 	'support/feed',
-	'wiki/feed', // Wiki feeds
+	'wiki/feed',
 
 	// Repository and code feeds
-	'branches/feed', // Git branches
-	'commits/feed', // Git commits
-	'issues/feed', // Issue tracker
-	'pull-requests/feed', // PR feeds
-	'releases/feed', // Software releases
-	'tags/feed', // Git tags
+	'branches/feed',
+	'commits/feed',
+	'issues/feed',
+	'pull-requests/feed',
+	'releases/feed',
+	'tags/feed',
 
 	// Analytics and tracking feeds
-	'analytics/feed', // Analytics data
-	'metrics/feed', // Metrics feeds
-	'reports/feed', // Report feeds
-	'stats/feed', // Statistics feeds
+	'analytics/feed',
+	'metrics/feed',
+	'reports/feed',
+	'stats/feed',
 
 	// Multi-language feeds
-	'de/feed', // German
-	'en/feed', // English
-	'es/feed', // Spanish
-	'fr/feed', // French
-	'it/feed', // Italian
-	'ja/feed', // Japanese
-	'ko/feed', // Korean
-	'pt/feed', // Portuguese
-	'ru/feed', // Russian
-	'zh/feed', // Chinese
-
-	// Additional file extensions
-	'feed.csv', // CSV feeds
-	'feed.txt', // Plain text feeds
-	'feed.yaml', // YAML feeds
-	'feed.yml', // YAML feeds (alternative)
+	'de/feed',
+	'en/feed',
+	'es/feed',
+	'fr/feed',
+	'it/feed',
+	'ja/feed',
+	'ko/feed',
+	'pt/feed',
+	'ru/feed',
+	'zh/feed',
 
 	// Specialized platforms
-	'drupal/feed', // Drupal CMS
-	'joomla/feed', // Joomla CMS
-	'magento/feed', // Magento stores
-	'opencart/feed', // OpenCart
-	'prestashop/feed', // PrestaShop
-	'shopify/feed', // Shopify stores
-	'typo3/feed', // TYPO3 CMS
-	'woocommerce/feed', // WooCommerce
+	'drupal/feed',
+	'joomla/feed',
+	'magento/feed',
+	'opencart/feed',
+	'prestashop/feed',
+	'shopify/feed',
+	'typo3/feed',
+	'woocommerce/feed',
 
 	// Social and community platforms
-	'discourse/feed', // Discourse forums
-	'invision/feed', // Invision Community
-	'phpbb/feed', // phpBB forums
-	'vbulletin/feed', // vBulletin forums
-	'xenforo/feed', // XenForo forums
+	'discourse/feed',
+	'invision/feed',
+	'phpbb/feed',
+	'vbulletin/feed',
+	'xenforo/feed',
 ];
+
+/**
+ * Gets the appropriate endpoint list based on search mode
+ * @param {'fast' | 'standard' | 'exhaustive'} mode - The search thoroughness mode
+ * @returns {string[]} The combined endpoint list for the given mode
+ */
+function getEndpointsByMode(mode: 'fast' | 'standard' | 'exhaustive'): string[] {
+	switch (mode) {
+		case 'fast':
+			return ESSENTIAL_ENDPOINTS;
+		case 'standard':
+			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS];
+		case 'exhaustive':
+			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS, ...COMPREHENSIVE_ENDPOINTS];
+		default:
+			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS];
+	}
+}
+
+/**
+ * Validates and sanitizes the search mode parameter
+ * @param {string | undefined} mode - The search mode to validate
+ * @returns {'fast' | 'standard' | 'exhaustive'} A valid search mode
+ */
+function validateSearchMode(mode: string | undefined): 'fast' | 'standard' | 'exhaustive' {
+	if (!mode) {
+		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive';
+	}
+
+	const validModes = ['fast', 'standard', 'exhaustive'];
+	if (!validModes.includes(mode)) {
+		console.warn(`Invalid search mode "${mode}". Falling back to "${DEFAULT_SEARCH_MODE}".`);
+		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive';
+	}
+
+	return mode as 'fast' | 'standard' | 'exhaustive';
+}
+
+/**
+ * Validates and clamps concurrency value to safe limits
+ * @param {number | undefined} concurrency - The concurrency value to validate
+ * @returns {number} A safe concurrency value
+ */
+function validateConcurrency(concurrency: number | undefined): number {
+	if (concurrency === undefined || concurrency === null) {
+		return DEFAULT_CONCURRENCY;
+	}
+
+	if (!Number.isFinite(concurrency) || concurrency < MIN_CONCURRENCY) {
+		console.warn(`Invalid concurrency value ${concurrency}. Using minimum: ${MIN_CONCURRENCY}.`);
+		return MIN_CONCURRENCY;
+	}
+
+	if (concurrency > MAX_CONCURRENCY) {
+		console.warn(`Concurrency value ${concurrency} exceeds maximum. Clamping to ${MAX_CONCURRENCY}.`);
+		return MAX_CONCURRENCY;
+	}
+
+	return Math.floor(concurrency);
+}
+
+/**
+ * Validates and clamps request delay to safe limits
+ * @param {number | undefined} delay - The request delay to validate
+ * @returns {number} A safe delay value
+ */
+function validateRequestDelay(delay: number | undefined): number {
+	if (delay === undefined || delay === null) {
+		return DEFAULT_REQUEST_DELAY;
+	}
+
+	if (!Number.isFinite(delay) || delay < 0) {
+		console.warn(`Invalid request delay ${delay}. Using default: ${DEFAULT_REQUEST_DELAY}.`);
+		return DEFAULT_REQUEST_DELAY;
+	}
+
+	if (delay > MAX_REQUEST_DELAY) {
+		console.warn(`Request delay ${delay}ms exceeds maximum. Clamping to ${MAX_REQUEST_DELAY}ms.`);
+		return MAX_REQUEST_DELAY;
+	}
+
+	return Math.floor(delay);
+}
+
+/**
+ * Validates that a URL is within safe length limits
+ * @param {string} url - The URL to validate
+ * @returns {boolean} True if URL is valid length
+ */
+function isValidUrlLength(url: string): boolean {
+	return url.length <= MAX_URL_LENGTH;
+}
 
 import checkFeed from './checkFeed.js';
 import { type FeedSeekerInstance } from './checkFeed.js';
@@ -364,10 +493,30 @@ export interface BlindSearchFeed extends Feed {
  * Uses a "path traversal" algorithm that starts from the specific URL and works up to the domain root
  * @param {string} siteUrl - The base site URL
  * @param {boolean} keepQueryParams - Whether to keep query parameters
+ * @param {string[]} endpoints - The list of feed endpoints to check
  * @returns {string[]} Array of potential feed URLs
+ * @throws {Error} When siteUrl is invalid or too long
  */
-function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean): string[] {
-	const origin = new URL(siteUrl).origin;
+function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoints: string[]): string[] {
+	// Validate URL format
+	let urlObj: URL;
+	try {
+		urlObj = new URL(siteUrl);
+	} catch (error) {
+		throw new Error(`Invalid URL provided to blindSearch: ${siteUrl}`);
+	}
+
+	// Security: Validate URL length to prevent memory exhaustion
+	if (!isValidUrlLength(siteUrl)) {
+		throw new Error(`URL too long (${siteUrl.length} chars). Maximum allowed: ${MAX_URL_LENGTH} characters.`);
+	}
+
+	// Security: Validate protocol to prevent non-HTTP(S) schemes
+	if (!['http:', 'https:'].includes(urlObj.protocol)) {
+		throw new Error(`Invalid protocol "${urlObj.protocol}". Only http: and https: are allowed.`);
+	}
+
+	const origin = urlObj.origin;
 	let path = siteUrl;
 	const endpointUrls: string[] = [];
 
@@ -375,7 +524,6 @@ function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean): string
 	// This preserves original URL parameters like ?category=tech in feed URLs
 	let queryParams = '';
 	if (keepQueryParams) {
-		const urlObj = new URL(siteUrl);
 		queryParams = urlObj.search; // This includes the '?' character if there are query parameters
 	}
 
@@ -388,12 +536,27 @@ function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean): string
 		const basePath = path.endsWith('/') ? path.slice(0, -1) : path;
 
 		// Try each known feed endpoint at this path level
-		FEED_ENDPOINTS.forEach(endpoint => {
+		for (const endpoint of endpoints) {
+			// Security: Check if we've exceeded the maximum number of URLs
+			if (endpointUrls.length >= MAX_GENERATED_URLS) {
+				console.warn(
+					`URL generation limit reached (${MAX_GENERATED_URLS} URLs). Stopping to prevent resource exhaustion.`
+				);
+				return endpointUrls;
+			}
+
 			// Construct final URL: basePath + "/" + endpoint + queryParams (if any)
 			// Example: "https://example.com/blog" + "/" + "feed" + "?category=tech"
 			const urlWithParams = queryParams ? `${basePath}/${endpoint}${queryParams}` : `${basePath}/${endpoint}`;
-			endpointUrls.push(urlWithParams);
-		});
+
+			// Security: Validate URL length before adding
+			if (isValidUrlLength(urlWithParams)) {
+				endpointUrls.push(urlWithParams);
+			} else {
+				// Skip URLs that exceed safe length limits
+				console.warn(`Skipping URL (too long): ${urlWithParams.substring(0, 100)}...`);
+			}
+		}
 
 		// Move up one directory level by removing everything after the last "/"
 		// Example: "https://example.com/blog/posts" → "https://example.com/blog"
@@ -427,10 +590,10 @@ function addFeed(
 
 	feeds.push({
 		url,
-		feedType: feedResult.type,
-		title: feedResult.title,
+		title: null, // No link element title in blind search (unlike metaLinks)
 		type: feedResult.type,
-		feedTitle: feedResult.title,
+		feedTitle: feedResult.title, // Actual feed title from parsing the feed
+		feedType: feedResult.type, // Included for BlindSearchFeed interface compatibility
 	});
 
 	return { rssFound, atomFound };
@@ -453,12 +616,18 @@ function shouldContinueSearch(
 	atomFound: boolean,
 	shouldCheckAll: boolean
 ): boolean {
-	// Continue if we haven't processed all URLs AND we haven't found both feed types
-	// Logic breakdown:
-	// - If shouldCheckAll is true: never stop early (!(false) = true)
-	// - If shouldCheckAll is false: stop when both RSS and Atom are found (!(true && true) = false)
-	// - Always stop when currentIndex >= totalUrls
-	return currentIndex < totalUrls && !(shouldCheckAll ? false : rssFound && atomFound);
+	// Stop if we've processed all URLs
+	if (currentIndex >= totalUrls) {
+		return false;
+	}
+
+	// Continue checking all URLs if shouldCheckAll is enabled
+	if (shouldCheckAll) {
+		return true;
+	}
+
+	// Otherwise, stop when both RSS and Atom feeds are found
+	return !(rssFound && atomFound);
 }
 
 /**
@@ -467,39 +636,53 @@ function shouldContinueSearch(
  * appending various known feed endpoints at each level.
  *
  * @param {MetaLinksInstance} instance - The instance object containing site information and an event emitter.
+ * @param {AbortSignal} [signal] - Optional AbortSignal to cancel the search operation
  * @returns {Promise<BlindSearchFeed[]>} A promise that resolves to an array of found feed objects.
  *   Each object contains the `url` of the feed, its `feedType` ('rss' or 'atom'), and its `title` if available.
+ * @throws {Error} When the operation is aborted via AbortSignal
  */
-export default async function blindSearch(instance: MetaLinksInstance): Promise<BlindSearchFeed[]> {
-	// Generate all possible endpoint URLs
-	const endpointUrls = generateEndpointUrls(instance.site, instance.options?.keepQueryParams || false);
+export default async function blindSearch(instance: MetaLinksInstance, signal?: AbortSignal): Promise<BlindSearchFeed[]> {
+	// Security: Validate and sanitize search mode
+	const searchMode = validateSearchMode(instance.options?.searchMode);
+	const endpoints = getEndpointsByMode(searchMode);
+
+	// Generate all possible endpoint URLs with prioritized endpoints
+	const endpointUrls = generateEndpointUrls(instance.site, instance.options?.keepQueryParams || false, endpoints);
 
 	// Emit the total count so the CLI can display it
 	instance.emit('start', { module: 'blindsearch', niceName: 'Blind search', endpointUrls: endpointUrls.length });
 
 	const shouldCheckAll = instance.options?.all || false;
-	const maxFeeds = instance.options?.maxFeeds || 0; // Maximum number of feeds to find (0 = no limit)
+	const maxFeeds = instance.options?.maxFeeds ?? DEFAULT_MAX_FEEDS; // Maximum number of feeds to find
 
-	// Process each URL to find feeds
-	const results = await processFeeds(endpointUrls, shouldCheckAll, maxFeeds, instance);
+	// Security: Validate and clamp concurrency to safe limits
+	const concurrency = validateConcurrency(instance.options?.concurrency);
+
+	// Process each URL to find feeds with concurrent batching
+	const results = await processFeeds(endpointUrls, shouldCheckAll, maxFeeds, concurrency, instance, signal);
 
 	instance.emit('end', { module: 'blindsearch', feeds: results.feeds });
 	return results.feeds;
 }
 
 /**
- * Processes a list of URLs to find feeds
+ * Processes a list of URLs to find feeds with concurrent batching
  * @param {string[]} endpointUrls - Array of URLs to check for feeds
  * @param {boolean} shouldCheckAll - Whether to check all URLs regardless of what's found
  * @param {number} maxFeeds - Maximum number of feeds to find (0 = no limit)
+ * @param {number} concurrency - Number of concurrent requests to make
  * @param {MetaLinksInstance} instance - The FeedSeeker instance
+ * @param {AbortSignal} [signal] - Optional AbortSignal to cancel the operation
  * @returns {Promise<{feeds: BlindSearchFeed[], rssFound: boolean, atomFound: boolean}>} A promise that resolves to an object containing feeds, rssFound, and atomFound status
+ * @throws {Error} When the operation is aborted
  */
 async function processFeeds(
 	endpointUrls: string[],
 	shouldCheckAll: boolean,
 	maxFeeds: number,
-	instance: MetaLinksInstance
+	concurrency: number,
+	instance: MetaLinksInstance,
+	signal?: AbortSignal
 ): Promise<{ feeds: BlindSearchFeed[]; rssFound: boolean; atomFound: boolean }> {
 	const feeds: BlindSearchFeed[] = [];
 	const foundUrls = new Set<string>();
@@ -507,33 +690,54 @@ async function processFeeds(
 	let atomFound = false;
 	let i = 0;
 
+	// Process URLs in concurrent batches
 	while (shouldContinueSearch(i, endpointUrls.length, rssFound, atomFound, shouldCheckAll)) {
+		// Check if the operation has been aborted
+		if (signal?.aborted) {
+			throw new Error('Blind search operation was aborted');
+		}
+
 		// Check if we've reached the maximum number of feeds
 		if (maxFeeds > 0 && feeds.length >= maxFeeds) {
 			await handleMaxFeedsReached(instance, feeds, maxFeeds);
 			break;
 		}
 
-		const url = endpointUrls[i];
-		const result = await processSingleFeedUrl(url, instance, foundUrls, feeds, rssFound, atomFound);
+		// Create a batch of URLs to process concurrently
+		const batchSize = Math.min(concurrency, endpointUrls.length - i);
+		const batch = endpointUrls.slice(i, i + batchSize);
 
-		// Update tracking flags if a feed was found
-		if (result.found) {
-			rssFound = result.rssFound;
-			atomFound = result.atomFound;
+		// Process batch concurrently using Promise.allSettled (continue even if some fail)
+		const batchResults = await Promise.allSettled(
+			batch.map(url => processSingleFeedUrl(url, instance, foundUrls, feeds, rssFound, atomFound))
+		);
 
-			// Check if we've reached the maximum number of feeds
-			if (maxFeeds > 0 && feeds.length >= maxFeeds) {
-				await handleMaxFeedsReached(instance, feeds, maxFeeds);
-				break;
+		// Process results from the batch
+		for (const result of batchResults) {
+			if (result.status === 'fulfilled' && result.value.found) {
+				rssFound = result.value.rssFound;
+				atomFound = result.value.atomFound;
+
+				// Check if we've reached the maximum number of feeds after finding one
+				if (maxFeeds > 0 && feeds.length >= maxFeeds) {
+					await handleMaxFeedsReached(instance, feeds, maxFeeds);
+					i = endpointUrls.length; // Force loop to end
+					break;
+				}
 			}
 		}
 
-		// Emit that a URL was checked, which will increment the counter and update the progress
-		let feedsFound = feeds.length;
+		// Emit progress for the processed batch
+		i += batchSize;
+		const feedsFound = feeds.length;
 		instance.emit('log', { module: 'blindsearch', totalEndpoints: endpointUrls.length, totalCount: i, feedsFound });
 
-		i++;
+		// Rate limiting: Add delay between batches if configured
+		// Security: Validate and clamp delay to safe limits
+		const requestDelay = validateRequestDelay(instance.options?.requestDelay);
+		if (requestDelay > 0 && i < endpointUrls.length) {
+			await new Promise(resolve => setTimeout(resolve, requestDelay));
+		}
 	}
 
 	return { feeds, rssFound, atomFound };
@@ -543,7 +747,7 @@ async function processFeeds(
  * Processes a single feed URL
  * @param {string} url - The URL to process
  * @param {MetaLinksInstance} instance - The FeedSeeker instance
- * @param {Set<string>} foundUrls - Set of already found URLs
+ * @param {Set<string>} foundUrls - Set of already checked URLs to prevent duplicate requests
  * @param {BlindSearchFeed[]} feeds - Array of found feeds
  * @param {boolean} rssFound - Whether an RSS feed has been found
  * @param {boolean} atomFound - Whether an Atom feed has been found
@@ -557,13 +761,19 @@ async function processSingleFeedUrl(
 	rssFound: boolean,
 	atomFound: boolean
 ): Promise<{ found: boolean; rssFound: boolean; atomFound: boolean }> {
+	// Skip if this URL has already been checked (prevents duplicate requests)
+	if (foundUrls.has(url)) {
+		return { found: false, rssFound, atomFound };
+	}
+
+	// Mark URL as checked before making the request
+	foundUrls.add(url);
+
 	try {
 		const feedResult = await checkFeed(url, '', instance);
 
-		// Only add feed if it hasn't been found before
-		if (feedResult && !foundUrls.has(url)) {
-			foundUrls.add(url); // Track this URL to prevent duplicates
-
+		// Add feed if it was successfully validated
+		if (feedResult) {
 			// Add feed and update tracking flags
 			const updatedFlags = addFeed(feedResult, url, feeds, rssFound, atomFound);
 			rssFound = updatedFlags.rssFound;
