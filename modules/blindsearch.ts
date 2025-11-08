@@ -7,6 +7,15 @@ const DEFAULT_CONCURRENCY = 3; // Number of concurrent requests to make
 const DEFAULT_SEARCH_MODE = 'standard'; // Default search thoroughness
 
 /**
+ * Security and resource limits
+ */
+const MAX_URL_LENGTH = 2083; // Maximum safe URL length (IE limit, widely accepted standard)
+const MAX_CONCURRENCY = 10; // Maximum concurrent requests to prevent resource exhaustion
+const MIN_CONCURRENCY = 1; // Minimum concurrent requests
+const MAX_GENERATED_URLS = 10000; // Maximum number of URLs to generate (prevent memory exhaustion)
+const MAX_REQUEST_DELAY = 60000; // Maximum delay between requests (60 seconds)
+
+/**
  * Essential feed endpoints - highest probability of success
  * These are the most common feed paths found across the web
  * Fast mode: checks only these endpoints (~25 patterns)
@@ -394,6 +403,80 @@ function getEndpointsByMode(mode: 'fast' | 'standard' | 'exhaustive'): string[] 
 	}
 }
 
+/**
+ * Validates and sanitizes the search mode parameter
+ * @param {string | undefined} mode - The search mode to validate
+ * @returns {'fast' | 'standard' | 'exhaustive'} A valid search mode
+ */
+function validateSearchMode(mode: string | undefined): 'fast' | 'standard' | 'exhaustive' {
+	if (!mode) {
+		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive';
+	}
+
+	const validModes = ['fast', 'standard', 'exhaustive'];
+	if (!validModes.includes(mode)) {
+		console.warn(`Invalid search mode "${mode}". Falling back to "${DEFAULT_SEARCH_MODE}".`);
+		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive';
+	}
+
+	return mode as 'fast' | 'standard' | 'exhaustive';
+}
+
+/**
+ * Validates and clamps concurrency value to safe limits
+ * @param {number | undefined} concurrency - The concurrency value to validate
+ * @returns {number} A safe concurrency value
+ */
+function validateConcurrency(concurrency: number | undefined): number {
+	if (concurrency === undefined || concurrency === null) {
+		return DEFAULT_CONCURRENCY;
+	}
+
+	if (!Number.isFinite(concurrency) || concurrency < MIN_CONCURRENCY) {
+		console.warn(`Invalid concurrency value ${concurrency}. Using minimum: ${MIN_CONCURRENCY}.`);
+		return MIN_CONCURRENCY;
+	}
+
+	if (concurrency > MAX_CONCURRENCY) {
+		console.warn(`Concurrency value ${concurrency} exceeds maximum. Clamping to ${MAX_CONCURRENCY}.`);
+		return MAX_CONCURRENCY;
+	}
+
+	return Math.floor(concurrency);
+}
+
+/**
+ * Validates and clamps request delay to safe limits
+ * @param {number | undefined} delay - The request delay to validate
+ * @returns {number} A safe delay value
+ */
+function validateRequestDelay(delay: number | undefined): number {
+	if (delay === undefined || delay === null) {
+		return DEFAULT_REQUEST_DELAY;
+	}
+
+	if (!Number.isFinite(delay) || delay < 0) {
+		console.warn(`Invalid request delay ${delay}. Using default: ${DEFAULT_REQUEST_DELAY}.`);
+		return DEFAULT_REQUEST_DELAY;
+	}
+
+	if (delay > MAX_REQUEST_DELAY) {
+		console.warn(`Request delay ${delay}ms exceeds maximum. Clamping to ${MAX_REQUEST_DELAY}ms.`);
+		return MAX_REQUEST_DELAY;
+	}
+
+	return Math.floor(delay);
+}
+
+/**
+ * Validates that a URL is within safe length limits
+ * @param {string} url - The URL to validate
+ * @returns {boolean} True if URL is valid length
+ */
+function isValidUrlLength(url: string): boolean {
+	return url.length <= MAX_URL_LENGTH;
+}
+
 import checkFeed from './checkFeed.js';
 import { type FeedSeekerInstance } from './checkFeed.js';
 import { type MetaLinksInstance, type Feed } from './metaLinks.js';
@@ -412,7 +495,7 @@ export interface BlindSearchFeed extends Feed {
  * @param {boolean} keepQueryParams - Whether to keep query parameters
  * @param {string[]} endpoints - The list of feed endpoints to check
  * @returns {string[]} Array of potential feed URLs
- * @throws {Error} When siteUrl is invalid
+ * @throws {Error} When siteUrl is invalid or too long
  */
 function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoints: string[]): string[] {
 	// Validate URL format
@@ -421,6 +504,16 @@ function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoin
 		urlObj = new URL(siteUrl);
 	} catch (error) {
 		throw new Error(`Invalid URL provided to blindSearch: ${siteUrl}`);
+	}
+
+	// Security: Validate URL length to prevent memory exhaustion
+	if (!isValidUrlLength(siteUrl)) {
+		throw new Error(`URL too long (${siteUrl.length} chars). Maximum allowed: ${MAX_URL_LENGTH} characters.`);
+	}
+
+	// Security: Validate protocol to prevent non-HTTP(S) schemes
+	if (!['http:', 'https:'].includes(urlObj.protocol)) {
+		throw new Error(`Invalid protocol "${urlObj.protocol}". Only http: and https: are allowed.`);
 	}
 
 	const origin = urlObj.origin;
@@ -443,12 +536,27 @@ function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoin
 		const basePath = path.endsWith('/') ? path.slice(0, -1) : path;
 
 		// Try each known feed endpoint at this path level
-		endpoints.forEach(endpoint => {
+		for (const endpoint of endpoints) {
+			// Security: Check if we've exceeded the maximum number of URLs
+			if (endpointUrls.length >= MAX_GENERATED_URLS) {
+				console.warn(
+					`URL generation limit reached (${MAX_GENERATED_URLS} URLs). Stopping to prevent resource exhaustion.`
+				);
+				return endpointUrls;
+			}
+
 			// Construct final URL: basePath + "/" + endpoint + queryParams (if any)
 			// Example: "https://example.com/blog" + "/" + "feed" + "?category=tech"
 			const urlWithParams = queryParams ? `${basePath}/${endpoint}${queryParams}` : `${basePath}/${endpoint}`;
-			endpointUrls.push(urlWithParams);
-		});
+
+			// Security: Validate URL length before adding
+			if (isValidUrlLength(urlWithParams)) {
+				endpointUrls.push(urlWithParams);
+			} else {
+				// Skip URLs that exceed safe length limits
+				console.warn(`Skipping URL (too long): ${urlWithParams.substring(0, 100)}...`);
+			}
+		}
 
 		// Move up one directory level by removing everything after the last "/"
 		// Example: "https://example.com/blog/posts" → "https://example.com/blog"
@@ -534,9 +642,9 @@ function shouldContinueSearch(
  * @throws {Error} When the operation is aborted via AbortSignal
  */
 export default async function blindSearch(instance: MetaLinksInstance, signal?: AbortSignal): Promise<BlindSearchFeed[]> {
-	// Get search mode and endpoints (priority-based: fast -> standard -> exhaustive)
-	const searchMode = instance.options?.searchMode ?? DEFAULT_SEARCH_MODE;
-	const endpoints = getEndpointsByMode(searchMode as 'fast' | 'standard' | 'exhaustive');
+	// Security: Validate and sanitize search mode
+	const searchMode = validateSearchMode(instance.options?.searchMode);
+	const endpoints = getEndpointsByMode(searchMode);
 
 	// Generate all possible endpoint URLs with prioritized endpoints
 	const endpointUrls = generateEndpointUrls(instance.site, instance.options?.keepQueryParams || false, endpoints);
@@ -546,7 +654,9 @@ export default async function blindSearch(instance: MetaLinksInstance, signal?: 
 
 	const shouldCheckAll = instance.options?.all || false;
 	const maxFeeds = instance.options?.maxFeeds ?? DEFAULT_MAX_FEEDS; // Maximum number of feeds to find
-	const concurrency = instance.options?.concurrency ?? DEFAULT_CONCURRENCY; // Number of concurrent requests
+
+	// Security: Validate and clamp concurrency to safe limits
+	const concurrency = validateConcurrency(instance.options?.concurrency);
 
 	// Process each URL to find feeds with concurrent batching
 	const results = await processFeeds(endpointUrls, shouldCheckAll, maxFeeds, concurrency, instance, signal);
@@ -623,7 +733,8 @@ async function processFeeds(
 		instance.emit('log', { module: 'blindsearch', totalEndpoints: endpointUrls.length, totalCount: i, feedsFound });
 
 		// Rate limiting: Add delay between batches if configured
-		const requestDelay = instance.options?.requestDelay ?? DEFAULT_REQUEST_DELAY;
+		// Security: Validate and clamp delay to safe limits
+		const requestDelay = validateRequestDelay(instance.options?.requestDelay);
 		if (requestDelay > 0 && i < endpointUrls.length) {
 			await new Promise(resolve => setTimeout(resolve, requestDelay));
 		}
