@@ -99,9 +99,15 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 			throw new TypeError(`Invalid URL: ${site}`);
 		}
 
-		// Normalize site link but remove trailing slash for root paths to prevent duplicate checks in path traversal
-		// For example: https://example.com/ should become https://example.com to avoid checking endpoints twice
-		this.site = urlObj.pathname === '/' ? urlObj.origin : urlObj.href;
+		// Validate protocol - only http and https are supported
+		if (!['http:', 'https:'].includes(urlObj.protocol)) {
+			throw new TypeError(`Unsupported protocol: ${urlObj.protocol}. Only http: and https: are supported.`);
+		}
+
+		// Normalize site link by removing trailing slash to prevent duplicate checks in path traversal
+		// For example: https://example.com/ should become https://example.com
+		// and https://example.com/blog/ should become https://example.com/blog
+		this.site = urlObj.pathname === '/' ? urlObj.origin : urlObj.href.replace(/\/$/, '');
 		this.options = {
 			timeout: 5, // Default timeout of 5 seconds
 			...options
@@ -122,7 +128,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 		if (this.initPromise === null) {
 			this.initPromise = (async () => {
 				try {
-					const response = await fetchWithTimeout(this.site, this.options.timeout! * 1000);
+					const response = await fetchWithTimeout(this.site, (this.options.timeout ?? 5) * 1000);
 
 					if (!response.ok) {
 						this.emit('error', {
@@ -257,19 +263,27 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 
 		// Use Map for deduplication by URL
 		const feedMap = new Map<string, Feed | BlindSearchFeed>();
-		const searchStrategies = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
+		const searchStrategies = [
+			() => this.metaLinks(),
+			() => this.checkAllAnchors(),
+			() => this.blindSearch()
+		];
 
 		for (const strategy of searchStrategies) {
-			const feeds = await strategy.call(this);
+			const feeds = await strategy();
 			if (feeds && feeds.length > 0) {
 				// Add feeds to map, deduplicating by URL
 				for (const feed of feeds) {
 					if (!feedMap.has(feed.url)) {
 						feedMap.set(feed.url, feed);
+						// Check if we've reached maxFeeds limit after adding each feed
+						if (!all && maxFeeds && maxFeeds > 0 && feedMap.size >= maxFeeds) {
+							break;
+						}
 					}
 				}
 
-				// Check if we've reached maxFeeds limit
+				// Exit strategy loop if we've reached maxFeeds limit
 				if (!all && maxFeeds && maxFeeds > 0 && feedMap.size >= maxFeeds) {
 					break;
 				}
@@ -292,11 +306,8 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 			}
 		}
 
-		// Convert map to array and apply maxFeeds limit
-		let totalFeeds = Array.from(feedMap.values());
-		if (maxFeeds && maxFeeds > 0 && totalFeeds.length > maxFeeds) {
-			totalFeeds = totalFeeds.slice(0, maxFeeds);
-		}
+		// Convert map to array (no slicing needed as we enforced maxFeeds during collection)
+		const totalFeeds = Array.from(feedMap.values());
 
 		this.emit('end', { module: 'all', feeds: totalFeeds });
 		return totalFeeds;
