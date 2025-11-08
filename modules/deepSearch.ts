@@ -114,8 +114,12 @@ class Crawler extends EventEmitter {
 		instance: FeedSeekerInstance | null = null
 	) {
 		super();
-		const absoluteStartUrl = new URL(startUrl);
-		this.startUrl = absoluteStartUrl.href;
+		try {
+			const absoluteStartUrl = new URL(startUrl);
+			this.startUrl = absoluteStartUrl.href;
+		} catch (error) {
+			throw new Error(`Invalid start URL: ${startUrl}`);
+		}
 		this.maxDepth = maxDepth;
 		this.concurrency = concurrency;
 		this.maxLinks = maxLinks; // Maximum number of links to process
@@ -170,15 +174,10 @@ class Crawler extends EventEmitter {
 
 	/**
 	 * Starts the crawling process
-	 * @returns {Feed[]} Array of found feeds
 	 */
-	start(): Feed[] {
+	start(): void {
 		this.queue.push({ url: this.startUrl, depth: 0 });
 		this.emit('start', { module: 'deepSearch', niceName: 'Deep search' });
-		this.queue.drain(() => {
-			this.emit('end', { module: 'deepSearch', feeds: this.feeds, visitedUrls: this.visitedUrls.size });
-		});
-		return this.feeds;
 	}
 
 	/**
@@ -364,9 +363,14 @@ class Crawler extends EventEmitter {
 		const { document } = parseHTML(html);
 
 		for (const link of document.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>) {
-			const absoluteUrl = new URL(link.href, this.startUrl).href;
-			const shouldStop = await this.processLink(absoluteUrl, depth);
-			if (shouldStop) break;
+			try {
+				const absoluteUrl = new URL(link.href, this.startUrl).href;
+				const shouldStop = await this.processLink(absoluteUrl, depth);
+				if (shouldStop) break;
+			} catch (error) {
+				// Skip malformed URLs
+				continue;
+			}
 		}
 	}
 }
@@ -407,6 +411,7 @@ export default async function deepSearch(
 	// Create a promise that resolves when the queue is drained
 	await new Promise<void>(resolve => {
 		crawler.queue.drain(() => {
+			crawler.emit('end', { module: 'deepSearch', feeds: crawler.feeds, visitedUrls: crawler.visitedUrls.size });
 			resolve();
 		});
 	});
