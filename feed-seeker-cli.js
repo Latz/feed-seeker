@@ -1,5 +1,5 @@
 import { Command, Option } from 'commander';
-import FeedScout from './feed-scout.js';
+import FeedSeeker from './feed-seeker.js';
 import { createRequire } from 'module';
 import { styleText } from 'node:util';
 
@@ -45,7 +45,7 @@ async function log(data) {
 // -------------------------------------------------------------------------------------------------------
 
 function initializeFeedFinder(site, options) {
-	const FeedFinder = new FeedScout(site, options);
+	const FeedFinder = new FeedSeeker(site, options);
 	FeedFinder.site = site;
 	FeedFinder.options = options;
 
@@ -81,7 +81,7 @@ async function getFeeds(site, options) {
 displayBanner();
 
 const program = new Command();
-program.name(`feed-scout`).description('Find RSS, Atom, and JSON feeds on any website with FeedScout.');
+program.name(`feed-seeker`).description('Find RSS, Atom, and JSON feeds on any website with FeedSeeker.');
 program
 	.command('version')
 	.description('Get version')
@@ -98,27 +98,73 @@ program
 	.option('-a, --anchorsonly', 'Anchors search only')
 	.option('-d, --deepsearch', 'Enable deep search')
 	.option('--deepsearch-only', 'Deep search only')
-	.option('--depth <number>', 'Depth of deep search', 3)
-	.option('--max-links <number>', 'Maximum number of links to process during deep search', 1000)
-	.option('--timeout <seconds>', 'Timeout for fetch requests in seconds', 5)
+	.option('--depth <number>', 'Depth of deep search', (val) => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 1) {
+			throw new Error('Depth must be a positive number (minimum 1)');
+		}
+		return num;
+	}, 3)
+	.option('--max-links <number>', 'Maximum number of links to process during deep search', (val) => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 1) {
+			throw new Error('Max links must be a positive number (minimum 1)');
+		}
+		return num;
+	}, 1000)
+	.option('--timeout <seconds>', 'Timeout for fetch requests in seconds', (val) => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 1) {
+			throw new Error('Timeout must be a positive number (minimum 1 second)');
+		}
+		return num;
+	}, 5)
 	.option('--keep-query-params', 'Keep query parameters from the original URL when searching')
 	.option('--check-foreign-feeds', "Check if foreign domain URLs are feeds (but don't crawl them)")
-	.option('--max-errors <number>', 'Stop after a certain number of errors', 5)
-	.option('--max-feeds <number>', 'Stop search after finding a certain number of feeds', 0)
+	.option('--max-errors <number>', 'Stop after a certain number of errors', (val) => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 0) {
+			throw new Error('Max errors must be a non-negative number');
+		}
+		return num;
+	}, 5)
+	.option('--max-feeds <number>', 'Stop search after finding a certain number of feeds', (val) => {
+		const num = parseInt(val, 10);
+		if (isNaN(num) || num < 0) {
+			throw new Error('Max feeds must be a non-negative number');
+		}
+		return num;
+	}, 0)
 	.description('Find feeds for site\n')
 	.action(async (site, options) => {
 		if (!site) {
 			program.help();
-		} else {
+			process.exit(0);
+		}
+		try {
 			// Store the result directly on the program object
 			program.feeds = await getFeeds(site, options);
+		} catch (error) {
+			if (options.displayErrors) {
+				console.error('\nError details:', error);
+			} else {
+				console.error(styleText('red', `\nError: ${error.message}`));
+			}
+			process.exit(1);
 		}
 	});
 
 // add hidden option '--display-errors' to program
 program.addOption(new Option('--display-errors', 'Display errors').hideHelp());
 
-// exceute program
-program.parseAsync(process.argv).then(() => {
-	console.log(program.feeds);
-});
+// execute program
+program.parseAsync(process.argv)
+	.then(() => {
+		if (program.feeds !== undefined) {
+			console.log(program.feeds);
+		}
+	})
+	.catch((error) => {
+		console.error(styleText('red', `\nError: ${error.message}`));
+		process.exit(1);
+	});
