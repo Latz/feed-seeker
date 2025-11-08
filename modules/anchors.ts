@@ -211,6 +211,11 @@ async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
 
 	const baseUrl = new URL(instance.site);
 
+	// Return early if document is not available (initialization failed)
+	if (!instance.document) {
+		return [];
+	}
+
 	// Get all anchors and filter for same-host or allowed domains in a single operation
 	const allAnchors = instance.document.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
 	const filteredAnchors: HTMLAnchorElement[] = [];

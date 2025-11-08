@@ -22,13 +22,6 @@ import EventEmitter from './modules/eventEmitter.js';
 import fetchWithTimeout from './modules/fetchWithTimeout.js';
 
 /**
- * Minimal document interface for empty/mock document objects
- */
-interface MinimalDocument {
-	querySelectorAll: (selector: string) => NodeListOf<Element> | never[];
-}
-
-/**
  * FeedSeeker options interface
  */
 export interface FeedSeekerOptions extends DeepSearchOptions {
@@ -38,11 +31,11 @@ export interface FeedSeekerOptions extends DeepSearchOptions {
 	keepQueryParams?: boolean;
 	showErrors?: boolean;
 	followMetaRefresh?: boolean;
-	deepsearchOnly?: boolean;
-	metasearch?: boolean;
-	blindsearch?: boolean;
-	anchorsonly?: boolean;
-	deepsearch?: boolean;
+	deepSearchOnly?: boolean;
+	metaSearch?: boolean;
+	blindSearch?: boolean;
+	anchorsOnly?: boolean;
+	deepSearch?: boolean;
 }
 
 /**
@@ -67,7 +60,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	options: FeedSeekerOptions;
 	initPromise: Promise<void> | null;
 	content?: string;
-	document!: Document;
+	document?: Document;
 
 	/**
 	 * Creates a new FeedSeeker instance
@@ -137,7 +130,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 							error: `HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`,
 						});
 						this.content = '';
-						this.document = { querySelectorAll: () => [] } as unknown as Document;
+						this.document = undefined;
 						this.emit('initialized');
 						return;
 					}
@@ -167,7 +160,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 					});
 
 					this.content = '';
-					this.document = { querySelectorAll: () => [] } as unknown as Document;
+					this.document = undefined;
 					this.emit('initialized');
 				}
 			})();
@@ -243,22 +236,22 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	 * console.log('All feeds:', feeds);
 	 */
 	async startSearch(): Promise<Array<Feed | BlindSearchFeed>> {
-		const { deepsearchOnly, metasearch, blindsearch, anchorsonly, deepsearch, all, maxFeeds } = this.options;
+		const { deepSearchOnly, metaSearch, blindSearch, anchorsOnly, deepSearch, all, maxFeeds } = this.options;
 
 		// Handle single strategy modes
-		if (deepsearchOnly) {
+		if (deepSearchOnly) {
 			return this.deepSearch();
 		}
 
-		if (metasearch) {
+		if (metaSearch) {
 			return this.metaLinks();
 		}
 
-		if (blindsearch) {
+		if (blindSearch) {
 			return this.blindSearch();
 		}
 
-		if (anchorsonly) {
+		if (anchorsOnly) {
 			return this.checkAllAnchors();
 		}
 
@@ -284,7 +277,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 		}
 
 		// Run deep search if enabled and we haven't reached the limit
-		if (deepsearch && (!maxFeeds || feedMap.size < maxFeeds)) {
+		if (deepSearch && (!maxFeeds || feedMap.size < maxFeeds)) {
 			const deepFeeds = await this.deepSearch();
 			if (deepFeeds && deepFeeds.length > 0) {
 				for (const feed of deepFeeds) {

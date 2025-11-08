@@ -38,7 +38,7 @@ export interface Feed {
  * Extended FeedSeeker instance for metaLinks
  */
 export interface MetaLinksInstance extends FeedSeekerInstance {
-	document: Document;
+	document?: Document;
 	site: string;
 	emit: (event: string, data: unknown) => void;
 }
@@ -112,6 +112,12 @@ export default async function metaLinks(instance: MetaLinksInstance): Promise<Fe
 	instance.emit('start', { module: 'metalinks', niceName: 'Meta links' });
 	const feeds: Feed[] = [];
 	const foundUrls = new Set<string>();
+
+	// Return early if document is not available (initialization failed)
+	if (!instance.document) {
+		instance.emit('end', { module: 'metalinks', feeds });
+		return feeds;
+	}
 
 	// 1. Check for links with specific feed `type` attributes.
 	const feedTypes = ['feed+json', 'rss+xml', 'atom+xml', 'xml', 'rdf+xml'];

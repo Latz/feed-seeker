@@ -105,11 +105,11 @@ program
 
 program
 	.argument('[site]', 'The website URL to search for feeds')
-	.option('-m, --metasearch', 'Meta search only')
-	.option('-b, --blindsearch', 'Blind search only')
-	.option('-a, --anchorsonly', 'Anchors search only')
-	.option('-d, --deepsearch', 'Enable deep search')
-	.option('--deepsearch-only', 'Deep search only')
+	.option('-m, --meta-search', 'Meta search only')
+	.option('-b, --blind-search', 'Blind search only')
+	.option('-a, --anchors-only', 'Anchors search only')
+	.option('-d, --deep-search', 'Enable deep search')
+	.option('--deep-search-only', 'Deep search only')
 	.option('--depth <number>', 'Depth of deep search', '3')
 	.option('--max-links <number>', 'Maximum number of links to process during deep search', '1000')
 	.option('--timeout <seconds>', 'Timeout for fetch requests in seconds', '5')
@@ -118,7 +118,7 @@ program
 	.option('--max-errors <number>', 'Stop after a certain number of errors', '5')
 	.option('--max-feeds <number>', 'Stop search after finding a certain number of feeds', '0')
 	.description('Find feeds for site\n')
-	.action(async (site: string, options: FeedScoutOptions) => {
+	.action(async (site: string, options: FeedSeekerOptions) => {
 		if (!site) {
 			program.help();
 		} else {

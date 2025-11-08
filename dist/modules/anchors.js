@@ -83,7 +83,10 @@ async function U(e, r) {
 }
 async function f(e) {
   await g(e);
-  const r = new URL(e.site), t = e.document.querySelectorAll("a"), o = [];
+  const r = new URL(e.site);
+  if (!e.document)
+    return [];
+  const t = e.document.querySelectorAll("a"), o = [];
   for (const i of t) {
     const a = u(i, r, e);
     a && p(a, r) && o.push(i);
