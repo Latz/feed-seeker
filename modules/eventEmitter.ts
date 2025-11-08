@@ -5,13 +5,14 @@
  * including private fields, Sets for O(1) lookups, and comprehensive error handling.
  *
  * @module EventEmitter
- * @version 1.0.0
+ * @version 2.0.0
  * @author latz
  * @since 1.0.0
  */
 
 /**
  * Type definition for event listener functions
+ * Note: Async listeners are supported - promise rejections will be caught and handled
  */
 export type EventListener = (...args: unknown[]) => void | Promise<void>;
 
@@ -19,7 +20,24 @@ export type EventListener = (...args: unknown[]) => void | Promise<void>;
  * Interface for wrapper functions that store a reference to the original listener
  */
 interface OnceWrapper extends EventListener {
-	originalListener?: EventListener;
+	originalListener: EventListener;
+}
+
+/**
+ * Configuration options for EventEmitter error handling
+ */
+export interface EventEmitterOptions {
+	/**
+	 * Maximum number of listeners per event before warning (0 = unlimited)
+	 * @default 10
+	 */
+	maxListeners?: number;
+
+	/**
+	 * Whether to capture async errors from Promise-returning listeners
+	 * @default true
+	 */
+	captureAsyncErrors?: boolean;
 }
 
 /**
@@ -44,6 +62,10 @@ interface OnceWrapper extends EventListener {
  *   .on('end', () => console.log('Ended'))
  *   .emit('start')
  *   .emit('end');
+ *
+ * // Error handling
+ * emitter.on('error', (err) => console.error('Error:', err));
+ * emitter.emit('error', new Error('Something went wrong'));
  */
 export default class EventEmitter {
 	/**
@@ -54,20 +76,118 @@ export default class EventEmitter {
 	#events: Map<string, Set<EventListener>> = new Map();
 
 	/**
+	 * Maximum number of listeners per event (0 = unlimited)
+	 * @private
+	 */
+	#maxListeners: number;
+
+	/**
+	 * Whether to capture async errors
+	 * @private
+	 */
+	#captureAsyncErrors: boolean;
+
+	/**
+	 * Default max listeners for all instances
+	 * @private
+	 */
+	static #defaultMaxListeners = 10;
+
+	/**
+	 * Creates a new EventEmitter instance
+	 * @param {EventEmitterOptions} options - Configuration options
+	 */
+	constructor(options: EventEmitterOptions = {}) {
+		this.#maxListeners = options.maxListeners ?? EventEmitter.#defaultMaxListeners;
+		this.#captureAsyncErrors = options.captureAsyncErrors ?? true;
+	}
+
+	/**
+	 * Sets the default maximum number of listeners for all new EventEmitter instances
+	 * @param {number} n - The maximum number of listeners (0 = unlimited)
+	 */
+	static setDefaultMaxListeners(n: number): void {
+		if (typeof n !== 'number' || n < 0 || !Number.isInteger(n)) {
+			throw new TypeError('Max listeners must be a non-negative integer');
+		}
+		EventEmitter.#defaultMaxListeners = n;
+	}
+
+	/**
+	 * Validates event name
+	 * @private
+	 */
+	#validateEventName(event: string): void {
+		if (typeof event !== 'string' || event.trim().length === 0) {
+			throw new TypeError('Event must be a non-empty string');
+		}
+	}
+
+	/**
+	 * Validates listener
+	 * @private
+	 */
+	#validateListener(listener: EventListener): void {
+		if (typeof listener !== 'function') {
+			throw new TypeError('Listener must be a function');
+		}
+	}
+
+	/**
+	 * Checks and warns if max listeners exceeded
+	 * @private
+	 */
+	#checkMaxListeners(event: string): void {
+		if (this.#maxListeners > 0) {
+			const count = this.listenerCount(event);
+			if (count > this.#maxListeners) {
+				console.warn(
+					`Warning: Possible EventEmitter memory leak detected. ` +
+					`${count} ${event} listeners added. ` +
+					`Use emitter.setMaxListeners() to increase limit`
+				);
+			}
+		}
+	}
+
+	/**
+	 * Handles errors from listener execution
+	 * @private
+	 */
+	#handleListenerError(error: unknown, event: string): void {
+		// Special handling for 'error' event errors
+		if (event === 'error') {
+			// If an error event listener throws, we can't emit another error event
+			// So we log and rethrow
+			console.error('Error in error event listener:', error);
+			throw error;
+		}
+
+		// Emit error event if there are listeners
+		const errorListeners = this.#events.get('error');
+		if (errorListeners && errorListeners.size > 0) {
+			this.emit('error', error, event);
+		} else {
+			// No error listeners - throw the error
+			console.error(`Unhandled error in event listener for '${event}':`, error);
+			throw error;
+		}
+	}
+
+	/**
 	 * Adds an event listener for the specified event
 	 * @param {string} event - The name of the event to listen for
 	 * @param {EventListener} listener - The function to call when the event is emitted
 	 * @returns {EventEmitter} The instance for method chaining
-	 * @throws {TypeError} When listener is not a function
+	 * @throws {TypeError} When event is not a non-empty string or listener is not a function
 	 * @example
 	 * emitter.on('data', (payload) => {
 	 *   console.log('Received data:', payload);
 	 * });
 	 */
 	on(event: string, listener: EventListener): this {
-		if (typeof listener !== 'function') {
-			throw new TypeError('Listener must be a function');
-		}
+		this.#validateEventName(event);
+		this.#validateListener(listener);
 
 		const listeners = this.#events.get(event);
 		if (!listeners) {
@@ -76,7 +196,38 @@ export default class EventEmitter {
 			listeners.add(listener);
 		}
 
+		this.#checkMaxListeners(event);
+
 		return this; // Enable method chaining
+	}
+
+	/**
+	 * Adds an event listener to the beginning of the listeners array
+	 * @param {string} event - The name of the event to listen for
+	 * @param {EventListener} listener - The function to call when the event is emitted
+	 * @returns {EventEmitter} The instance for method chaining
+	 * @throws {TypeError} When event is not a non-empty string or listener is not a function
+	 * @example
+	 * emitter.prependListener('data', (payload) => {
+	 *   console.log('This runs first');
+	 * });
+	 */
+	prependListener(event: string, listener: EventListener): this {
+		this.#validateEventName(event);
+		this.#validateListener(listener);
+
+		const listeners = this.#events.get(event);
+		if (!listeners) {
+			this.#events.set(event, new Set([listener]));
+		} else {
+			// Create new Set with listener first, then existing listeners
+			const newListeners = new Set([listener, ...listeners]);
+			this.#events.set(event, newListeners);
+		}
+
+		this.#checkMaxListeners(event);
+
+		return this;
 	}
 
 	/**
@@ -85,7 +236,7 @@ export default class EventEmitter {
 	 * @param {string} event - The name of the event to listen for
 	 * @param {EventListener} listener - The function to call when the event is emitted (will be removed after first call)
 	 * @returns {EventEmitter} The instance for method chaining
-	 * @throws {TypeError} When listener is not a function
+	 * @throws {TypeError} When event is not a non-empty string or listener is not a function
 	 * @example
 	 * emitter.once('init', () => {
 	 *   console.log('This will only run once');
@@ -95,14 +246,13 @@ export default class EventEmitter {
 	 * emitter.emit('init'); // Does nothing - listener was removed
 	 */
 	once(event: string, listener: EventListener): this {
-		if (typeof listener !== 'function') {
-			throw new TypeError('Listener must be a function');
-		}
+		this.#validateEventName(event);
+		this.#validateListener(listener);
 
-		const onceWrapper: OnceWrapper = (...args: unknown[]) => {
+		const onceWrapper: OnceWrapper = ((...args: unknown[]) => {
 			this.off(event, onceWrapper);
-			listener.apply(this, args);
-		};
+			listener(...args);
+		}) as OnceWrapper;
 
 		// Store reference to original listener for removal
 		onceWrapper.originalListener = listener;
@@ -110,11 +260,32 @@ export default class EventEmitter {
 	}
 
 	/**
+	 * Adds a one-time event listener to the beginning of the listeners array
+	 * @param {string} event - The name of the event to listen for
+	 * @param {EventListener} listener - The function to call when the event is emitted
+	 * @returns {EventEmitter} The instance for method chaining
+	 * @throws {TypeError} When event is not a non-empty string or listener is not a function
+	 */
+	prependOnceListener(event: string, listener: EventListener): this {
+		this.#validateEventName(event);
+		this.#validateListener(listener);
+
+		const onceWrapper: OnceWrapper = ((...args: unknown[]) => {
+			this.off(event, onceWrapper);
+			listener(...args);
+		}) as OnceWrapper;
+
+		onceWrapper.originalListener = listener;
+		return this.prependListener(event, onceWrapper);
+	}
+
+	/**
 	 * Emits an event, calling all listeners registered for that event
 	 * Listeners are called synchronously in the order they were added
 	 * @param {string} event - The name of the event to emit
-	 * @param {...any} args - Arguments to pass to the listeners
+	 * @param {...unknown} args - Arguments to pass to the listeners
 	 * @returns {boolean} True if the event had listeners, false otherwise
+	 * @throws {Error} If an 'error' event is emitted with no listeners
 	 * @example
 	 * emitter.emit('data', { id: 1, message: 'Hello' });
 	 * emitter.emit('error', new Error('Something went wrong'));
@@ -122,17 +293,36 @@ export default class EventEmitter {
 	 * const hasListeners = emitter.emit('test');
 	 * console.log(hasListeners); // true if listeners exist, false otherwise
 	 */
-	emit(event: string, ...args: any[]): boolean {
+	emit(event: string, ...args: unknown[]): boolean {
 		const listeners = this.#events.get(event);
 
-		if (!listeners) return false; // Return false if no listeners
+		if (!listeners || listeners.size === 0) {
+			// Special case: unhandled 'error' events should throw
+			if (event === 'error') {
+				const error = args[0];
+				if (error instanceof Error) {
+					throw error;
+				} else {
+					throw new Error(`Unhandled error event: ${String(error)}`);
+				}
+			}
+			return false; // Return false if no listeners
+		}
 
 		// Convert to array to avoid issues if listeners are modified during emission
 		[...listeners].forEach(listener => {
 			try {
-				listener.apply(this, args);
+				// Call listener without binding context
+				const result = listener(...args);
+
+				// Handle async errors if enabled
+				if (this.#captureAsyncErrors && result instanceof Promise) {
+					result.catch(error => {
+						this.#handleListenerError(error, event);
+					});
+				}
 			} catch (error) {
-				console.error(`Error in event listener for ${event}:`, error);
+				this.#handleListenerError(error, event);
 			}
 		});
 
@@ -155,7 +345,8 @@ export default class EventEmitter {
 		if (!listeners) return this;
 
 		// Handle both direct listeners and once() wrappers
-		listeners.forEach(l => {
+		// Use defensive copy to avoid modifying Set during iteration
+		[...listeners].forEach(l => {
 			const onceWrapper = l as OnceWrapper;
 			if (l === listener || onceWrapper.originalListener === listener) {
 				listeners.delete(l);
@@ -177,11 +368,33 @@ export default class EventEmitter {
 	 */
 	removeAllListeners(event?: string): this {
 		if (event) {
+			this.#validateEventName(event);
 			this.#events.delete(event);
 		} else {
 			this.#events.clear();
 		}
 		return this;
+	}
+
+	/**
+	 * Sets the maximum number of listeners for this emitter instance
+	 * @param {number} n - The maximum number of listeners (0 = unlimited)
+	 * @returns {EventEmitter} The instance for method chaining
+	 */
+	setMaxListeners(n: number): this {
+		if (typeof n !== 'number' || n < 0 || !Number.isInteger(n)) {
+			throw new TypeError('Max listeners must be a non-negative integer');
+		}
+		this.#maxListeners = n;
+		return this;
+	}
+
+	/**
+	 * Gets the maximum number of listeners for this emitter instance
+	 * @returns {number} The maximum number of listeners
+	 */
+	getMaxListeners(): number {
+		return this.#maxListeners;
 	}
 
 	/**
@@ -192,6 +405,39 @@ export default class EventEmitter {
 	listenerCount(event: string): number {
 		const listeners = this.#events.get(event);
 		return listeners ? listeners.size : 0;
+	}
+
+	/**
+	 * Returns a copy of the array of listeners for the specified event
+	 * Returns unwrapped listeners (without once() wrappers)
+	 * @param {string} event - The name of the event
+	 * @returns {Array<EventListener>} Array of listener functions
+	 * @example
+	 * const listeners = emitter.listeners('data');
+	 * console.log(`There are ${listeners.length} listeners`);
+	 */
+	listeners(event: string): EventListener[] {
+		const listeners = this.#events.get(event);
+		if (!listeners) return [];
+
+		// Return unwrapped listeners (original functions, not wrappers)
+		return [...listeners].map(l => {
+			const onceWrapper = l as OnceWrapper;
+			return onceWrapper.originalListener || l;
+		});
+	}
+
+	/**
+	 * Returns a copy of the array of listeners for the specified event,
+	 * including any wrappers (such as those created by once())
+	 * @param {string} event - The name of the event
+	 * @returns {Array<EventListener>} Array of listener functions including wrappers
+	 * @example
+	 * const rawListeners = emitter.rawListeners('data');
+	 */
+	rawListeners(event: string): EventListener[] {
+		const listeners = this.#events.get(event);
+		return listeners ? [...listeners] : [];
 	}
 
 	/**
