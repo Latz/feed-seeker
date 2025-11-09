@@ -151,6 +151,33 @@ export default class EventEmitter {
 	}
 
 	/**
+	 * Converts an error to a string representation
+	 * Handles Error objects, plain objects with error properties, and other types
+	 * @private
+	 */
+	#serializeError(error: unknown): string {
+		if (error instanceof Error) {
+			return error.message;
+		}
+
+		// Handle plain objects with error/message properties
+		if (typeof error === 'object' && error !== null) {
+			const obj = error as Record<string, unknown>;
+			// Try common error property names
+			if (typeof obj.error === 'string') return obj.error;
+			if (typeof obj.message === 'string') return obj.message;
+			// Fallback to JSON representation for debugging
+			try {
+				return JSON.stringify(obj);
+			} catch {
+				return String(error);
+			}
+		}
+
+		return String(error);
+	}
+
+	/**
 	 * Handles errors from listener execution
 	 * @private
 	 */
@@ -303,7 +330,8 @@ export default class EventEmitter {
 				if (error instanceof Error) {
 					throw error;
 				} else {
-					throw new Error(`Unhandled error event: ${String(error)}`);
+					const serialized = this.#serializeError(error);
+					throw new Error(`Unhandled error event: ${serialized}`);
 				}
 			}
 			return false; // Return false if no listeners

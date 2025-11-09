@@ -22,13 +22,6 @@ import EventEmitter from './modules/eventEmitter.js';
 import fetchWithTimeout from './modules/fetchWithTimeout.js';
 
 /**
- * Minimal document interface for empty/mock document objects
- */
-interface MinimalDocument {
-	querySelectorAll: (selector: string) => NodeListOf<Element> | never[];
-}
-
-/**
  * FeedSeeker options interface
  */
 export interface FeedSeekerOptions extends DeepSearchOptions {
@@ -68,15 +61,16 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	initPromise: Promise<void> | null;
 	content?: string;
 	document!: Document;
+	private rawSite: string; // Store the raw input for validation during initialization
 
 	/**
 	 * Creates a new FeedSeeker instance
 	 * @param {string} site - The website URL to search for feeds (protocol optional, defaults to https://)
 	 * @param {FeedSeekerOptions} [options={}] - Configuration options for the search
-	 * @throws {TypeError} When site parameter is not provided or invalid
 	 * @example
 	 * // Basic usage
 	 * const seeker = new FeedSeeker('example.com');
+	 * seeker.on('error', (error) => console.error(error));
 	 *
 	 * // With options
 	 * const seeker = new FeedSeeker('https://blog.example.com', {
@@ -84,31 +78,14 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	 *   timeout: 10,
 	 *   all: true
 	 * });
+	 * seeker.on('error', (error) => console.error(error));
 	 */
 	constructor(site: string, options: FeedSeekerOptions = {}) {
 		super();
 
-		// Validate site parameter
-		if (!site || typeof site !== 'string') {
-			throw new TypeError('site parameter must be a non-empty string');
-		}
-
-		// Add https:// if no protocol is specified
-		if (!site.includes('://')) {
-			site = `https://${site}`;
-		}
-
-		// Validate URL format
-		let urlObj: URL;
-		try {
-			urlObj = new URL(site);
-		} catch (error) {
-			throw new TypeError(`Invalid URL: ${site}`);
-		}
-
-		// Normalize site link but remove trailing slash for root paths to prevent duplicate checks in path traversal
-		// For example: https://example.com/ should become https://example.com to avoid checking endpoints twice
-		this.site = urlObj.pathname === '/' ? urlObj.origin : urlObj.href;
+		// Store the raw site and options for deferred validation
+		this.rawSite = site;
+		this.site = ''; // Will be set during initialize()
 		this.options = {
 			timeout: 5, // Default timeout of 5 seconds
 			...options
@@ -117,10 +94,10 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	}
 
 	/**
-	 * Initializes the FeedSeeker instance by fetching the site content and parsing the HTML
+	 * Initializes the FeedSeeker instance by validating the URL and fetching the site content and parsing the HTML
 	 * This method is called automatically by other methods and caches the result
+	 * Emits 'error' events if validation or fetching fails
 	 * @returns {Promise<void>} A promise that resolves when the initialization is complete
-	 * @throws {Error} When the site cannot be fetched or parsed
 	 * @private
 	 * @example
 	 * await seeker.initialize(); // Usually called automatically
@@ -129,6 +106,43 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 		if (this.initPromise === null) {
 			this.initPromise = (async () => {
 				try {
+					// Validate site parameter
+					if (!this.rawSite || typeof this.rawSite !== 'string') {
+						this.emit('error', {
+							module: 'FeedSeeker',
+							error: 'Site parameter must be a non-empty string',
+						});
+						this.content = '';
+						this.document = { querySelectorAll: () => [] } as unknown as Document;
+						this.emit('initialized');
+						return;
+					}
+
+					// Add https:// if no protocol is specified
+					let siteUrl = this.rawSite;
+					if (!siteUrl.includes('://')) {
+						siteUrl = `https://${siteUrl}`;
+					}
+
+					// Validate URL format
+					let urlObj: URL;
+					try {
+						urlObj = new URL(siteUrl);
+					} catch {
+						this.emit('error', {
+							module: 'FeedSeeker',
+							error: `Invalid URL: ${this.rawSite}`,
+						});
+						this.content = '';
+						this.document = { querySelectorAll: () => [] } as unknown as Document;
+						this.emit('initialized');
+						return;
+					}
+
+					// Normalize site link but remove trailing slash for root paths to prevent duplicate checks in path traversal
+					// For example: https://example.com/ should become https://example.com to avoid checking endpoints twice
+					this.site = urlObj.pathname === '/' ? urlObj.origin : urlObj.href;
+
 					const response = await fetchWithTimeout(this.site, this.options.timeout! * 1000);
 
 					if (!response.ok) {

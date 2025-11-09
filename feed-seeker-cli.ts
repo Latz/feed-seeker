@@ -55,14 +55,43 @@ async function log(...args: unknown[]): Promise<void> {
 	}
 }
 
-function initializeFeedFinder(site: string, options: FeedSeekerOptions): FeedSeeker {
-	const FeedFinder = new FeedSeeker(site, options);
+interface FeedFinderWithError extends FeedSeeker {
+	initializationError?: boolean;
+}
+
+function initializeFeedFinder(site: string, options: FeedSeekerOptions): FeedFinderWithError {
+	const FeedFinder = new FeedSeeker(site, options) as FeedFinderWithError;
 	FeedFinder.site = site;
 	FeedFinder.options = options;
+	FeedFinder.initializationError = false;
 
 	FeedFinder.on('start', start);
 	FeedFinder.on('log', log);
 	FeedFinder.on('end', end);
+
+	// Add error handler to provide user-friendly error messages with site name
+	FeedFinder.on('error', (...args: unknown[]) => {
+		const errorData = args[0];
+
+		// Check if this is an initialization error (from FeedSeeker module)
+		if (typeof errorData === 'object' && errorData !== null) {
+			const obj = errorData as Record<string, unknown>;
+			if (obj.module === 'FeedSeeker') {
+				FeedFinder.initializationError = true;
+			}
+		}
+
+		// Handle both Error objects and error event objects
+		if (errorData instanceof Error) {
+			console.error(styleText('red', `\nError for ${site}: ${errorData.message}`));
+		} else if (typeof errorData === 'object' && errorData !== null) {
+			const obj = errorData as Record<string, unknown>;
+			const errorMessage = typeof obj.error === 'string' ? obj.error : String(errorData);
+			console.error(styleText('red', `\nError for ${site}: ${errorMessage}`));
+		} else {
+			console.error(styleText('red', `\nError for ${site}: ${String(errorData)}`));
+		}
+	});
 
 	return FeedFinder;
 }
@@ -74,6 +103,15 @@ async function getFeeds(site: string, options: FeedSeekerOptions): Promise<Feed[
 	}
 
 	const FeedFinder = initializeFeedFinder(site, options);
+
+	// Initialize the site first to check for errors
+	await FeedFinder.initialize();
+
+	// If initialization failed, return empty array and don't continue searching
+	if (FeedFinder.initializationError) {
+		return [];
+	}
+
 	const strategies = [() => FeedFinder.metaLinks(), () => FeedFinder.checkAllAnchors(), () => FeedFinder.blindSearch()];
 
 	const findfeeds = async (): Promise<Feed[]> => {
