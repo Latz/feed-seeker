@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { execSync } from 'child_process';
 
 const rollupOptionsPlugin = {
   name: 'rollup-options-plugin',
@@ -25,8 +26,38 @@ const rollupOptionsPlugin = {
   }
 };
 
+const minificationPlugin = {
+  name: 'minification-plugin',
+  apply: 'build',
+  enforce: 'post',
+  writeBundle(options) {
+    // Run terser on output files to create .min.js versions
+    const distDir = resolve(__dirname, 'dist');
+
+    // Files to minify
+    const filesToMinify = [
+      { input: 'feed-seeker.js', output: 'feed-seeker.min.js' },
+      { input: 'feed-seeker.cjs', output: 'feed-seeker.min.cjs' }
+    ];
+
+    for (const { input, output } of filesToMinify) {
+      const inputPath = resolve(distDir, input);
+      const outputPath = resolve(distDir, output);
+
+      try {
+        execSync(`npx terser "${inputPath}" -o "${outputPath}" -c passes=3,drop_console=true,drop_debugger=true -m`, {
+          cwd: __dirname,
+          stdio: 'pipe'
+        });
+      } catch (error) {
+        console.warn(`Warning: Failed to minify ${input}:`, error.message);
+      }
+    }
+  }
+};
+
 export default defineConfig({
-  plugins: [rollupOptionsPlugin],
+  plugins: [rollupOptionsPlugin, minificationPlugin],
   test: {
     globals: true,
     environment: 'node',
@@ -44,9 +75,9 @@ export default defineConfig({
   },
   build: {
     // Enable minification with terser for maximum compression
-    minify: 'terser',
+    minify: false, // We'll create separate minified files instead
 
-    // Terser options for extreme minification
+    // Terser options for extreme minification (used for .min.js files)
     terserOptions: {
       compress: {
         // Maximum compression passes
