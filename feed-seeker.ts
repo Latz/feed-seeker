@@ -36,6 +36,7 @@ export interface FeedSeekerOptions extends DeepSearchOptions {
 	blindsearch?: boolean;
 	anchorsonly?: boolean;
 	deepsearch?: boolean;
+	searchMode?: string;
 }
 
 /**

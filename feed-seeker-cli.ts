@@ -9,6 +9,7 @@ import type { StartEventData, EndEventData, LogEventData } from './types/events.
 // CLI-specific options that extend FeedSeekerOptions
 interface CLIOptions extends FeedSeekerOptions {
 	displayErrors?: boolean;
+	searchMode?: string;
 }
 
 let counterLength = 0; // needed for fancy blindsearch log display
@@ -234,6 +235,7 @@ program
 		}
 		return num;
 	}, 0)
+	.option('--search-mode <mode>', 'Search mode for blind search: fast (~25), standard (~100), or exhaustive (~350+)', 'standard')
 	.description('Find feeds for site\n')
 	.action(async (site: string, options: CLIOptions) => {
 		if (!site) {
