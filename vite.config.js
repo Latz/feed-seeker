@@ -15,6 +15,13 @@ const rollupOptionsPlugin = {
         }
       }
     }
+
+    // Remove bundled package.json files
+    for (const key of Object.keys(bundle)) {
+      if (key.includes('package-')) {
+        delete bundle[key];
+      }
+    }
   }
 };
 
@@ -115,24 +122,15 @@ export default defineConfig({
 
     lib: {
       entry: {
-        index: resolve(__dirname, 'feed-seeker.ts'),
-        'feed-seeker-cli': resolve(__dirname, 'feed-seeker-cli.ts'),
-        'modules/metaLinks': resolve(__dirname, 'modules/metaLinks.ts'),
-        'modules/anchors': resolve(__dirname, 'modules/anchors.ts'),
-        'modules/blindsearch': resolve(__dirname, 'modules/blindsearch.ts'),
-        'modules/deepSearch': resolve(__dirname, 'modules/deepSearch.ts'),
-        'modules/eventEmitter': resolve(__dirname, 'modules/eventEmitter.ts'),
-        'modules/fetchWithTimeout': resolve(__dirname, 'modules/fetchWithTimeout.ts')
+        'feed-seeker': resolve(__dirname, 'feed-seeker.ts'),
+        'feed-seeker-cli': resolve(__dirname, 'feed-seeker-cli.ts')
       },
       name: 'FeedSeeker',
       fileName: (format, entryName) => {
         if (entryName === 'feed-seeker-cli') {
           return 'feed-seeker-cli.js'; // Only ES for CLI
         }
-        if (entryName === 'index') {
-          return `feed-seeker.${format === 'es' ? 'js' : 'cjs'}`;
-        }
-        return `${entryName}.${format === 'es' ? 'js' : 'cjs'}`;
+        return `feed-seeker.${format === 'es' ? 'js' : 'cjs'}`;
       },
       formats: ['es', 'cjs']
     },
