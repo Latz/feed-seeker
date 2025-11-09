@@ -83,9 +83,29 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	constructor(site: string, options: FeedSeekerOptions = {}) {
 		super();
 
-		// Store the raw site and options for deferred validation
+		// Store the raw site for potential deferred error handling
 		this.rawSite = site;
-		this.site = ''; // Will be set during initialize()
+
+		// Normalize site URL (add https:// if no protocol, remove trailing slash)
+		// This is done synchronously to maintain backward compatibility with tests
+		// Any validation errors will be emitted during initialize()
+		let normalizedSite = site;
+		if (!normalizedSite.includes('://')) {
+			normalizedSite = `https://${normalizedSite}`;
+		}
+
+		// Try to parse URL to normalize it, but don't throw errors here
+		try {
+			const urlObj = new URL(normalizedSite);
+			// Normalize site link but remove trailing slash for root paths to prevent duplicate checks in path traversal
+			// For example: https://example.com/ should become https://example.com to avoid checking endpoints twice
+			this.site = urlObj.pathname === '/' ? urlObj.origin : urlObj.href;
+		} catch {
+			// If URL is invalid, store the normalized attempt
+			// The actual error will be emitted during initialize()
+			this.site = normalizedSite;
+		}
+
 		this.options = {
 			timeout: 5, // Default timeout of 5 seconds
 			...options
@@ -106,7 +126,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 		if (this.initPromise === null) {
 			this.initPromise = (async () => {
 				try {
-					// Validate site parameter
+					// Validate site parameter is not empty
 					if (!this.rawSite || typeof this.rawSite !== 'string') {
 						this.emit('error', {
 							module: 'FeedSeeker',
@@ -118,30 +138,20 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 						return;
 					}
 
-					// Add https:// if no protocol is specified
-					let siteUrl = this.rawSite;
-					if (!siteUrl.includes('://')) {
-						siteUrl = `https://${siteUrl}`;
-					}
-
-					// Validate URL format
-					let urlObj: URL;
+					// Validate URL format (site should already be normalized in constructor)
 					try {
-						urlObj = new URL(siteUrl);
+						// eslint-disable-next-line no-new
+						new URL(this.site);
 					} catch {
 						this.emit('error', {
 							module: 'FeedSeeker',
-							error: `Invalid URL: ${this.rawSite}`,
+							error: `Invalid URL: ${this.site}`,
 						});
 						this.content = '';
 						this.document = { querySelectorAll: () => [] } as unknown as Document;
 						this.emit('initialized');
 						return;
 					}
-
-					// Normalize site link but remove trailing slash for root paths to prevent duplicate checks in path traversal
-					// For example: https://example.com/ should become https://example.com to avoid checking endpoints twice
-					this.site = urlObj.pathname === '/' ? urlObj.origin : urlObj.href;
 
 					const response = await fetchWithTimeout(this.site, this.options.timeout! * 1000);
 
