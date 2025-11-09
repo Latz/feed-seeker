@@ -1,16 +1,15 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, expect } from 'vitest';
 import fetchWithTimeout from '../modules/fetchWithTimeout.ts';
 
 describe('fetchWithTimeout Module', () => {
   describe('Function Structure', () => {
     it('should be a function', () => {
-      assert.strictEqual(typeof fetchWithTimeout, 'function');
+      expect(typeof fetchWithTimeout).toBe('function');
     });
 
     it('should have expected function signature', () => {
       // The function should accept URL and optional timeout parameters
-      assert.strictEqual(fetchWithTimeout.length >= 1, true);
+      expect(fetchWithTimeout.length >= 1).toBe(true);
     });
   });
 
@@ -22,21 +21,21 @@ describe('fetchWithTimeout Module', () => {
       const timeout = 5000;
 
       // Should not throw when called with valid parameters
-      assert.doesNotThrow(() => {
+      expect(() => {
         // Just verify the function signature, don't actually make the request
         const promise = fetchWithTimeout(url, timeout);
-        assert.ok(promise instanceof Promise);
-      });
+        expect(promise instanceof Promise).toBeTruthy();
+      }).not.toThrow();
     });
 
     it('should use default timeout when not specified', () => {
       const url = 'https://example.com';
 
       // Should not throw when called with just URL
-      assert.doesNotThrow(() => {
+      expect(() => {
         const promise = fetchWithTimeout(url);
-        assert.ok(promise instanceof Promise);
-      });
+        expect(promise instanceof Promise).toBeTruthy();
+      }).not.toThrow();
     });
   });
 
@@ -51,10 +50,10 @@ describe('fetchWithTimeout Module', () => {
       ];
 
       validUrls.forEach(url => {
-        assert.doesNotThrow(() => {
+        expect(() => {
           const promise = fetchWithTimeout(url);
-          assert.ok(promise instanceof Promise);
-        });
+          expect(promise instanceof Promise).toBeTruthy();
+        }).not.toThrow();
       });
     });
   });
@@ -64,7 +63,7 @@ describe('fetchWithTimeout Module', () => {
       const url = 'https://example.com';
       const result = fetchWithTimeout(url);
 
-      assert.ok(result instanceof Promise);
+      expect(result instanceof Promise).toBeTruthy();
     });
   });
 
@@ -76,10 +75,10 @@ describe('fetchWithTimeout Module', () => {
       try {
         await fetchWithTimeout(invalidUrl, 1000);
         // If it doesn't throw, that's okay - we just want to verify it handles errors
-        assert.ok(true);
+        expect(true).toBeTruthy();
       } catch (error) {
         // If it throws, that's expected for network errors
-        assert.ok(error instanceof Error);
+        expect(error instanceof Error).toBeTruthy();
       }
     });
 
@@ -91,10 +90,10 @@ describe('fetchWithTimeout Module', () => {
       try {
         await fetchWithTimeout(slowUrl, shortTimeout);
         // If it doesn't timeout, that's okay for this test
-        assert.ok(true);
+        expect(true).toBeTruthy();
       } catch (error) {
         // Should either timeout or have a network error
-        assert.ok(error instanceof Error);
+        expect(error instanceof Error).toBeTruthy();
       }
     });
   });
@@ -106,9 +105,9 @@ describe('fetchWithTimeout Module', () => {
       const promise = fetchWithTimeout(url);
 
       // Should have then/catch methods like a Promise
-      assert.strictEqual(typeof promise.then, 'function');
-      assert.strictEqual(typeof promise.catch, 'function');
-      assert.strictEqual(typeof promise.finally, 'function');
+      expect(typeof promise.then).toBe('function');
+      expect(typeof promise.catch).toBe('function');
+      expect(typeof promise.finally).toBe('function');
     });
   });
 });

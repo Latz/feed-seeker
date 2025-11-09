@@ -1,5 +1,4 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, expect } from 'vitest';
 import { parseHTML } from 'linkedom';
 
 // Create helper functions that mirror the ones in metaLinks.ts for testing
@@ -47,63 +46,63 @@ describe('metaLinks Module', () => {
     describe('cleanTitle()', () => {
       it('should clean excessive whitespace', () => {
         const result = cleanTitle('  Title   with   spaces  ');
-        assert.strictEqual(result, 'Title with spaces');
+        expect(result).toBe('Title with spaces');
       });
 
       it('should handle newlines and tabs', () => {
         const result = cleanTitle('Title\n\twith\nspaces');
-        assert.strictEqual(result, 'Title with spaces');
+        expect(result).toBe('Title with spaces');
       });
 
       it('should return null/undefined as is', () => {
-        assert.strictEqual(cleanTitle(null), null);
-        assert.strictEqual(cleanTitle(undefined), undefined);
+        expect(cleanTitle(null)).toBe(null);
+        expect(cleanTitle(undefined)).toBe(undefined);
       });
 
       it('should handle empty strings', () => {
-        assert.strictEqual(cleanTitle(''), '');
+        expect(cleanTitle('')).toBe('');
       });
 
       it('should handle strings with only whitespace', () => {
-        assert.strictEqual(cleanTitle('   '), '');
+        expect(cleanTitle('   ')).toBe('');
       });
     });
 
     describe('getFeedType()', () => {
       it('should identify RSS type from type attribute', () => {
         const link = { type: 'application/rss+xml' };
-        assert.strictEqual(getFeedType(link), 'rss');
+        expect(getFeedType(link)).toBe('rss');
       });
 
       it('should identify Atom type from type attribute', () => {
         const link = { type: 'application/atom+xml' };
-        assert.strictEqual(getFeedType(link), 'atom');
+        expect(getFeedType(link)).toBe('atom');
       });
 
       it('should identify JSON type from type attribute', () => {
         const link = { type: 'application/feed+json' };
-        assert.strictEqual(getFeedType(link), 'json');
+        expect(getFeedType(link)).toBe('json');
       });
 
       it('should identify type from href extension', () => {
-        assert.strictEqual(getFeedType({ href: 'feed.rss' }), 'rss');
-        assert.strictEqual(getFeedType({ href: 'feed.atom' }), 'atom');
-        assert.strictEqual(getFeedType({ href: 'feed.json' }), 'json');
-        assert.strictEqual(getFeedType({ href: 'feed.xml' }), 'rss');
+        expect(getFeedType({ href: 'feed.rss' })).toBe('rss');
+        expect(getFeedType({ href: 'feed.atom' })).toBe('atom');
+        expect(getFeedType({ href: 'feed.json' })).toBe('json');
+        expect(getFeedType({ href: 'feed.xml' })).toBe('rss');
       });
 
       it('should default to RSS if type cannot be determined', () => {
-        assert.strictEqual(getFeedType({}), 'rss');
-        assert.strictEqual(getFeedType({ type: 'text/html' }), 'rss');
+        expect(getFeedType({})).toBe('rss');
+        expect(getFeedType({ type: 'text/html' })).toBe('rss');
       });
 
       it('should handle mixed case MIME types', () => {
         const link = { type: 'Application/RSS+XML' };
-        assert.strictEqual(getFeedType(link), 'rss');
+        expect(getFeedType(link)).toBe('rss');
       });
 
       it('should handle href with query parameters', () => {
-        assert.strictEqual(getFeedType({ href: 'feed.rss?param=value' }), 'rss');
+        expect(getFeedType({ href: 'feed.rss?param=value' })).toBe('rss');
       });
     });
   });
@@ -125,7 +124,7 @@ describe('metaLinks Module', () => {
       const { document } = parseHTML(html);
       const links = document.querySelectorAll('link[rel="alternate"]');
 
-      assert.strictEqual(links.length, 2);
+      expect(links.length).toBe(2);
       assert.strictEqual(links[0].getAttribute('type'), 'application/rss+xml');
       assert.strictEqual(links[1].getAttribute('type'), 'application/atom+xml');
     });
@@ -145,7 +144,7 @@ describe('metaLinks Module', () => {
       const { document } = parseHTML(html);
       const links = document.querySelectorAll('link[rel="alternate"]');
 
-      assert.strictEqual(links.length, 0);
+      expect(links.length).toBe(0);
     });
 
     it('should handle empty document', () => {
@@ -154,7 +153,7 @@ describe('metaLinks Module', () => {
       const { document } = parseHTML(html);
       const links = document.querySelectorAll('link[rel="alternate"]');
 
-      assert.strictEqual(links.length, 0);
+      expect(links.length).toBe(0);
     });
 
     it('should find links with various type attributes', () => {
@@ -173,7 +172,7 @@ describe('metaLinks Module', () => {
       const { document } = parseHTML(html);
       const links = document.querySelectorAll('link[rel="alternate"]');
 
-      assert.strictEqual(links.length, 3);
+      expect(links.length).toBe(3);
     });
 
     it('should handle multiple links with same type', () => {
@@ -191,7 +190,7 @@ describe('metaLinks Module', () => {
       const { document } = parseHTML(html);
       const links = document.querySelectorAll('link[rel="alternate"]');
 
-      assert.strictEqual(links.length, 2);
+      expect(links.length).toBe(2);
       assert.strictEqual(links[0].getAttribute('title'), 'Main Feed');
       assert.strictEqual(links[1].getAttribute('title'), 'Comments Feed');
     });

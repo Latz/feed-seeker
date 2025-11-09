@@ -1,5 +1,4 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, expect } from 'vitest';
 
 /**
  * Integration Tests for FeedSeeker
@@ -27,7 +26,7 @@ describe('FeedSeeker Integration Tests', () => {
           normalized = input;
         }
 
-        assert.strictEqual(normalized, expected);
+        expect(normalized).toBe(expected);
       });
     });
 
@@ -37,7 +36,7 @@ describe('FeedSeeker Integration Tests', () => {
       const pathParts = url.pathname.split('/').filter(p => p);
 
       // Verify path parts extraction
-      assert.deepStrictEqual(pathParts, ['blog', 'posts']);
+      expect(pathParts).toEqual(['blog', 'posts']);
 
       // Build parent paths
       const parentPaths = [];
@@ -46,16 +45,16 @@ describe('FeedSeeker Integration Tests', () => {
         parentPaths.push(path);
       }
 
-      assert.deepStrictEqual(parentPaths, ['/blog/posts', '/blog']);
+      expect(parentPaths).toEqual(['/blog/posts', '/blog']);
     });
 
     it('should preserve query parameters in URLs', () => {
       const baseUrl = 'https://example.com/feed?category=tech&lang=en';
       const url = new URL(baseUrl);
 
-      assert.strictEqual(url.searchParams.get('category'), 'tech');
-      assert.strictEqual(url.searchParams.get('lang'), 'en');
-      assert.strictEqual(url.href, baseUrl);
+      expect(url.searchParams.get('category')).toBe('tech');
+      expect(url.searchParams.get('lang')).toBe('en');
+      expect(url.href).toBe(baseUrl);
     });
 
     it('should handle URL resolution correctly', () => {
@@ -63,7 +62,7 @@ describe('FeedSeeker Integration Tests', () => {
       const relative = '/feed.xml';
       const absolute = new URL(relative, base).href;
 
-      assert.strictEqual(absolute, 'https://example.com/feed.xml');
+      expect(absolute).toBe('https://example.com/feed.xml');
     });
   });
 
@@ -88,7 +87,7 @@ describe('FeedSeeker Integration Tests', () => {
           detectedType = 'json';
         }
 
-        assert.strictEqual(detectedType, expectedType);
+        expect(detectedType).toBe(expectedType);
       });
     });
 
@@ -113,7 +112,7 @@ describe('FeedSeeker Integration Tests', () => {
           detectedType = 'json';
         }
 
-        assert.strictEqual(detectedType, expectedType);
+        expect(detectedType).toBe(expectedType);
       });
     });
   });
@@ -135,9 +134,9 @@ describe('FeedSeeker Integration Tests', () => {
 
       // Verify all paths are non-empty and valid
       commonPaths.forEach(path => {
-        assert.ok(path.length > 0);
-        assert.ok(!path.includes(' '));
-        assert.ok(!path.startsWith('/'));
+        expect(path.length > 0).toBeTruthy();
+        expect(!path.includes(' '));
+        expect(!path.startsWith('/'));
       });
     });
 
@@ -146,7 +145,7 @@ describe('FeedSeeker Integration Tests', () => {
       const feedPaths = ['feed', 'rss', 'atom.xml'];
       const feedUrls = feedPaths.map(path => new URL(path, baseUrl).href);
 
-      assert.deepStrictEqual(feedUrls, [
+      expect(feedUrls).toEqual([
         'https://example.com/feed',
         'https://example.com/rss',
         'https://example.com/atom.xml',
@@ -161,7 +160,7 @@ describe('FeedSeeker Integration Tests', () => {
         return new URL(pattern, baseUrl + '/').href;
       });
 
-      assert.deepStrictEqual(feedUrls, [
+      expect(feedUrls).toEqual([
         'https://example.com/blog/feed',
         'https://example.com/blog/rss.xml',
         'https://example.com/blog/index.xml',
@@ -191,8 +190,8 @@ describe('FeedSeeker Integration Tests', () => {
       emit('start', { module: 'test' });
       emit('end', { module: 'test' });
 
-      assert.strictEqual(startCalled, true);
-      assert.strictEqual(endCalled, true);
+      expect(startCalled).toBe(true);
+      expect(endCalled).toBe(true);
     });
 
     it('should pass data with events', () => {
@@ -211,9 +210,9 @@ describe('FeedSeeker Integration Tests', () => {
       on('log', (data) => { receivedData = data; });
 
       const testData = { module: 'test', message: 'Test message' };
-      emit('log', testData);
+      emit('log').toEqual(testData);
 
-      assert.deepStrictEqual(receivedData, testData);
+      expect(receivedData).toEqual(testData);
     });
   });
 
@@ -232,10 +231,10 @@ describe('FeedSeeker Integration Tests', () => {
 </rss>`;
 
       // Basic validation
-      assert.ok(rssContent.includes('<rss'));
-      assert.ok(rssContent.includes('<channel>'));
-      assert.ok(rssContent.includes('<item>'));
-      assert.ok(rssContent.includes('version="2.0"'));
+      expect(rssContent.includes('<rss'));
+      expect(rssContent.includes('<channel>'));
+      expect(rssContent.includes('<item>'));
+      expect(rssContent.includes('version="2.0"'));
     });
 
     it('should validate Atom feed structure', () => {
@@ -250,9 +249,9 @@ describe('FeedSeeker Integration Tests', () => {
 </feed>`;
 
       // Basic validation
-      assert.ok(atomContent.includes('<feed'));
-      assert.ok(atomContent.includes('xmlns="http://www.w3.org/2005/Atom"'));
-      assert.ok(atomContent.includes('<entry>'));
+      expect(atomContent.includes('<feed'));
+      expect(atomContent.includes('xmlns="http://www.w3.org/2005/Atom"'));
+      expect(atomContent.includes('<entry>'));
     });
 
     it('should validate JSON feed structure', () => {
@@ -269,11 +268,11 @@ describe('FeedSeeker Integration Tests', () => {
       };
 
       // Basic validation
-      assert.ok(jsonFeed.version);
-      assert.ok(jsonFeed.title);
-      assert.ok(Array.isArray(jsonFeed.items));
-      assert.strictEqual(jsonFeed.items.length, 1);
-      assert.ok(jsonFeed.items[0].id);
+      expect(jsonFeed.version).toBeTruthy();
+      expect(jsonFeed.title).toBeTruthy();
+      expect(Array.isArray(jsonFeed.items)).toBeTruthy();
+      expect(jsonFeed.items.length).toBe(1);
+      expect(jsonFeed.items[0].id).toBeTruthy();
     });
   });
 
@@ -293,7 +292,7 @@ describe('FeedSeeker Integration Tests', () => {
           }
           new URL(url);
         } catch (error) {
-          assert.ok(error instanceof Error);
+          expect(error instanceof Error).toBeTruthy();
         }
       });
     });
@@ -312,7 +311,7 @@ describe('FeedSeeker Integration Tests', () => {
           (content.includes('<?xml') || content.startsWith('{'));
 
         if (!isValid) {
-          assert.ok(true, 'Correctly identified as invalid');
+          expect(true).toBeTruthy();
         }
       });
     });
@@ -331,9 +330,9 @@ describe('FeedSeeker Integration Tests', () => {
       // If we found feeds, we might skip other strategies
       const shouldContinue = results.length === 0;
 
-      assert.strictEqual(strategies.length, 4);
-      assert.strictEqual(results.length > 0, true);
-      assert.strictEqual(shouldContinue, false); // Found feeds, so don't continue
+      expect(strategies.length).toBe(4);
+      expect(results.length > 0).toBe(true);
+      expect(shouldContinue).toBe(false); // Found feeds, so don't continue
     });
 
     it('should aggregate results from multiple strategies', () => {
@@ -355,8 +354,8 @@ describe('FeedSeeker Integration Tests', () => {
         new Map(allResults.map(item => [item.url, item])).values()
       );
 
-      assert.strictEqual(allResults.length, 2);
-      assert.strictEqual(uniqueResults.length, 2);
+      expect(allResults.length).toBe(2);
+      expect(uniqueResults.length).toBe(2);
     });
   });
 
@@ -376,10 +375,10 @@ describe('FeedSeeker Integration Tests', () => {
 
       const mergedOptions = { ...defaultOptions, ...userOptions };
 
-      assert.strictEqual(mergedOptions.timeout, 5000);
-      assert.strictEqual(mergedOptions.maxFeeds, 5);
-      assert.strictEqual(mergedOptions.maxDepth, 3); // from defaults
-      assert.strictEqual(mergedOptions.maxLinks, 1000); // from defaults
+      expect(mergedOptions.timeout).toBe(5000);
+      expect(mergedOptions.maxFeeds).toBe(5);
+      expect(mergedOptions.maxDepth).toBe(3); // from defaults
+      expect(mergedOptions.maxLinks).toBe(1000); // from defaults
     });
 
     it('should validate option values', () => {
@@ -390,14 +389,14 @@ describe('FeedSeeker Integration Tests', () => {
       };
 
       // All values should be positive numbers
-      assert.ok(options.timeout > 0);
-      assert.ok(options.maxFeeds > 0);
-      assert.ok(options.maxDepth > 0);
+      expect(options.timeout > 0).toBeTruthy();
+      expect(options.maxFeeds > 0).toBeTruthy();
+      expect(options.maxDepth > 0).toBeTruthy();
 
       // Types should be numbers
-      assert.strictEqual(typeof options.timeout, 'number');
-      assert.strictEqual(typeof options.maxFeeds, 'number');
-      assert.strictEqual(typeof options.maxDepth, 'number');
+      expect(typeof options.timeout).toBe('number');
+      expect(typeof options.maxFeeds).toBe('number');
+      expect(typeof options.maxDepth).toBe('number');
     });
   });
 });

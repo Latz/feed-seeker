@@ -1,5 +1,4 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, expect } from 'vitest';
 
 // Mock FeedSeeker instance for testing
 class MockFeedSeeker {
@@ -32,7 +31,7 @@ describe('Blind Search Module', () => {
 			const pathParts = url.pathname.split('/').filter(p => p);
 
 			// Should have blog and posts
-			assert.deepStrictEqual(pathParts, ['blog', 'posts']);
+			expect(pathParts).toEqual(['blog', 'posts']);
 		});
 
 		it('should handle root URLs', () => {
@@ -40,7 +39,7 @@ describe('Blind Search Module', () => {
 			const url = new URL(baseUrl);
 			const pathParts = url.pathname.split('/').filter(p => p);
 
-			assert.deepStrictEqual(pathParts, []);
+			expect(pathParts).toEqual([]);
 		});
 
 		it('should handle URLs with trailing slashes', () => {
@@ -48,7 +47,7 @@ describe('Blind Search Module', () => {
 			const url = new URL(baseUrl);
 			const pathParts = url.pathname.split('/').filter(p => p);
 
-			assert.deepStrictEqual(pathParts, ['blog', 'posts']);
+			expect(pathParts).toEqual(['blog', 'posts']);
 		});
 	});
 
@@ -58,8 +57,8 @@ describe('Blind Search Module', () => {
 
 			// Verify these are reasonable feed paths
 			commonPaths.forEach(path => {
-				assert.ok(path.length > 0, `Path ${path} should not be empty`);
-				assert.ok(!path.includes(' '), `Path ${path} should not contain spaces`);
+				expect(path.length > 0).toBeTruthy();
+				expect(!path.includes(' ')).toBeTruthy();
 			});
 		});
 	});
@@ -74,7 +73,7 @@ describe('Blind Search Module', () => {
 			});
 
 			instance.emit('test');
-			assert.strictEqual(eventFired, true);
+			expect(eventFired).toBe(true);
 		});
 
 		it('should pass data with events', () => {
@@ -86,7 +85,7 @@ describe('Blind Search Module', () => {
 			});
 
 			instance.emit('test', { module: 'blindsearch' });
-			assert.deepStrictEqual(receivedData, { module: 'blindsearch' });
+			expect(receivedData).toEqual({ module: 'blindsearch' });
 		});
 	});
 });

@@ -1,5 +1,4 @@
-import { describe, it, beforeEach, afterEach, mock } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import FeedSeeker from '../feed-seeker.ts';
 import metaLinks from '../modules/metaLinks.ts';
 import checkAllAnchors from '../modules/anchors.ts';
@@ -13,78 +12,81 @@ describe('FeedSeeker Main Class', () => {
 	beforeEach(() => {
 		fs = new FeedSeeker('https://example.com');
 		// Mock the initialize method to prevent actual network calls
-		mock.method(fs, 'initialize', async () => {
+		vi.spyOn(fs, 'initialize').mockImplementation(async () => {
 			fs.document = { querySelectorAll: () => [] }; // Provide a mock document
 			return Promise.resolve();
 		});
 	});
 
 	afterEach(() => {
-		mock.reset();
+		vi.restoreAllMocks();
 	});
 
 	describe('Constructor', () => {
 		it('should create instance with proper site normalization', () => {
 			const scout = new FeedSeeker('example.com');
-			assert.strictEqual(scout.site, 'https://example.com');
+			expect(scout.site).toBe('https://example.com');
 		});
 
 		it('should handle URLs with protocol correctly', () => {
 			const scout = new FeedSeeker('https://example.com');
-			assert.strictEqual(scout.site, 'https://example.com');
+			expect(scout.site).toBe('https://example.com');
 		});
 
 		it('should store options correctly', () => {
 			const options = { timeout: 10, maxFeeds: 5 };
 			const scout = new FeedSeeker('https://example.com', options);
-			assert.deepStrictEqual(scout.options, options);
+			expect(scout.options).toEqual(options);
 		});
 
 		it('should initialize with null initPromise', () => {
 			const scout = new FeedSeeker('https://example.com');
-			assert.strictEqual(scout.initPromise, null);
+			expect(scout.initPromise).toBe(null);
 		});
 	});
 
 	describe('Method Availability', () => {
 		it('should have all required search methods', () => {
-			assert.strictEqual(typeof fs.initialize, 'function');
-			assert.strictEqual(typeof fs.metaLinks, 'function');
-			assert.strictEqual(typeof fs.checkAllAnchors, 'function');
-			assert.strictEqual(typeof fs.blindSearch, 'function');
-			assert.strictEqual(typeof fs.deepSearch, 'function');
+			expect(typeof fs.initialize).toBe('function');
+			expect(typeof fs.metaLinks).toBe('function');
+			expect(typeof fs.checkAllAnchors).toBe('function');
+			expect(typeof fs.blindSearch).toBe('function');
+			expect(typeof fs.deepSearch).toBe('function');
 		});
 	});
 
 	describe('Search Method Orchestration', () => {
 		it('should call metaLinks module when metaLinks() is invoked', async () => {
-			const metaLinksMock = mock.fn(metaLinks, async () => [{ type: 'rss' }]);
+			const metaLinksMock = vi.fn().mockResolvedValue([{ type: 'rss' }]);
+			vi.spyOn(fs, 'metaLinks').mockImplementation(metaLinksMock);
 			const result = await fs.metaLinks();
 
-			assert.strictEqual(metaLinksMock.mock.callCount(), 1);
-			assert.deepStrictEqual(result, [{ type: 'rss' }]);
+			expect(metaLinksMock).toHaveBeenCalledTimes(1);
+			expect(result).toEqual([{ type: 'rss' }]);
 		});
 
 		it('should call blindSearch module when blindSearch() is invoked', async () => {
-			const blindSearchMock = mock.fn(blindSearch, async () => [{ type: 'json' }]);
+			const blindSearchMock = vi.fn().mockResolvedValue([{ type: 'json' }]);
+			vi.spyOn(fs, 'blindSearch').mockImplementation(blindSearchMock);
 			const result = await fs.blindSearch();
 
-			assert.strictEqual(blindSearchMock.mock.callCount(), 1);
-			assert.deepStrictEqual(result, [{ type: 'json' }]);
+			expect(blindSearchMock).toHaveBeenCalledTimes(1);
+			expect(result).toEqual([{ type: 'json' }]);
 		});
 
 		it('should call deepSearch module when deepSearch() is invoked', async () => {
-			const deepSearchMock = mock.fn(deepSearch, async () => [{ type: 'rss' }]);
+			const deepSearchMock = vi.fn().mockResolvedValue([{ type: 'rss' }]);
+			vi.spyOn(fs, 'deepSearch').mockImplementation(deepSearchMock);
 			const result = await fs.deepSearch();
 
-			assert.strictEqual(deepSearchMock.mock.callCount(), 1);
-			assert.deepStrictEqual(result, [{ type: 'rss' }]);
+			expect(deepSearchMock).toHaveBeenCalledTimes(1);
+			expect(result).toEqual([{ type: 'rss' }]);
 		});
 	});
 
 	describe('Event System Integration', () => {
 		it('should extend EventEmitter functionality', () => {
-			assert.ok(fs.on && fs.emit && typeof fs.on === 'function');
+			expect(fs.on && fs.emit && typeof fs.on === 'function');
 		});
 
 		it('should emit "initialized" after initialize() is complete', async () => {
@@ -94,7 +96,7 @@ describe('FeedSeeker Main Class', () => {
 			});
 
 			await fs.initialize();
-			assert.strictEqual(eventEmitted, true);
+			expect(eventEmitted).toBe(true);
 		});
 	});
 
@@ -104,9 +106,9 @@ describe('FeedSeeker Main Class', () => {
 			const fs2 = new FeedSeeker('http://example.com');
 			const fs3 = new FeedSeeker('https://example.com/path');
 
-			assert.strictEqual(fs1.site, 'https://example.com');
-			assert.strictEqual(fs2.site, 'http://example.com');
-			assert.strictEqual(fs3.site, 'https://example.com/path');
+			expect(fs1.site).toBe('https://example.com');
+			expect(fs2.site).toBe('http://example.com');
+			expect(fs3.site).toBe('https://example.com/path');
 		});
 	});
 });

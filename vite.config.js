@@ -2,6 +2,21 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['tests/**/*.test.js'],
+    exclude: ['tests/anchors.test.js', 'tests/anchors-helpers.test.js', 'tests/feed-seeker-cli.test.js', 'node_modules/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        'tests/'
+      ]
+    }
+  },
   build: {
     // Enable minification with terser for maximum compression
     minify: 'terser',
