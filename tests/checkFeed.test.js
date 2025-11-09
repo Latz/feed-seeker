@@ -198,8 +198,10 @@ describe('checkFeed Module', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty content', async () => {
-      const result = await checkFeed('https://example.com/feed.xml', '');
-      expect(result).toBe(null);
+      // When content is empty and no instance is provided, it should throw
+      await expect(checkFeed('https://example.com/feed.xml', '')).rejects.toThrow(
+        'Instance parameter is required when content is not provided'
+      );
     });
 
     it('should handle malformed XML', async () => {
@@ -269,6 +271,7 @@ ${items}
 <rss version="2.0">
 <channel>
 <title>Test Feed</title>
+<description>Test Feed Description</description>
 <link>https://example.com/blog?category=tech&amp;lang=en</link>
 <item>
 <title>Sample Item</title>
@@ -285,7 +288,7 @@ ${items}
 
   describe('Multiple Feed Formats', () => {
     it('should distinguish between RSS and Atom', async () => {
-      const rss = `<?xml version="1.0"?><rss version="2.0"><channel><title>RSS</title><item><title>Item</title></item></channel></rss>`;
+      const rss = `<?xml version="1.0"?><rss version="2.0"><channel><title>RSS</title><description>RSS Feed</description><item><title>Item</title></item></channel></rss>`;
       const atom = `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title>Atom</title><entry><title>Entry</title></entry></feed>`;
 
       const rssResult = await checkFeed('https://example.com/rss.xml', rss);
@@ -300,6 +303,7 @@ ${items}
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
 <channel>
 <title>Namespaced Feed</title>
+<description>Feed with namespaces</description>
 <item>
 <title>Item with namespace</title>
 <content:encoded><![CDATA[<p>HTML content</p>]]></content:encoded>

@@ -210,7 +210,7 @@ describe('FeedSeeker Integration Tests', () => {
       on('log', (data) => { receivedData = data; });
 
       const testData = { module: 'test', message: 'Test message' };
-      emit('log').toEqual(testData);
+      emit('log', testData);
 
       expect(receivedData).toEqual(testData);
     });

@@ -14,6 +14,7 @@ describe('FeedSeeker Main Class', () => {
 		// Mock the initialize method to prevent actual network calls
 		vi.spyOn(fs, 'initialize').mockImplementation(async () => {
 			fs.document = { querySelectorAll: () => [] }; // Provide a mock document
+			fs.emit('initialized'); // Emit the initialized event
 			return Promise.resolve();
 		});
 	});

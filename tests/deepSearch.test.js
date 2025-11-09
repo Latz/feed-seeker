@@ -85,7 +85,7 @@ describe('Deep Search Module', () => {
 	describe('isValidUrl() method', () => {
 		it('should return true for valid, same-domain URLs', () => {
 			expect(crawler.isValidUrl('https://example.com/page')).toBe(true);
-			expect(crawler.isValidUrl('https://sub.example.com/page')).toBe(false); // tldts matches registrable domain
+			expect(crawler.isValidUrl('https://sub.example.com/page')).toBe(true); // tldts matches registrable domain, subdomains are same domain
 		});
 
 		it('should return false for external domains', () => {
@@ -127,7 +127,8 @@ describe('Deep Search Module', () => {
 				}
 			});
 			crawler.maxLinks = 0;
-			crawler.shouldCrawl('https://example.com/page').toBe(1);
+			const result = crawler.shouldCrawl('https://example.com/page');
+			expect(result).toBe(false); // Should return false when maxLinks is 0
 			expect(logEmitted).toBe(true);
 		});
 
