@@ -304,6 +304,15 @@ class Crawler extends EventEmitter {
 		const shouldCheckFeed = this.isValidUrl(url) || this.checkForeignFeeds;
 		if (!shouldCheckFeed) return false;
 
+		// Emit progress update
+		const remainingUrls = this.queue.length();
+		this.emit('log', {
+			module: 'deepSearch',
+			url,
+			depth,
+			progress: { processed: this.visitedUrls.size, remaining: remainingUrls },
+		});
+
 		try {
 			const feedResult = await checkFeed(url, '', this.instance || undefined);
 			if (feedResult && !this.feeds.some(feed => feed.url === url)) {

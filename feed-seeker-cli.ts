@@ -53,6 +53,31 @@ async function log(...args: unknown[]): Promise<void> {
 			counterLength = counter.length;
 		}
 	}
+	if (data.module === 'deepSearch') {
+		// Display deep search progress: [depth/processed+remaining] current-url
+		if ('url' in data && 'depth' in data && 'progress' in data) {
+			const progress = data.progress as Record<string, number>;
+			const processed = progress.processed || 0;
+			const remaining = progress.remaining || 0;
+			const total = processed + remaining;
+
+			// Extract domain from URL for cleaner display
+			try {
+				const urlObj = new URL(data.url as string);
+				const domain = urlObj.hostname;
+				const path = urlObj.pathname.length > 20 ? urlObj.pathname.substring(0, 17) + '...' : urlObj.pathname;
+				const displayUrl = `${domain}${path}`;
+
+				// Use carriage return to overwrite the current line
+				const progress_str = `\r [depth:${data.depth} ${processed}/${total}] ${displayUrl}`;
+				process.stdout.write(progress_str);
+			} catch {
+				// Fallback if URL parsing fails
+				const progress_str = `\r [depth:${data.depth} ${processed}/${total}]`;
+				process.stdout.write(progress_str);
+			}
+		}
+	}
 }
 
 interface FeedFinderWithError extends FeedSeeker {
