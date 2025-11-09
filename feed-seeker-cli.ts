@@ -112,7 +112,29 @@ async function getFeeds(site: string, options: FeedSeekerOptions): Promise<Feed[
 		return [];
 	}
 
-	const strategies = [() => FeedFinder.metaLinks(), () => FeedFinder.checkAllAnchors(), () => FeedFinder.blindSearch()];
+	// Build strategies array based on CLI options
+	const strategies: Array<() => Promise<Feed[]>> = [];
+
+	// If specific strategies are requested, use only those
+	if (options.metasearch) {
+		strategies.push(() => FeedFinder.metaLinks());
+	} else if (options.anchorsonly) {
+		strategies.push(() => FeedFinder.checkAllAnchors());
+	} else if (options.blindsearch) {
+		strategies.push(() => FeedFinder.blindSearch());
+	} else if (options.deepsearchOnly) {
+		strategies.push(() => FeedFinder.deepSearch());
+	} else {
+		// Default: try all strategies in order
+		strategies.push(() => FeedFinder.metaLinks());
+		strategies.push(() => FeedFinder.checkAllAnchors());
+		strategies.push(() => FeedFinder.blindSearch());
+
+		// Add deep search if enabled
+		if (options.deepsearch) {
+			strategies.push(() => FeedFinder.deepSearch());
+		}
+	}
 
 	const findfeeds = async (): Promise<Feed[]> => {
 		for (const strategy of strategies) {

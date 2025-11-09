@@ -214,11 +214,9 @@ async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
 	// Get all anchors and filter for same-host or allowed domains in a single operation
 	const allAnchors = instance.document.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
 	const filteredAnchors: HTMLAnchorElement[] = [];
-	let totalCount = 0;
 
 	// Process anchors one by one to avoid creating intermediate arrays
 	for (const anchor of allAnchors) {
-		totalCount++;
 		const urlToCheck = getUrlFromAnchor(anchor, baseUrl, instance);
 		if (urlToCheck && isAllowedDomain(urlToCheck, baseUrl)) {
 			filteredAnchors.push(anchor);
