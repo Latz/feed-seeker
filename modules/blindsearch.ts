@@ -387,16 +387,17 @@ const COMPREHENSIVE_ENDPOINTS: string[] = [
 
 /**
  * Gets the appropriate endpoint list based on search mode
- * @param {'fast' | 'standard' | 'exhaustive'} mode - The search thoroughness mode
+ * @param {'fast' | 'standard' | 'exhaustive' | 'full'} mode - The search thoroughness mode
  * @returns {string[]} The combined endpoint list for the given mode
  */
-function getEndpointsByMode(mode: 'fast' | 'standard' | 'exhaustive'): string[] {
+function getEndpointsByMode(mode: 'fast' | 'standard' | 'exhaustive' | 'full'): string[] {
 	switch (mode) {
 		case 'fast':
 			return ESSENTIAL_ENDPOINTS;
 		case 'standard':
 			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS];
 		case 'exhaustive':
+		case 'full':
 			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS, ...COMPREHENSIVE_ENDPOINTS];
 		default:
 			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS];
@@ -406,20 +407,20 @@ function getEndpointsByMode(mode: 'fast' | 'standard' | 'exhaustive'): string[] 
 /**
  * Validates and sanitizes the search mode parameter
  * @param {string | undefined} mode - The search mode to validate
- * @returns {'fast' | 'standard' | 'exhaustive'} A valid search mode
+ * @returns {'fast' | 'standard' | 'exhaustive' | 'full'} A valid search mode
  */
-function validateSearchMode(mode: string | undefined): 'fast' | 'standard' | 'exhaustive' {
+function validateSearchMode(mode: string | undefined): 'fast' | 'standard' | 'exhaustive' | 'full' {
 	if (!mode) {
-		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive';
+		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive' | 'full';
 	}
 
-	const validModes = ['fast', 'standard', 'exhaustive'];
+	const validModes = ['fast', 'standard', 'exhaustive', 'full'];
 	if (!validModes.includes(mode)) {
 		console.warn(`Invalid search mode "${mode}". Falling back to "${DEFAULT_SEARCH_MODE}".`);
-		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive';
+		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive' | 'full';
 	}
 
-	return mode as 'fast' | 'standard' | 'exhaustive';
+	return mode as 'fast' | 'standard' | 'exhaustive' | 'full';
 }
 
 /**
