@@ -1,7 +1,25 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
+const rollupOptionsPlugin = {
+  name: 'rollup-options-plugin',
+  apply: 'build',
+  enforce: 'post',
+  generateBundle(options, bundle) {
+    // If building CJS and this is the CLI, skip it
+    if (options.format === 'cjs' && Object.keys(bundle).some(key => key.includes('feed-seeker-cli'))) {
+      // Remove CLI from CJS build
+      for (const key of Object.keys(bundle)) {
+        if (key.includes('feed-seeker-cli')) {
+          delete bundle[key];
+        }
+      }
+    }
+  }
+};
+
 export default defineConfig({
+  plugins: [rollupOptionsPlugin],
   test: {
     globals: true,
     environment: 'node',
@@ -108,15 +126,21 @@ export default defineConfig({
       },
       name: 'FeedSeeker',
       fileName: (format, entryName) => {
+        if (entryName === 'feed-seeker-cli') {
+          return 'feed-seeker-cli.js'; // Only ES for CLI
+        }
         if (entryName === 'index') {
           return `feed-seeker.${format === 'es' ? 'js' : 'cjs'}`;
-        }
-        if (entryName === 'feed-seeker-cli') {
-          return `feed-seeker-cli.js`;
         }
         return `${entryName}.${format === 'es' ? 'js' : 'cjs'}`;
       },
       formats: ['es', 'cjs']
+    },
+
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'es2020'
+      }
     },
 
     rollupOptions: {

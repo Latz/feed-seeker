@@ -2,7 +2,6 @@
 
 import { Command, Option } from 'commander';
 import FeedSeeker, { type FeedSeekerOptions } from './feed-seeker.js';
-import { createRequire } from 'module';
 import { styleText } from 'node:util';
 import { type Feed } from './modules/metaLinks.js';
 import type { StartEventData, EndEventData, LogEventData } from './types/events.js';
@@ -102,9 +101,9 @@ program.name(`feed-seeker`).description('Find RSS, Atom, and JSON feeds on any w
 program
 	.command('version')
 	.description('Get version')
-	.action(() => {
-		const require = createRequire(import.meta.url);
-		const packageConfig = require('./package.json');
+	.action(async () => {
+		const packageModule = await import('./package.json', { assert: { type: 'json' } });
+		const packageConfig = packageModule.default;
 		process.stdout.write(`${packageConfig.version}\n`);
 	});
 
