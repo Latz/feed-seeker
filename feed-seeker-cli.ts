@@ -65,16 +65,14 @@ async function log(...args: unknown[]): Promise<void> {
 			try {
 				const urlObj = new URL(data.url as string);
 				const domain = urlObj.hostname;
-				const path = urlObj.pathname.length > 20 ? urlObj.pathname.substring(0, 17) + '...' : urlObj.pathname;
+				const path = urlObj.pathname.length > 30 ? urlObj.pathname.substring(0, 27) + '...' : urlObj.pathname;
 				const displayUrl = `${domain}${path}`;
 
-				// Use carriage return to overwrite the current line
-				const progress_str = `\r [depth:${data.depth} ${processed}/${total}] ${displayUrl}`;
-				process.stdout.write(progress_str);
+				// Log on a new line
+				process.stdout.write(`  [depth:${data.depth} ${processed}/${total}] ${displayUrl}\n`);
 			} catch {
 				// Fallback if URL parsing fails
-				const progress_str = `\r [depth:${data.depth} ${processed}/${total}]`;
-				process.stdout.write(progress_str);
+				process.stdout.write(`  [depth:${data.depth} ${processed}/${total}]\n`);
 			}
 		}
 	}
