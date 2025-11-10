@@ -141,13 +141,9 @@ async function getFeeds(site: string, options: FeedSeekerOptions): Promise<Feed[
 		strategies.push(
 			() => FeedFinder.metaLinks(),
 			() => FeedFinder.checkAllAnchors(),
-			() => FeedFinder.blindSearch()
+			() => FeedFinder.blindSearch(),
+			...(options.deepsearch ? [() => FeedFinder.deepSearch()] : [])
 		);
-
-		// Add deep search if enabled
-		if (options.deepsearch) {
-			strategies.push(() => FeedFinder.deepSearch());
-		}
 	}
 
 	const findfeeds = async (): Promise<Feed[]> => {
