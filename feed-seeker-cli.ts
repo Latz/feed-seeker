@@ -137,17 +137,13 @@ async function getFeeds(site: string, options: FeedSeekerOptions): Promise<Feed[
 	} else if (options.deepsearchOnly) {
 		strategies.push(() => FeedFinder.deepSearch());
 	} else {
-		// Default: try all strategies in order
+		// Default: try all strategies in order (including deep search if enabled)
 		strategies.push(
 			() => FeedFinder.metaLinks(),
 			() => FeedFinder.checkAllAnchors(),
-			() => FeedFinder.blindSearch()
+			() => FeedFinder.blindSearch(),
+			...(options.deepsearch ? [() => FeedFinder.deepSearch()] : [])
 		);
-
-		// Add deep search if enabled
-		if (options.deepsearch) {
-			strategies.push(() => FeedFinder.deepSearch());
-		}
 	}
 
 	const findfeeds = async (): Promise<Feed[]> => {
