@@ -138,9 +138,11 @@ async function getFeeds(site: string, options: FeedSeekerOptions): Promise<Feed[
 		strategies.push(() => FeedFinder.deepSearch());
 	} else {
 		// Default: try all strategies in order
-		strategies.push(() => FeedFinder.metaLinks());
-		strategies.push(() => FeedFinder.checkAllAnchors());
-		strategies.push(() => FeedFinder.blindSearch());
+		strategies.push(
+			() => FeedFinder.metaLinks(),
+			() => FeedFinder.checkAllAnchors(),
+			() => FeedFinder.blindSearch()
+		);
 
 		// Add deep search if enabled
 		if (options.deepsearch) {
