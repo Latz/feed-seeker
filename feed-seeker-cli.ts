@@ -5,6 +5,7 @@ import FeedSeeker, { type FeedSeekerOptions } from './feed-seeker.js';
 import { styleText } from 'node:util';
 import { type Feed } from './modules/metaLinks.js';
 import type { StartEventData, EndEventData, LogEventData } from './types/events.js';
+import bannerText from './modules/banner.js';
 
 // CLI-specific options that extend FeedSeekerOptions
 interface CLIOptions extends FeedSeekerOptions {
@@ -13,19 +14,6 @@ interface CLIOptions extends FeedSeekerOptions {
 }
 
 let counterLength = 0; // needed for fancy blindsearch log display
-
-// Create a gradient banner with tagline
-function displayBanner(): void {
-	const bannerText = ` \x1b[38;2;255;17;0m_\x1b[0m\x1b[38;2;255;34;0m_\x1b[0m\x1b[38;2;255;51;0m_\x1b[0m\x1b[38;2;255;69;0m_\x1b[0m\x1b[38;2;255;86;0m_\x1b[0m             \x1b[38;2;130;255;0m_\x1b[0m \x1b[38;2;65;255;0m_\x1b[0m\x1b[38;2;32;255;0m_\x1b[0m\x1b[38;2;0;255;0m_\x1b[0m\x1b[38;2;0;220;34m_\x1b[0m                  \x1b[38;2;119;0;179m_\x1b[0m
-\x1b[38;2;255;0;0m|\x1b[0m  \x1b[38;2;255;51;0m_\x1b[0m\x1b[38;2;255;69;0m_\x1b[0m\x1b[38;2;255;86;0m_\x1b[0m\x1b[38;2;255;103;0m|\x1b[0m\x1b[38;2;255;120;0m_\x1b[0m\x1b[38;2;255;137;0m_\x1b[0m  \x1b[38;2;255;186;0m_\x1b[0m\x1b[38;2;255;202;0m_\x1b[0m\x1b[38;2;255;219;0m_\x1b[0m  \x1b[38;2;228;255;0m_\x1b[0m\x1b[38;2;195;255;0m_\x1b[0m\x1b[38;2;163;255;0m|\x1b[0m \x1b[38;2;97;255;0m/\x1b[0m \x1b[38;2;32;255;0m_\x1b[0m\x1b[38;2;0;255;0m_\x1b[0m\x1b[38;2;0;220;34m_\x1b[0m\x1b[38;2;0;185;69m|\x1b[0m  \x1b[38;2;0;81;173m_\x1b[0m\x1b[38;2;0;47;207m_\x1b[0m\x1b[38;2;0;12;242m_\x1b[0m \x1b[38;2;15;0;228m_\x1b[0m\x1b[38;2;25;0;212m_\x1b[0m\x1b[38;2;34;0;196m_\x1b[0m  \x1b[38;2;63;0;148m_\x1b[0m   \x1b[38;2;101;0;159m_\x1b[0m\x1b[38;2;110;0;169m|\x1b[0m \x1b[38;2;129;0;190m|\x1b[0m\x1b[38;2;138;0;200m_\x1b[0m
-\x1b[38;2;255;0;0m|\x1b[0m \x1b[38;2;255;34;0m|\x1b[0m\x1b[38;2;255;51;0m_\x1b[0m \x1b[38;2;255;86;0m/\x1b[0m \x1b[38;2;255;120;0m_\x1b[0m \x1b[38;2;255;153;0m\\\x1b[0m\x1b[38;2;255;170;0m/\x1b[0m \x1b[38;2;255;202;0m_\x1b[0m \x1b[38;2;255;235;0m\\\x1b[0m\x1b[38;2;255;252;0m/\x1b[0m \x1b[38;2;195;255;0m_\x1b[0m\x1b[38;2;163;255;0m\`\x1b[0m \x1b[38;2;97;255;0m\\\x1b[0m\x1b[38;2;65;255;0m_\x1b[0m\x1b[38;2;32;255;0m_\x1b[0m\x1b[38;2;0;255;0m_\x1b[0m \x1b[38;2;0;185;69m\\\x1b[0m \x1b[38;2;0;116;138m/\x1b[0m \x1b[38;2;0;47;207m_\x1b[0m\x1b[38;2;0;12;242m_\x1b[0m\x1b[38;2;6;0;244m/\x1b[0m \x1b[38;2;25;0;212m_\x1b[0m \x1b[38;2;44;0;180m\\\x1b[0m\x1b[38;2;54;0;164m|\x1b[0m \x1b[38;2;73;0;132m|\x1b[0m \x1b[38;2;91;0;148m|\x1b[0m \x1b[38;2;110;0;169m|\x1b[0m \x1b[38;2;129;0;190m_\x1b[0m\x1b[38;2;138;0;200m_\x1b[0m\x1b[38;2;148;0;211m|\x1b[0m
-\x1b[38;2;255;0;0m|\x1b[0m  \x1b[38;2;255;51;0m_\x1b[0m\x1b[38;2;255;69;0m|\x1b[0m  \x1b[38;2;255;120;0m_\x1b[0m\x1b[38;2;255;137;0m_\x1b[0m\x1b[38;2;255;153;0m/\x1b[0m  \x1b[38;2;255;202;0m_\x1b[0m\x1b[38;2;255;219;0m_\x1b[0m\x1b[38;2;255;235;0m/\x1b[0m \x1b[38;2;228;255;0m(\x1b[0m\x1b[38;2;195;255;0m_\x1b[0m\x1b[38;2;163;255;0m|\x1b[0m \x1b[38;2;97;255;0m|\x1b[0m\x1b[38;2;65;255;0m_\x1b[0m\x1b[38;2;32;255;0m_\x1b[0m\x1b[38;2;0;255;0m_\x1b[0m\x1b[38;2;0;220;34m)\x1b[0m \x1b[38;2;0;151;103m|\x1b[0m \x1b[38;2;0;81;173m(\x1b[0m\x1b[38;2;0;47;207m_\x1b[0m\x1b[38;2;0;12;242m|\x1b[0m \x1b[38;2;15;0;228m(\x1b[0m\x1b[38;2;25;0;212m_\x1b[0m\x1b[38;2;34;0;196m)\x1b[0m \x1b[38;2;54;0;164m|\x1b[0m \x1b[38;2;73;0;132m|\x1b[0m\x1b[38;2;82;0;138m_\x1b[0m\x1b[38;2;91;0;148m|\x1b[0m \x1b[38;2;110;0;169m|\x1b[0m \x1b[38;2;129;0;190m|\x1b[0m\x1b[38;2;138;0;200m_\x1b[0m
-\x1b[38;2;255;0;0m|\x1b[0m\x1b[38;2;255;17;0m_\x1b[0m\x1b[38;2;255;34;0m|\x1b[0m  \x1b[38;2;255;86;0m\\\x1b[0m\x1b[38;2;255;103;0m_\x1b[0m\x1b[38;2;255;120;0m_\x1b[0m\x1b[38;2;255;137;0m_\x1b[0m\x1b[38;2;255;153;0m|\x1b[0m\x1b[38;2;255;170;0m\\\x1b[0m\x1b[38;2;255;186;0m_\x1b[0m\x1b[38;2;255;202;0m_\x1b[0m\x1b[38;2;255;219;0m_\x1b[0m\x1b[38;2;255;235;0m|\x1b[0m\x1b[38;2;255;252;0m\\\x1b[0m\x1b[38;2;228;255;0m_\x1b[0m\x1b[38;2;195;255;0m_\x1b[0m\x1b[38;2;163;255;0m,\x1b[0m\x1b[38;2;130;255;0m_\x1b[0m\x1b[38;2;97;255;0m|\x1b[0m\x1b[38;2;65;255;0m_\x1b[0m\x1b[38;2;32;255;0m_\x1b[0m\x1b[38;2;0;255;0m_\x1b[0m\x1b[38;2;0;220;34m_\x1b[0m\x1b[38;2;0;185;69m/\x1b[0m \x1b[38;2;0;116;138m\\\x1b[0m\x1b[38;2;0;81;173m_\x1b[0m\x1b[38;2;0;47;207m_\x1b[0m\x1b[38;2;0;12;242m_\x1b[0m\x1b[38;2;6;0;244m\\\x1b[0m\x1b[38;2;15;0;228m_\x1b[0m\x1b[38;2;25;0;212m_\x1b[0m\x1b[38;2;34;0;196m_\x1b[0m\x1b[38;2;44;0;180m/\x1b[0m \x1b[38;2;63;0;148m\\\x1b[0m\x1b[38;2;73;0;132m_\x1b[0m\x1b[38;2;82;0;138m_\x1b[0m\x1b[38;2;91;0;148m,\x1b[0m\x1b[38;2;101;0;159m_\x1b[0m\x1b[38;2;110;0;169m|\x1b[0m\x1b[38;2;119;0;179m\\\x1b[0m\x1b[38;2;129;0;190m_\x1b[0m\x1b[38;2;138;0;200m_\x1b[0m\x1b[38;2;148;0;211m|\x1b[0m
-
-     \x1b[1;31m---> On the trail of every feed <---\x1b[0m`;
-
-	console.log(`${bannerText}\n`);
-}
 
 function start(...args: unknown[]): void {
 	const data = args[0] as StartEventData;
@@ -178,7 +166,7 @@ interface ExtendedCommand extends Command {
 }
 
 // =======================================================================================================
-displayBanner();
+console.log(`${bannerText}\n`);
 
 const program: ExtendedCommand = new Command();
 program.name(`feed-seeker`).description('Find RSS, Atom, and JSON feeds on any website with FeedSeeker.');
@@ -198,44 +186,73 @@ program
 	.option('-a, --anchorsonly', 'Anchors search only')
 	.option('-d, --deepsearch', 'Enable deep search')
 	.option('--deepsearch-only', 'Deep search only')
-	.option('--depth <number>', 'Depth of deep search', (val: string): number => {
-		const num = parseInt(val, 10);
-		if (isNaN(num) || num < 1) {
-			throw new Error('Depth must be a positive number (minimum 1)');
-		}
-		return num;
-	}, 3)
-	.option('--max-links <number>', 'Maximum number of links to process during deep search', (val: string): number => {
-		const num = parseInt(val, 10);
-		if (isNaN(num) || num < 1) {
-			throw new Error('Max links must be a positive number (minimum 1)');
-		}
-		return num;
-	}, 1000)
-	.option('--timeout <seconds>', 'Timeout for fetch requests in seconds', (val: string): number => {
-		const num = parseInt(val, 10);
-		if (isNaN(num) || num < 1) {
-			throw new Error('Timeout must be a positive number (minimum 1 second)');
-		}
-		return num;
-	}, 5)
+	.option(
+		'--depth <number>',
+		'Depth of deep search',
+		(val: string): number => {
+			const num = parseInt(val, 10);
+			if (isNaN(num) || num < 1) {
+				throw new Error('Depth must be a positive number (minimum 1)');
+			}
+			return num;
+		},
+		3
+	)
+	.option(
+		'--max-links <number>',
+		'Maximum number of links to process during deep search',
+		(val: string): number => {
+			const num = parseInt(val, 10);
+			if (isNaN(num) || num < 1) {
+				throw new Error('Max links must be a positive number (minimum 1)');
+			}
+			return num;
+		},
+		1000
+	)
+	.option(
+		'--timeout <seconds>',
+		'Timeout for fetch requests in seconds',
+		(val: string): number => {
+			const num = parseInt(val, 10);
+			if (isNaN(num) || num < 1) {
+				throw new Error('Timeout must be a positive number (minimum 1 second)');
+			}
+			return num;
+		},
+		5
+	)
 	.option('--keep-query-params', 'Keep query parameters from the original URL when searching')
 	.option('--check-foreign-feeds', "Check if foreign domain URLs are feeds (but don't crawl them)")
-	.option('--max-errors <number>', 'Stop after a certain number of errors', (val: string): number => {
-		const num = parseInt(val, 10);
-		if (isNaN(num) || num < 0) {
-			throw new Error('Max errors must be a non-negative number');
-		}
-		return num;
-	}, 5)
-	.option('--max-feeds <number>', 'Stop search after finding a certain number of feeds', (val: string): number => {
-		const num = parseInt(val, 10);
-		if (isNaN(num) || num < 0) {
-			throw new Error('Max feeds must be a non-negative number');
-		}
-		return num;
-	}, 0)
-	.option('--search-mode <mode>', 'Search mode for blind search: fast (~25), standard (~100), or full (~350+)', 'standard')
+	.option(
+		'--max-errors <number>',
+		'Stop after a certain number of errors',
+		(val: string): number => {
+			const num = parseInt(val, 10);
+			if (isNaN(num) || num < 0) {
+				throw new Error('Max errors must be a non-negative number');
+			}
+			return num;
+		},
+		5
+	)
+	.option(
+		'--max-feeds <number>',
+		'Stop search after finding a certain number of feeds',
+		(val: string): number => {
+			const num = parseInt(val, 10);
+			if (isNaN(num) || num < 0) {
+				throw new Error('Max feeds must be a non-negative number');
+			}
+			return num;
+		},
+		0
+	)
+	.option(
+		'--search-mode <mode>',
+		'Search mode for blind search: fast (~25), standard (~100), or full (~350+)',
+		'standard'
+	)
 	.description('Find feeds for site\n')
 	.action(async (site: string, options: CLIOptions) => {
 		if (!site) {
@@ -260,13 +277,14 @@ program
 program.addOption(new Option('--display-errors', 'Display errors').hideHelp());
 
 // execute program
-program.parseAsync(process.argv)
+program
+	.parseAsync(process.argv)
 	.then(() => {
 		if (program.feeds !== undefined) {
 			console.log(program.feeds);
 		}
 	})
-	.catch((error) => {
+	.catch(error => {
 		const err = error as Error;
 		console.error(styleText('red', `\nError: ${err.message}`));
 		process.exit(1);
