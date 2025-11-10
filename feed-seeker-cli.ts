@@ -189,7 +189,7 @@ program
 		'Depth of deep search',
 		(val: string): number => {
 			const num = parseInt(val, 10);
-			if (isNaN(num) || num < 1) {
+			if (Number.isNaN(num) || num < 1) {
 				throw new Error('Depth must be a positive number (minimum 1)');
 			}
 			return num;
@@ -201,7 +201,7 @@ program
 		'Maximum number of links to process during deep search',
 		(val: string): number => {
 			const num = parseInt(val, 10);
-			if (isNaN(num) || num < 1) {
+			if (Number.isNaN(num) || num < 1) {
 				throw new Error('Max links must be a positive number (minimum 1)');
 			}
 			return num;
@@ -213,7 +213,7 @@ program
 		'Timeout for fetch requests in seconds',
 		(val: string): number => {
 			const num = parseInt(val, 10);
-			if (isNaN(num) || num < 1) {
+			if (Number.isNaN(num) || num < 1) {
 				throw new Error('Timeout must be a positive number (minimum 1 second)');
 			}
 			return num;
@@ -227,7 +227,7 @@ program
 		'Stop after a certain number of errors',
 		(val: string): number => {
 			const num = parseInt(val, 10);
-			if (isNaN(num) || num < 0) {
+			if (Number.isNaN(num) || num < 0) {
 				throw new Error('Max errors must be a non-negative number');
 			}
 			return num;
@@ -239,7 +239,7 @@ program
 		'Stop search after finding a certain number of feeds',
 		(val: string): number => {
 			const num = parseInt(val, 10);
-			if (isNaN(num) || num < 0) {
+			if (Number.isNaN(num) || num < 0) {
 				throw new Error('Max feeds must be a non-negative number');
 			}
 			return num;
