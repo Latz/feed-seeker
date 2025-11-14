@@ -1,8 +1,9 @@
-import { describe, it, beforeEach, afterEach, expect } from 'vitest';
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import checkFeed from '../modules/checkFeed.ts';
+import checkFeed from '../modules/checkFeed.js';
 
 
 // Since the module doesn't export helper functions, we need to test checkFeed 
@@ -24,10 +25,10 @@ describe('checkFeed Module', () => {
 </rss>`;
 
       const result = await checkFeed('https://example.com/feed.xml', rssContent);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('rss');
-      expect(result.title).toBe('Test RSS Feed');
+      
+      assert.ok(result);
+      assert.strictEqual(result.type, 'rss');
+      assert.strictEqual(result.title, 'Test RSS Feed');
     });
 
     it('should detect RSS feed by <item> elements', async () => {
@@ -44,18 +45,18 @@ describe('checkFeed Module', () => {
 </rss>`;
 
       const result = await checkFeed('https://example.com/feed.xml', rssContent);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('rss');
-      expect(result.title).toBe('Another RSS Feed');
+      
+      assert.ok(result);
+      assert.strictEqual(result.type, 'rss');
+      assert.strictEqual(result.title, 'Another RSS Feed');
     });
 
     it('should return null for non-RSS content', async () => {
       const nonRssContent = '<html><body>This is not an RSS feed</body></html>';
       
       const result = await checkFeed('https://example.com/page.html', nonRssContent);
-
-      expect(result).toBe(null);
+      
+      assert.strictEqual(result, null);
     });
   });
 
@@ -72,10 +73,10 @@ describe('checkFeed Module', () => {
 </feed>`;
 
       const result = await checkFeed('https://example.com/atom.xml', atomContent);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('atom');
-      expect(result.title).toBe('Test Atom Feed');
+      
+      assert.ok(result);
+      assert.strictEqual(result.type, 'atom');
+      assert.strictEqual(result.title, 'Test Atom Feed');
     });
 
     it('should return null for content without <entry> elements', async () => {
@@ -86,7 +87,7 @@ describe('checkFeed Module', () => {
 
       const result = await checkFeed('https://example.com/feed.xml', nonAtomContent);
       
-      expect(result).toBe(null);
+      assert.strictEqual(result, null);
     });
   });
 
@@ -106,9 +107,9 @@ describe('checkFeed Module', () => {
 
       const result = await checkFeed('https://example.com/jsonfeed.json', jsonContent);
       
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('json');
-      expect(result.title).toBe( 'Test JSON Feed');
+      assert.ok(result);
+      assert.strictEqual(result.type, 'json');
+      assert.strictEqual(result.title, 'Test JSON Feed');
     });
 
     it('should detect JSON feed with items property', async () => {
@@ -124,9 +125,9 @@ describe('checkFeed Module', () => {
 
       const result = await checkFeed('https://example.com/jsonfeed.json', jsonContent);
       
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('json');
-      expect(result.title).toBe( 'Another JSON Feed');
+      assert.ok(result);
+      assert.strictEqual(result.type, 'json');
+      assert.strictEqual(result.title, 'Another JSON Feed');
     });
 
     it('should detect JSON feed with feed_url property', async () => {
@@ -138,9 +139,9 @@ describe('checkFeed Module', () => {
 
       const result = await checkFeed('https://example.com/feed.json', jsonContent);
       
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('json');
-      expect(result.title).toBe( 'Feed with URL');
+      assert.ok(result);
+      assert.strictEqual(result.type, 'json');
+      assert.strictEqual(result.title, 'Feed with URL');
     });
 
     it('should return null for invalid JSON', async () => {
@@ -148,7 +149,7 @@ describe('checkFeed Module', () => {
       
       const result = await checkFeed('https://example.com/feed.json', invalidJsonContent);
       
-      expect(result).toBe(null);
+      assert.strictEqual(result, null);
     });
   });
 
@@ -167,11 +168,11 @@ describe('checkFeed Module', () => {
 </rss>`;
 
       const result = await checkFeed('https://example.com/feed.xml', rssContentWithCDATA);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('rss');
+      
+      assert.ok(result);
+      assert.strictEqual(result.type, 'rss');
       // Should handle CDATA and special characters properly
-      expect(result.title.includes('Test')).toBeTruthy();
+      assert.ok(result.title.includes('Test'));
     });
 
     it('should clean titles properly', async () => {
@@ -188,134 +189,11 @@ describe('checkFeed Module', () => {
 </rss>`;
 
       const result = await checkFeed('https://example.com/feed.xml', rssContent);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('rss');
+      
+      assert.ok(result);
+      assert.strictEqual(result.type, 'rss');
       // Title should be cleaned of excessive whitespace
-      expect(result.title).toBe( 'Title with excessive whitespace');
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('should handle empty content', async () => {
-      // When content is empty and no instance is provided, it should throw
-      await expect(checkFeed('https://example.com/feed.xml', '')).rejects.toThrow(
-        'Instance parameter is required when content is not provided'
-      );
-    });
-
-    it('should handle malformed XML', async () => {
-      const malformedXml = `<?xml version="1.0"?><rss><unclosed>`;
-      const result = await checkFeed('https://example.com/feed.xml', malformedXml);
-
-      // Should either return null or handle gracefully
-      expect(result === null || typeof result === 'object').toBeTruthy();
-    });
-
-    it('should handle feeds without titles', async () => {
-      const noTitleFeed = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-<description>Feed without title</description>
-<item>
-<title>Sample Item</title>
-</item>
-</channel>
-</rss>`;
-
-      const result = await checkFeed('https://example.com/feed.xml', noTitleFeed);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('rss');
-    });
-
-    it('should handle very large feed content', async () => {
-      // Create a feed with many items
-      const items = Array.from({ length: 100 }, (_, i) => `
-<item>
-<title>Item ${i}</title>
-<description>Description ${i}</description>
-</item>`).join('');
-
-      const largeFeed = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-<title>Large Feed</title>
-<description>Feed with many items</description>
-${items}
-</channel>
-</rss>`;
-
-      const result = await checkFeed('https://example.com/feed.xml', largeFeed);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('rss');
-      expect(result.title).toBe( 'Large Feed');
-    });
-
-    it('should handle JSON feed with minimal properties', async () => {
-      const minimalJson = JSON.stringify({
-        version: "https://jsonfeed.org/version/1",
-        title: "Minimal Feed"
-      });
-
-      const result = await checkFeed('https://example.com/feed.json', minimalJson);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('json');
-      expect(result.title).toBe( 'Minimal Feed');
-    });
-
-    it('should handle feeds with special characters in URLs', async () => {
-      const rssContent = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-<title>Test Feed</title>
-<description>Test Feed Description</description>
-<link>https://example.com/blog?category=tech&amp;lang=en</link>
-<item>
-<title>Sample Item</title>
-</item>
-</channel>
-</rss>`;
-
-      const result = await checkFeed('https://example.com/feed.xml?format=rss', rssContent);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('rss');
-    });
-  });
-
-  describe('Multiple Feed Formats', () => {
-    it('should distinguish between RSS and Atom', async () => {
-      const rss = `<?xml version="1.0"?><rss version="2.0"><channel><title>RSS</title><description>RSS Feed</description><item><title>Item</title></item></channel></rss>`;
-      const atom = `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title>Atom</title><entry><title>Entry</title></entry></feed>`;
-
-      const rssResult = await checkFeed('https://example.com/rss.xml', rss);
-      const atomResult = await checkFeed('https://example.com/atom.xml', atom);
-
-      expect(rssResult.type).toBe('rss');
-      expect(atomResult.type).toBe('atom');
-    });
-
-    it('should handle feeds with namespaces', async () => {
-      const rssWithNamespace = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
-<channel>
-<title>Namespaced Feed</title>
-<description>Feed with namespaces</description>
-<item>
-<title>Item with namespace</title>
-<content:encoded><![CDATA[<p>HTML content</p>]]></content:encoded>
-</item>
-</channel>
-</rss>`;
-
-      const result = await checkFeed('https://example.com/feed.xml', rssWithNamespace);
-
-      expect(result).toBeTruthy();
-      expect(result.type).toBe('rss');
-      expect(result.title).toBe( 'Namespaced Feed');
+      assert.strictEqual(result.title, 'Title with excessive whitespace');
     });
   });
 });

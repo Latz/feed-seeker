@@ -1,14 +1,12 @@
-// Deep Search - Website crawling for feed discovery
+// Beispiele: https://www.abendzeitung-muenchen.de/die-az/service/die-rss-feeds-der-abendzeitung-muenchen-art-667276
 
 import checkFeed from './checkFeed.js';
 import { parseHTML } from 'linkedom';
 import tldts from 'tldts';
 import EventEmitter from './eventEmitter.js';
-import { queue, QueueObject } from 'async';
+import { queue } from 'async';
 import fetchWithTimeout from './fetchWithTimeout.js';
-import { type FeedSeekerInstance } from './checkFeed.js';
-import { type Feed } from './metaLinks.js';
-
+// -------------------------------------------------------------------------------
 /**
  * Checks if a URL points to a file with an excluded extension.
  * Used to avoid downloading large binary files during link crawling.
@@ -16,7 +14,7 @@ import { type Feed } from './metaLinks.js';
  * @param {string} url - The URL to check
  * @returns {boolean} True if the URL ends with an excluded extension, false otherwise
  */
-function excludedFile(url: string): boolean {
+function excludedFile(url) {
 	const excludedExtensions = [
 		'.zip',
 		'.rar',
@@ -62,64 +60,22 @@ function excludedFile(url: string): boolean {
 	];
 	return excludedExtensions.some(extension => url.endsWith(extension));
 }
+// -------------------------------------------------------------------------------
 
-/**
- * Task object for the crawler queue
- */
-interface CrawlTask {
-	url: string;
-	depth: number;
-}
-
-/**
- * Deep search options
- */
-export interface DeepSearchOptions {
-	depth?: number;
-	maxLinks?: number;
-	checkForeignFeeds?: boolean;
-	maxErrors?: number;
-	maxFeeds?: number;
-	timeout?: number;
-}
-
-/**
- * Crawler class for deep website crawling
- */
 class Crawler extends EventEmitter {
-	startUrl: string;
-	maxDepth: number;
-	concurrency: number;
-	maxLinks: number;
-	mainDomain: string | null;
-	checkForeignFeeds: boolean;
-	maxErrors: number;
-	maxFeeds: number;
-	errorCount: number;
-	instance: FeedSeekerInstance | null;
-	queue: QueueObject<CrawlTask>;
-	visitedUrls: Set<string>;
-	timeout: number;
-	maxLinksReachedMessageEmitted: boolean;
-	feeds: Feed[];
-
 	constructor(
-		startUrl: string,
-		maxDepth: number = 3,
-		concurrency: number = 5,
-		maxLinks: number = 1000,
-		checkForeignFeeds: boolean = false,
-		maxErrors: number = 5,
-		maxFeeds: number = 0,
-		instance: FeedSeekerInstance | null = null
+		startUrl,
+		maxDepth = 3,
+		concurrency = 5,
+		maxLinks = 1000,
+		checkForeignFeeds = false,
+		maxErrors = 5,
+		maxFeeds = 0,
+		instance = null
 	) {
 		super();
-		try {
-			const absoluteStartUrl = new URL(startUrl);
-			this.startUrl = absoluteStartUrl.href;
-		} catch (error) {
-			throw new Error(`Invalid start URL: ${startUrl}`);
-		}
+		const absoluteStartUrl = new URL(startUrl);
+		this.startUrl = absoluteStartUrl.href;
 		this.maxDepth = maxDepth;
 		this.concurrency = concurrency;
 		this.maxLinks = maxLinks; // Maximum number of links to process
@@ -128,7 +84,7 @@ class Crawler extends EventEmitter {
 		this.maxErrors = maxErrors; // Maximum number of errors before stopping
 		this.maxFeeds = maxFeeds; // Maximum number of feeds to find before stopping
 		this.errorCount = 0; // Current error count
-		this.instance = instance; // Store the FeedSeeker instance
+		this.instance = instance; // Store the FeedScout instance
 		// Initialize async queue with concurrency control
 		// The queue processes crawlPage tasks with limited concurrency to prevent overwhelming the target server
 		// bind(this) ensures 'this' context is preserved when crawlPage is called by the queue
@@ -141,7 +97,7 @@ class Crawler extends EventEmitter {
 
 		// Error handling strategy: Implement circuit breaker pattern
 		// Stop crawling after maxErrors to prevent endless error loops on problematic sites
-		this.queue.error((err: Error) => {
+		this.queue.error(err => {
 			// Only process if we haven't reached the error limit yet
 			if (this.errorCount < this.maxErrors) {
 				// Increment error count
@@ -170,34 +126,44 @@ class Crawler extends EventEmitter {
 				}
 			}
 		});
-	}
+	} // constructor
 
 	/**
 	 * Starts the crawling process
+	 * @returns {Array} Array of found feeds
 	 */
-	start(): void {
+	start() {
 		this.queue.push({ url: this.startUrl, depth: 0 });
 		this.emit('start', { module: 'deepSearch', niceName: 'Deep search' });
+		this.queue.drain(() => {
+			this.emit('end', { module: 'deepSearch', feeds: this.feeds, visitedUrls: this.visitedUrls.size });
+		});
+		return this.feeds;
 	}
 
+	// ----------------------------------------------------------------------------------
+	// Check if url is
+	// * valid
+	// * from same domain
+	// * not visited before
 	/**
 	 * Checks if a URL is valid (same domain, not excluded file type)
 	 * @param {string} url - The URL to validate
 	 * @returns {boolean} True if the URL is valid, false otherwise
 	 */
-	isValidUrl(url: string): boolean {
+	isValidUrl(url) {
 		try {
 			// Domain comparison using tldts.getDomain() to extract the registrable domain
 			// Example: both "blog.example.com" and "www.example.com" return "example.com"
 			// This allows crawling subdomains of the same site while blocking external domains
-			const sameDomain = tldts.getDomain(url) === tldts.getDomain(this.startUrl);
+			const sameDomain = tldts.getDomain(url) == tldts.getDomain(this.startUrl);
 
 			// File type filtering prevents downloading large binary files (images, videos, archives)
 			// See excludedFile() function for the complete list of blocked extensions
 			const notExcludedFile = !excludedFile(url);
 
 			return sameDomain && notExcludedFile;
-		} catch (error: unknown) {
+		} catch (error) {
 			// URL parsing can fail for malformed URLs - handle gracefully
 			// Only process if we haven't reached the error limit yet
 			if (this.errorCount < this.maxErrors) {
@@ -230,6 +196,7 @@ class Crawler extends EventEmitter {
 		}
 	}
 
+	// ----------------------------------------------------------------------------------
 	/**
 	 * Handles pre-crawl checks and validations for a given URL.
 	 * @param {string} url - The URL to check.
@@ -237,7 +204,7 @@ class Crawler extends EventEmitter {
 	 * @returns {boolean} True if the crawl should continue, false otherwise.
 	 * @private
 	 */
-	shouldCrawl(url: string, depth: number): boolean {
+	shouldCrawl(url, depth) {
 		if (depth > this.maxDepth) return false;
 		if (this.visitedUrls.has(url)) return false;
 
@@ -263,7 +230,7 @@ class Crawler extends EventEmitter {
 	 * @returns {boolean} True if the crawl should stop, false otherwise.
 	 * @private
 	 */
-	handleFetchError(url: string, depth: number, error: string): boolean {
+	handleFetchError(url, depth, error) {
 		if (this.errorCount < this.maxErrors) {
 			this.errorCount++;
 			this.emit('log', { module: 'deepSearch', url, depth, error });
@@ -287,7 +254,7 @@ class Crawler extends EventEmitter {
 	 * @returns {Promise<boolean>} True if the crawl should stop, false otherwise.
 	 * @private
 	 */
-	async processLink(url: string, depth: number): Promise<boolean> {
+	async processLink(url, depth) {
 		if (this.visitedUrls.has(url)) return false;
 
 		if (this.visitedUrls.size >= this.maxLinks) {
@@ -304,19 +271,10 @@ class Crawler extends EventEmitter {
 		const shouldCheckFeed = this.isValidUrl(url) || this.checkForeignFeeds;
 		if (!shouldCheckFeed) return false;
 
-		// Emit progress update
-		const remainingUrls = this.queue.length();
-		this.emit('log', {
-			module: 'deepSearch',
-			url,
-			depth,
-			progress: { processed: this.visitedUrls.size, remaining: remainingUrls },
-		});
-
 		try {
-			const feedResult = await checkFeed(url, '', this.instance || undefined);
+			const feedResult = await checkFeed(url, '', this.instance);
 			if (feedResult && !this.feeds.some(feed => feed.url === url)) {
-				this.feeds.push({ url, type: feedResult.type, title: feedResult.title, feedTitle: feedResult.title });
+				this.feeds.push({ url, type: feedResult.type, title: feedResult.title });
 				this.emit('log', {
 					module: 'deepSearch',
 					url,
@@ -335,9 +293,8 @@ class Crawler extends EventEmitter {
 			} else if (!feedResult) {
 				this.emit('log', { module: 'deepSearch', url, depth: depth + 1, feedCheck: { isFeed: false } });
 			}
-		} catch (error: unknown) {
-			const err = error instanceof Error ? error : new Error(String(error));
-			return this.handleFetchError(url, depth + 1, `Error checking feed: ${err.message}`);
+		} catch (error) {
+			return this.handleFetchError(url, depth + 1, `Error checking feed: ${error.message}`);
 		}
 
 		if (depth + 1 <= this.maxDepth && this.isValidUrl(url)) {
@@ -348,10 +305,12 @@ class Crawler extends EventEmitter {
 
 	/**
 	 * Crawls a single page, extracting links and checking for feeds
-	 * @param {CrawlTask} task - The task object containing the URL and depth
+	 * @param {object} task - The task object containing the URL and depth
+	 * @param {string} task.url - The URL to crawl
+	 * @param {number} task.depth - The current depth of crawling
 	 * @returns {Promise<void>} A promise that resolves when the page has been crawled
 	 */
-	async crawlPage(task: CrawlTask): Promise<void> {
+	async crawlPage(task) {
 		let { url, depth } = task;
 
 		if (!this.shouldCrawl(url, depth)) return;
@@ -371,31 +330,14 @@ class Crawler extends EventEmitter {
 		const html = await response.text();
 		const { document } = parseHTML(html);
 
-		for (const link of document.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>) {
-			try {
-				const absoluteUrl = new URL(link.href, this.startUrl).href;
-				const shouldStop = await this.processLink(absoluteUrl, depth);
-				if (shouldStop) break;
-			} catch (error) {
-				// Skip malformed URLs
-				continue;
-			}
+		for (const link of document.querySelectorAll('a')) {
+			const absoluteUrl = new URL(link.href, this.startUrl).href;
+			const shouldStop = await this.processLink(absoluteUrl, depth);
+			if (shouldStop) break;
 		}
 	}
-}
-
-/**
- * Performs a deep search for feeds by crawling a website
- * @param {string} url - The starting URL to crawl
- * @param {DeepSearchOptions} options - Search options
- * @param {FeedSeekerInstance | null} instance - The FeedSeeker instance
- * @returns {Promise<Feed[]>} Array of found feeds
- */
-export default async function deepSearch(
-	url: string,
-	options: DeepSearchOptions = {},
-	instance: FeedSeekerInstance | null = null
-): Promise<Feed[]> {
+} // class Crawler
+export default async function deepSearch(url, options = {}, instance = null) {
 	const crawler = new Crawler(
 		url,
 		options.depth || 3,
@@ -404,23 +346,22 @@ export default async function deepSearch(
 		!!options.checkForeignFeeds, // Whether to check foreign domains for feeds
 		options.maxErrors || 5, // Maximum number of errors before stopping
 		options.maxFeeds || 0, // Maximum number of feeds before stopping (0 = no limit)
-		instance // Pass the FeedSeeker instance to the crawler
+		instance // Pass the FeedScout instance to the crawler
 	);
 	crawler.timeout = (options.timeout || 5) * 1000; // Convert seconds to milliseconds
 
 	// If we have an instance, forward crawler events to the instance
-	if (instance && instance.emit) {
-		crawler.on('start', data => instance.emit!('start', data));
-		crawler.on('log', data => instance.emit!('log', data));
-		crawler.on('error', data => instance.emit!('error', data));
-		crawler.on('end', data => instance.emit!('end', data));
+	if (instance) {
+		crawler.on('start', data => instance.emit('start', data));
+		crawler.on('log', data => instance.emit('log', data));
+		crawler.on('error', data => instance.emit('error', data));
+		crawler.on('end', data => instance.emit('end', data));
 	}
 
 	crawler.start();
 	// Create a promise that resolves when the queue is drained
-	await new Promise<void>(resolve => {
+	await new Promise(resolve => {
 		crawler.queue.drain(() => {
-			crawler.emit('end', { module: 'deepSearch', feeds: crawler.feeds, visitedUrls: crawler.visitedUrls.size });
 			resolve();
 		});
 	});

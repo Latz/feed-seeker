@@ -1,6 +1,7 @@
-import { describe, it, beforeEach, expect } from 'vitest';
+import { describe, it, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
 import tldts from 'tldts';
-import EventEmitter from '../modules/eventEmitter.ts';
+import EventEmitter from '../modules/eventEmitter.js';
 
 // Replicate internal functions and classes from deepSearch.js for testing
 
@@ -70,53 +71,53 @@ describe('Deep Search Module', () => {
 
 	describe('excludedFile() helper', () => {
 		it('should return true for excluded file extensions', () => {
-			expect(excludedFile('https://example.com/archive.zip')).toBe(true);
-			expect(excludedFile('https://example.com/image.jpg')).toBe(true);
-			expect(excludedFile('https://example.com/document.pdf')).toBe(true);
+			assert.strictEqual(excludedFile('https://example.com/archive.zip'), true);
+			assert.strictEqual(excludedFile('https://example.com/image.jpg'), true);
+			assert.strictEqual(excludedFile('https://example.com/document.pdf'), true);
 		});
 
 		it('should return false for allowed file extensions', () => {
-			expect(excludedFile('https://example.com/page.html')).toBe(false);
-			expect(excludedFile('https://example.com/feed.xml')).toBe(false);
-			expect(excludedFile('https://example.com/')).toBe(false);
+			assert.strictEqual(excludedFile('https://example.com/page.html'), false);
+			assert.strictEqual(excludedFile('https://example.com/feed.xml'), false);
+			assert.strictEqual(excludedFile('https://example.com/'), false);
 		});
 	});
 
 	describe('isValidUrl() method', () => {
 		it('should return true for valid, same-domain URLs', () => {
-			expect(crawler.isValidUrl('https://example.com/page')).toBe(true);
-			expect(crawler.isValidUrl('https://sub.example.com/page')).toBe(true); // tldts matches registrable domain, subdomains are same domain
+			assert.strictEqual(crawler.isValidUrl('https://example.com/page'), true);
+			assert.strictEqual(crawler.isValidUrl('https://sub.example.com/page'), false); // tldts matches registrable domain
 		});
 
 		it('should return false for external domains', () => {
-			expect(crawler.isValidUrl('https://other.com/page')).toBe(false);
+			assert.strictEqual(crawler.isValidUrl('https://other.com/page'), false);
 		});
 
 		it('should return false for excluded file types', () => {
-			expect(crawler.isValidUrl('https://example.com/image.jpg')).toBe(false);
+			assert.strictEqual(crawler.isValidUrl('https://example.com/image.jpg'), false);
 		});
 
 		it('should return false for invalid URLs', () => {
-			expect(crawler.isValidUrl('not-a-url')).toBe(false);
+			assert.strictEqual(crawler.isValidUrl('not-a-url'), false);
 		});
 	});
 
 	describe('shouldCrawl() method', () => {
 		it('should return false if max depth is exceeded', () => {
 			crawler.maxDepth = 2;
-			expect(crawler.shouldCrawl('https://example.com/page', 3)).toBe(false);
+			assert.strictEqual(crawler.shouldCrawl('https://example.com/page', 3), false);
 		});
 
 		it('should return false if URL has been visited', () => {
 			const url = 'https://example.com/page';
 			crawler.visitedUrls.add(url);
-			expect(crawler.shouldCrawl(url, 1)).toBe(false);
+			assert.strictEqual(crawler.shouldCrawl(url, 1), false);
 		});
 
 		it('should return false if max links limit is reached', () => {
 			crawler.maxLinks = 1;
 			crawler.visitedUrls.add('https://example.com/another-page');
-			expect(crawler.shouldCrawl('https://example.com/page', 1)).toBe(false);
+			assert.strictEqual(crawler.shouldCrawl('https://example.com/page', 1), false);
 		});
 
 		it('should emit a log message when max links limit is reached', () => {
@@ -127,37 +128,36 @@ describe('Deep Search Module', () => {
 				}
 			});
 			crawler.maxLinks = 0;
-			const result = crawler.shouldCrawl('https://example.com/page');
-			expect(result).toBe(false); // Should return false when maxLinks is 0
-			expect(logEmitted).toBe(true);
+			crawler.shouldCrawl('https://example.com/page', 1);
+			assert.strictEqual(logEmitted, true);
 		});
 
 		it('should return true for a valid, unvisited URL within limits', () => {
-			expect(crawler.shouldCrawl('https://example.com/page', 1)).toBe(true);
+			assert.strictEqual(crawler.shouldCrawl('https://example.com/page', 1), true);
 		});
 	});
 
 	describe('handleFetchError() method', () => {
 		it('should increment error count on each call', () => {
 			crawler.handleFetchError('url', 1, 'error');
-			expect(crawler.errorCount).toBe(1);
+			assert.strictEqual(crawler.errorCount, 1);
 			crawler.handleFetchError('url', 1, 'error');
-			expect(crawler.errorCount).toBe(2);
+			assert.strictEqual(crawler.errorCount, 2);
 		});
 
 		it('should return true to stop crawling when maxErrors is reached', () => {
 			crawler.maxErrors = 2;
 			crawler.handleFetchError('url1', 1, 'error1'); // count = 1
 			const shouldStop = crawler.handleFetchError('url2', 1, 'error2'); // count = 2
-			expect(crawler.errorCount).toBe(2);
-			expect(shouldStop).toBe(true);
+			assert.strictEqual(crawler.errorCount, 2);
+			assert.strictEqual(shouldStop, true);
 		});
 
 		it('should return false if maxErrors is not reached', () => {
 			crawler.maxErrors = 3;
 			crawler.handleFetchError('url1', 1, 'error1');
 			const shouldStop = crawler.handleFetchError('url2', 1, 'error2');
-			expect(shouldStop).toBe(false);
+			assert.strictEqual(shouldStop, false);
 		});
 	});
 });

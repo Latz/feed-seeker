@@ -24,7 +24,7 @@ import truncateUrl from 'truncate-url';
  * console.log(getMainDomain('https://blog.subdomain.example.co.uk')); // 'example.co.uk'
  * console.log(getMainDomain('https://example.org/path')); // 'example.org'
  */
-export function getMainDomain(url: string): string {
+export function getMainDomain(url) {
 	const urlObject = new URL(url);
 	const parts = urlObject.hostname.split('.');
 	const length = parts.length;
@@ -53,7 +53,7 @@ export function getMainDomain(url: string): string {
  * const short = 'https://example.com/feed';
  * console.log(smartTruncateUrl(short, 50)); // 'https://example.com/feed'
  */
-export function smartTruncateUrl(url: string, maxLength: number = 50): string {
+export function smartTruncateUrl(url, maxLength = 50) {
 	try {
 		const urlObj = new URL(url);
 		const domain = urlObj.hostname;

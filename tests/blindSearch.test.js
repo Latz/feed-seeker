@@ -1,7 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import assert from 'node:assert/strict';
+import blindSearch from '../modules/blindsearch.js';
+import * as checkFeedModule from '../modules/checkFeed.js';
 
-// Mock FeedSeeker instance for testing
-class MockFeedSeeker {
+// Mock FeedScout instance for testing
+class MockFeedScout {
 	constructor(site, options = {}) {
 		this.site = site;
 		this.options = options;
@@ -23,69 +26,38 @@ class MockFeedSeeker {
 }
 
 describe('Blind Search Module', () => {
-	describe('Path Generation', () => {
-		it('should generate correct URL paths', () => {
-			// Test that the module logic would generate the right paths
-			const baseUrl = 'https://example.com/blog/posts';
-			const url = new URL(baseUrl);
-			const pathParts = url.pathname.split('/').filter(p => p);
+	let instance;
 
-			// Should have blog and posts
-			expect(pathParts).toEqual(['blog', 'posts']);
-		});
-
-		it('should handle root URLs', () => {
-			const baseUrl = 'https://example.com';
-			const url = new URL(baseUrl);
-			const pathParts = url.pathname.split('/').filter(p => p);
-
-			expect(pathParts).toEqual([]);
-		});
-
-		it('should handle URLs with trailing slashes', () => {
-			const baseUrl = 'https://example.com/blog/posts/';
-			const url = new URL(baseUrl);
-			const pathParts = url.pathname.split('/').filter(p => p);
-
-			expect(pathParts).toEqual(['blog', 'posts']);
+	beforeEach(() => {
+		instance = new MockFeedScout('https://example.com/blog/posts');
+		// Mock checkFeed to prevent network calls
+		mock.method(checkFeedModule, 'default', async url => {
+			if (url.includes('blog/feed')) {
+				return { type: 'rss', title: 'Blog Feed' };
+			}
+			return null;
 		});
 	});
 
-	describe('Common Feed Paths', () => {
-		it('should include common feed path patterns', () => {
-			const commonPaths = ['feed', 'rss', 'atom', 'feeds', 'rss.xml', 'atom.xml', 'feed.xml'];
-
-			// Verify these are reasonable feed paths
-			commonPaths.forEach(path => {
-				expect(path.length > 0).toBeTruthy();
-				expect(!path.includes(' ')).toBeTruthy();
-			});
-		});
+	afterEach(() => {
+		mock.reset();
 	});
 
-	describe('Event System', () => {
-		it('should support event emission', () => {
-			const instance = new MockFeedSeeker('https://example.com');
-			let eventFired = false;
+	it('should find a feed using path traversal', async () => {
+		const feeds = await blindSearch(instance);
+		assert.strictEqual(feeds.length, 1);
+		assert.strictEqual(feeds[0].title, 'Blog Feed');
+	});
 
-			instance.on('test', () => {
-				eventFired = true;
-			});
+	it('should emit start and end events', async () => {
+		let startEmitted = false;
+		let endEmitted = false;
+		instance.on('start', data => (startEmitted = data.module === 'blindsearch'));
+		instance.on('end', data => (endEmitted = data.module === 'blindsearch'));
 
-			instance.emit('test');
-			expect(eventFired).toBe(true);
-		});
+		await blindSearch(instance);
 
-		it('should pass data with events', () => {
-			const instance = new MockFeedSeeker('https://example.com');
-			let receivedData = null;
-
-			instance.on('test', (data) => {
-				receivedData = data;
-			});
-
-			instance.emit('test', { module: 'blindsearch' });
-			expect(receivedData).toEqual({ module: 'blindsearch' });
-		});
+		assert.strictEqual(startEmitted, true, 'Start event should be emitted');
+		assert.strictEqual(endEmitted, true, 'End event should be emitted');
 	});
 });

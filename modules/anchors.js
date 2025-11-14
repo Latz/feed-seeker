@@ -11,8 +11,10 @@
  * @since 1.0.0
  */
 
+// New anchors.js module that collects all links on the page and checks if they are feeds
+// instead of using predefined patterns
+
 import checkFeed from './checkFeed.js';
-import { type Feed, type MetaLinksInstance } from './metaLinks.js';
 
 /**
  * Safely parses a URL and returns the parsed URL object or null if invalid
@@ -20,10 +22,10 @@ import { type Feed, type MetaLinksInstance } from './metaLinks.js';
  * @param {string|URL} [base] - The base URL for resolving relative URLs (optional)
  * @returns {URL|null} The parsed URL object or null if parsing fails
  */
-function parseUrlSafely(url: string, base?: string | URL): URL | null {
+function parseUrlSafely(url, base) {
 	try {
 		return new URL(url, base);
-	} catch (error: unknown) {
+	} catch (e) {
 		return null;
 	}
 }
@@ -33,7 +35,7 @@ function parseUrlSafely(url: string, base?: string | URL): URL | null {
  * @param {string} url - The URL to validate
  * @returns {boolean} True if the URL is valid and has HTTP or HTTPS protocol, false otherwise
  */
-function isValidHttpUrl(url: string): boolean {
+function isValidHttpUrl(url) {
 	const parsed = parseUrlSafely(url);
 	if (!parsed) {
 		// If it fails to parse, it might be a relative URL
@@ -47,7 +49,7 @@ function isValidHttpUrl(url: string): boolean {
  * @param {string} url - The URL to check
  * @returns {boolean} True if the URL is a relative path, false otherwise
  */
-function isRelativePath(url: string): boolean {
+function isRelativePath(url) {
 	// Check if it's not an absolute URL and doesn't contain a scheme
 	const parsed = parseUrlSafely(url);
 	if (parsed) {
@@ -64,7 +66,7 @@ function isRelativePath(url: string): boolean {
  * @param {URL} baseUrl - The base URL for comparison
  * @returns {boolean} True if the URL is on the same domain or is an allowed external domain, false otherwise
  */
-function isAllowedDomain(url: string, baseUrl: URL): boolean {
+function isAllowedDomain(url, baseUrl) {
 	const parsedUrl = parseUrlSafely(url);
 	if (!parsedUrl) {
 		// If URL parsing fails, it's likely a relative URL which should be same-domain by definition
@@ -94,9 +96,9 @@ function isAllowedDomain(url: string, baseUrl: URL): boolean {
 /**
  * Handles meta refresh redirects if present in the document.
  * It will fetch the content of the new URL and update the instance's document.
- * @param {MetaLinksInstance} instance - The FeedSeeker instance containing document and site info.
+ * @param {object} instance - The FeedScout instance containing document and site info.
  */
-function handleMetaRefreshRedirect(instance: MetaLinksInstance): Promise<Feed[]> | null {
+function handleMetaRefreshRedirect(instance) {
 	if (instance.options.followMetaRefresh) {
 		if (instance.document && typeof instance.document.querySelector === 'function') {
 			const content = instance.document.querySelector('meta[http-equiv="refresh"]')?.getAttribute('content');
@@ -121,10 +123,10 @@ function handleMetaRefreshRedirect(instance: MetaLinksInstance): Promise<Feed[]>
  * Resolves the URL from an anchor element.
  * @param {HTMLAnchorElement} anchor - The anchor element.
  * @param {URL} baseUrl - The base URL for resolving relative paths.
- * @param {MetaLinksInstance} instance - The FeedSeeker instance for emitting errors.
+ * @param {object} instance - The FeedScout instance for emitting errors.
  * @returns {string|null} The resolved URL or null if invalid.
  */
-function getUrlFromAnchor(anchor: HTMLAnchorElement, baseUrl: URL, instance: MetaLinksInstance): string | null {
+function getUrlFromAnchor(anchor, baseUrl, instance) {
 	if (!anchor.href) {
 		return null;
 	}
@@ -154,21 +156,12 @@ function getUrlFromAnchor(anchor: HTMLAnchorElement, baseUrl: URL, instance: Met
 }
 
 /**
- * Context object for processing anchors
- */
-interface AnchorContext {
-	instance: MetaLinksInstance;
-	baseUrl: URL;
-	feedUrls: Feed[];
-}
-
-/**
  * Checks a single anchor to see if it's a feed and adds it to the list if so.
  * @param {HTMLAnchorElement} anchor - The anchor element to check.
- * @param {AnchorContext} context - The context containing instance, baseUrl, and feedUrls array.
+ * @param {object} context - The context containing instance, baseUrl, and feedUrls array.
  * @returns {Promise<void>}
  */
-async function processAnchor(anchor: HTMLAnchorElement, context: AnchorContext): Promise<void> {
+async function processAnchor(anchor, context) {
 	const { instance, baseUrl, feedUrls } = context;
 	const urlToCheck = getUrlFromAnchor(anchor, baseUrl, instance);
 
@@ -180,18 +173,17 @@ async function processAnchor(anchor: HTMLAnchorElement, context: AnchorContext):
 		const feedResult = await checkFeed(urlToCheck, '', instance);
 		if (feedResult) {
 			feedUrls.push({
-				url: urlToCheck,
+				href: urlToCheck,
 				title: anchor.textContent?.trim() || null,
 				type: feedResult.type,
 				feedTitle: feedResult.title,
 			});
 		}
-	} catch (error: unknown) {
+	} catch (error) {
 		if (instance.options?.showErrors) {
-			const err = error instanceof Error ? error : new Error(String(error));
 			instance.emit('error', {
 				module: 'anchors',
-				error: `Error checking feed at ${urlToCheck}: ${err.message}`,
+				error: `Error checking feed at ${urlToCheck}: ${error.message}`,
 				explanation:
 					'An error occurred while trying to fetch and validate a potential feed URL found in an anchor tag. This could be due to network timeouts, server errors, or invalid feed content.',
 				suggestion:
@@ -203,20 +195,22 @@ async function processAnchor(anchor: HTMLAnchorElement, context: AnchorContext):
 
 /**
  * Checks all links on the page and verifies if they are feeds
- * @param {MetaLinksInstance} instance - The FeedSeeker instance containing document and site info
- * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed URLs
+ * @param {object} instance - The FeedScout instance containing document and site info
+ * @returns {Promise<Array>} A promise that resolves to an array of found feed URLs
  */
-async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
+async function checkAnchors(instance) {
 	await handleMetaRefreshRedirect(instance);
 
 	const baseUrl = new URL(instance.site);
 
 	// Get all anchors and filter for same-host or allowed domains in a single operation
-	const allAnchors = instance.document.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
-	const filteredAnchors: HTMLAnchorElement[] = [];
+	const allAnchors = instance.document.querySelectorAll('a');
+	const filteredAnchors = [];
+	let totalCount = 0;
 
 	// Process anchors one by one to avoid creating intermediate arrays
 	for (const anchor of allAnchors) {
+		totalCount++;
 		const urlToCheck = getUrlFromAnchor(anchor, baseUrl, instance);
 		if (urlToCheck && isAllowedDomain(urlToCheck, baseUrl)) {
 			filteredAnchors.push(anchor);
@@ -224,7 +218,7 @@ async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
 	}
 
 	const maxFeeds = instance.options?.maxFeeds || 0;
-	const context: AnchorContext = {
+	const context = {
 		instance,
 		baseUrl,
 		feedUrls: [],
@@ -249,15 +243,19 @@ async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
 /**
  * Main function to analyze all anchor elements on a page for potential feed URLs
  * Processes anchors with memory optimization, domain filtering, and comprehensive validation
- * @param {MetaLinksInstance} instance - The FeedSeeker instance containing parsed HTML and configuration
- * @returns {Promise<Feed[]>} Array of validated feed objects with url, title, and type properties
+ * @param {object} instance - The FeedScout instance containing parsed HTML and configuration
+ * @param {object} instance.document - Parsed HTML document from linkedom
+ * @param {string} instance.site - Base site URL for resolving relative links and domain filtering
+ * @param {object} instance.options - Configuration options including maxFeeds and domain restrictions
+ * @param {Function} instance.emit - Event emitter function for progress updates
+ * @returns {Promise<Array<object>>} Array of validated feed objects with url, title, and type properties
  * @throws {Error} When feed validation fails or network errors occur
  * @example
- * const feedSeeker = new FeedSeeker('https://example.com');
- * const feeds = await checkAllAnchors(feedSeeker);
+ * const feedScout = new FeedScout('https://example.com');
+ * const feeds = await checkAllAnchors(feedScout);
  * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
  */
-export default async function checkAllAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
+export default async function checkAllAnchors(instance) {
 	instance.emit('start', {
 		module: 'anchors',
 		niceName: 'Check all anchors',
