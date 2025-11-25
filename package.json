@@ -1,38 +1,21 @@
 {
-	"name": "feed-scout",
+	"name": "feedseeker",
 	"version": "1.0.0",
-	"description": "Feed Scout - Find RSS, Atom, and JSON feeds on any website with support for preserving query parameters",
-	"main": "dist/feed-scout.cjs",
-	"module": "dist/feed-scout.js",
+	"description": "FeedSeeker - Find RSS, Atom, and JSON feeds on any website with support for preserving query parameters",
+	"main": "dist/feed-seeker.cjs",
+	"module": "dist/feed-seeker.js",
 	"type": "module",
+	"bin": {
+		"feed-seeker": "dist/feed-seeker-cli.cjs"
+	},
 	"exports": {
 		".": {
-			"import": "./dist/feed-scout.js",
-			"require": "./dist/feed-scout.cjs"
+			"import": "./dist/feed-seeker.js",
+			"require": "./dist/feed-seeker.cjs"
 		},
-		"./metaLinks": {
-			"import": "./dist/modules/metaLinks.js",
-			"require": "./dist/modules/metaLinks.cjs"
-		},
-		"./anchors": {
-			"import": "./dist/modules/anchors.js",
-			"require": "./dist/modules/anchors.cjs"
-		},
-		"./blindsearch": {
-			"import": "./dist/modules/blindsearch.js",
-			"require": "./dist/modules/blindsearch.cjs"
-		},
-		"./deepSearch": {
-			"import": "./dist/modules/deepSearch.js",
-			"require": "./dist/modules/deepSearch.cjs"
-		},
-		"./eventEmitter": {
-			"import": "./dist/modules/eventEmitter.js",
-			"require": "./dist/modules/eventEmitter.cjs"
-		},
-		"./fetchWithTimeout": {
-			"import": "./dist/modules/fetchWithTimeout.js",
-			"require": "./dist/modules/fetchWithTimeout.cjs"
+		"./cli": {
+			"import": "./dist/feed-seeker-cli.js",
+			"require": "./dist/feed-seeker-cli.cjs"
 		}
 	},
 	"files": [
@@ -58,23 +41,18 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/yourusername/feed-scout.git"
+		"url": "https://github.com/yourusername/feedseeker.git"
 	},
 	"bugs": {
-		"url": "https://github.com/yourusername/feed-scout/issues"
+		"url": "https://github.com/yourusername/feedseeker/issues"
 	},
-	"homepage": "https://github.com/yourusername/feed-scout#readme",
+	"homepage": "https://github.com/yourusername/feedseeker#readme",
 	"dependencies": {
 		"async": "^3.2.6",
 		"chalk": "^5.6.2",
 		"commander": "^14.0.1",
-		"eta": "^4.0.1",
-		"isurl-module": "^0.10.0",
 		"linkedom": "^0.18.7",
-		"normalize-url": "^8.0.1",
-		"ora": "^9.0.0",
 		"parse5": "^7.2.1",
-		"progress-estimator": "^0.3.1",
 		"tldts": "^7.0.16",
 		"truncate-url": "^3.0.0"
 	},

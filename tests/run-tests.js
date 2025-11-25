@@ -5,12 +5,12 @@ const args = process.argv.slice(2);
 const defaultTestFiles = [
 	'./tests/eventEmitter.test.js',
 	'./tests/checkFeed.test.js',
-	'./tests/feedScout.test.js',
+	'./tests/feedSeeker.test.js',
 	'./tests/blindsearch.test.js',
 	'./tests/deepSearch.test.js',
 	'./tests/metaLinks.test.js',
 	'./tests/fetchWithTimeout.test.js',
-	'./tests/feed-scout-cli.test.js',
+	'./tests/feed-seeker-cli.test.js',
 ];
 
 const testFiles = args.length > 0 ? args : defaultTestFiles;

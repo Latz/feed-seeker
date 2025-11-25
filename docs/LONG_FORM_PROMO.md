@@ -1,8 +1,8 @@
-# Stop Hunting for RSS Feeds. Discover Them Automatically with Feed Scout.
+# Stop Hunting for RSS Feeds. Discover Them Automatically with Feed Seeker.
 
 Ever tried to build a news aggregator, a podcast directory, or a personal dashboard? One of the first, and most frustrating, hurdles is finding the content feeds. You start by looking for a simple `<link rel="alternate" type="application/rss+xml">` tag, but what happens when it's not there? You end up manually guessing URLs like `/feed`, `/rss.xml`, or digging through page source, hoping for a clue. It's tedious, unreliable, and doesn't scale.
 
-This is the exact problem I built **Feed Scout** to solve. It’s a powerful Node.js library designed to be your secret weapon for discovering RSS, Atom, and JSON feeds from any website, handling all the complexity so you can focus on building your application.
+This is the exact problem I built **Feed Seeker** to solve. It’s a powerful Node.js library designed to be your secret weapon for discovering RSS, Atom, and JSON feeds from any website, handling all the complexity so you can focus on building your application.
 
 ## The Challenge of Feed Discovery
 
@@ -13,9 +13,9 @@ Finding feeds isn't as simple as it seems. Websites hide them in all sorts of pl
 - **No links at all:** Many sites, especially those powered by platforms like WordPress, have feeds available at common endpoints (e.g., `/?feed=rss2`) but don't advertise them anywhere.
 - **Modern formats:** The world is moving beyond XML. JSON Feeds are becoming more popular, but many tools don't look for them.
 
-## How Feed Scout Finds What Others Miss
+## How Feed Seeker Finds What Others Miss
 
-Feed Scout doesn't just rely on one method; it employs a powerful, four-stage strategy to maximize its discovery rate.
+Feed Seeker doesn't just rely on one method; it employs a powerful, four-stage strategy to maximize its discovery rate.
 
 ### 1. Meta & Anchor Search (The Basics)
 
@@ -23,7 +23,7 @@ First, it does the obvious stuff: scanning for `<link>` tags in the HTML head an
 
 ### 2. Blind Search (The Secret Weapon)
 
-This is where Feed Scout starts to shine. When a site doesn't advertise its feed, we find it anyway. The blind search module intelligently tests over **320 common endpoint patterns** against the target URL and its parent paths.
+This is where Feed Seeker starts to shine. When a site doesn't advertise its feed, we find it anyway. The blind search module intelligently tests over **320 common endpoint patterns** against the target URL and its parent paths.
 
 For a URL like `https://example.com/blog/posts/my-article`, it will check for feeds at:
 - `/blog/posts/my-article/...`
@@ -35,7 +35,7 @@ This path-traversal logic means it finds feeds for specific categories, forums, 
 
 ### 3. Deep Search (The Crawler)
 
-For the most stubborn cases, Feed Scout can crawl the entire website. It follows internal links to discover feeds on pages other than the one you started with. Worried about performance or hitting a bad site? The deep search comes with:
+For the most stubborn cases, Feed Seeker can crawl the entire website. It follows internal links to discover feeds on pages other than the one you started with. Worried about performance or hitting a bad site? The deep search comes with:
 
 - **Concurrency Control:** Manages how many pages are fetched at once.
 - **Depth & Link Limits:** You control how deep and wide the crawl goes.
@@ -43,24 +43,24 @@ For the most stubborn cases, Feed Scout can crawl the entire website. It follows
 
 ## Built for Developers
 
-Feed Scout isn't just powerful; it's designed with a great Developer Experience (DX) in mind.
+Feed Seeker isn't just powerful; it's designed with a great Developer Experience (DX) in mind.
 
 - **Simple, Programmatic API:** Get started in seconds.
   ```javascript
-  import FeedScout from 'feed-scout';
+  import FeedSeeker from 'feed-seeker';
 
   // Find feeds using all strategies
-  const feeds = await new FeedScout('https://example.com').discover();
+  const feeds = await new FeedSeeker('https://example.com').discover();
   console.log(feeds);
   ```
 
 - **Powerful CLI:** Need to find a feed from your terminal? No problem.
   ```bash
   # Run a full deep search from the command line
-  npx feed-scout https://example.com --deepsearch
+  npx feed-seeker https://example.com --deepsearch
   ```
 
-- **Event-Driven Progress:** Building a UI? Feed Scout emits events for `start`, `log`, `end`, and `error` for each search strategy, so you can give your users real-time feedback.
+- **Event-Driven Progress:** Building a UI? Feed Seeker emits events for `start`, `log`, `end`, and `error` for each search strategy, so you can give your users real-time feedback.
 
 - **Robust and Production-Ready:** With built-in timeout management and intelligent error handling, you can trust it in your production applications.
 
@@ -73,16 +73,16 @@ Feed Scout isn't just powerful; it's designed with a great Developer Experience 
 
 ## Get Started
 
-Ready to stop hunting and start finding? Install Feed Scout today and see what you can uncover.
+Ready to stop hunting and start finding? Install Feed Seeker today and see what you can uncover.
 
 **Installation:**
 ```bash
-npm install feed-scout
+npm install feed-seeker
 ```
 
 We're open-source and would love your feedback, contributions, or a star on GitHub!
 
-- **NPM:** https://www.npmjs.com/package/feed-scout
-- **GitHub:** https://github.com/your-username/feed-scout
+- **NPM:** https://www.npmjs.com/package/feed-seeker
+- **GitHub:** https://github.com/your-username/feed-seeker
 
 Let me know what you build with it!

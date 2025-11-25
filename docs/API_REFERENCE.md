@@ -1,17 +1,17 @@
-# Feed Scout API Reference
+# Feed Seeker API Reference
 
 A simple, powerful library for discovering RSS, Atom, and JSON feeds on any website.
 
 ## Quick Start
 
 ```bash
-npm install feed-scout
+npm install feed-seeker
 ```
 
 ```javascript
-import FeedScout from 'feed-scout';
+import FeedSeeker from 'feed-seeker';
 
-const feedScout = new FeedScout('https://example.com');
+const feedScout = new FeedSeeker('https://example.com');
 const feeds = await feedScout.metaLinks();
 
 console.log(`Found ${feeds.length} feeds:`);
@@ -25,7 +25,7 @@ feeds.forEach(feed => {
 ### Constructor
 
 ```javascript
-new FeedScout(url, options)
+new FeedSeeker(url, options)
 ```
 
 **Parameters:**
@@ -34,7 +34,7 @@ new FeedScout(url, options)
 
 **Example:**
 ```javascript
-const feedScout = new FeedScout('https://news-site.com', {
+const feedScout = new FeedSeeker('https://news-site.com', {
   timeout: 10,
   maxFeeds: 5
 });
@@ -107,10 +107,10 @@ const options = {
 
 ## Event Handling
 
-Feed Scout emits events for real-time progress updates:
+Feed Seeker emits events for real-time progress updates:
 
 ```javascript
-const feedScout = new FeedScout('https://example.com');
+const feedScout = new FeedSeeker('https://example.com');
 
 // Website loaded and parsed
 feedScout.on('initialized', () => {
@@ -164,10 +164,10 @@ Each discovered feed returns an object with:
 ### Basic Feed Discovery
 
 ```javascript
-import FeedScout from 'feed-scout';
+import FeedSeeker from 'feed-seeker';
 
 async function findFeeds(url) {
-  const feedScout = new FeedScout(url);
+  const feedScout = new FeedSeeker(url);
   
   // Try meta search first (fastest)
   let feeds = await feedScout.metaLinks();
@@ -187,7 +187,7 @@ const feeds = await findFeeds('https://blog.example.com');
 
 ```javascript
 async function findAllFeeds(url) {
-  const feedScout = new FeedScout(url, { 
+  const feedScout = new FeedSeeker(url, { 
     maxFeeds: 0,  // No limit
     all: true     // Don't stop early
   });
@@ -212,7 +212,7 @@ async function findAllFeeds(url) {
 
 ```javascript
 async function findFeedsWithProgress(url) {
-  const feedScout = new FeedScout(url);
+  const feedScout = new FeedSeeker(url);
   
   let totalFound = 0;
   
@@ -237,7 +237,7 @@ async function findFeedsWithProgress(url) {
 
 ```javascript
 async function robustFeedSearch(url) {
-  const feedScout = new FeedScout(url, { timeout: 10 });
+  const feedScout = new FeedSeeker(url, { timeout: 10 });
   
   const errors = [];
   feedScout.on('error', (data) => {
@@ -289,7 +289,7 @@ const thoroughOptions = {
   maxLinks: 2000
 };
 
-const feedScout = new FeedScout(url, fastOptions);
+const feedScout = new FeedSeeker(url, fastOptions);
 const feeds = await feedScout.metaLinks();
 ```
 
@@ -301,7 +301,7 @@ async function processSites(urls) {
   
   for (const url of urls) {
     try {
-      const feedScout = new FeedScout(url, { timeout: 5 });
+      const feedScout = new FeedSeeker(url, { timeout: 5 });
       const feeds = await feedScout.metaLinks();
       
       results.push({
@@ -343,7 +343,7 @@ const results = await processSites(sites);
 
 ## Domain Security
 
-Feed Scout includes a whitelist of 70+ trusted domains for external feed discovery:
+Feed Seeker includes a whitelist of 70+ trusted domains for external feed discovery:
 
 - News: CNN, BBC, Reuters, NY Times
 - Podcasts: Spotify, Apple Podcasts, SoundCloud
@@ -373,10 +373,10 @@ All errors include helpful explanations and suggestions for resolution.
 
 ## TypeScript Support
 
-Feed Scout includes TypeScript definitions:
+Feed Seeker includes TypeScript definitions:
 
 ```typescript
-import FeedScout, { FeedObject, FeedScoutOptions } from 'feed-scout';
+import FeedSeeker, { FeedObject, FeedSeekerOptions } from 'feed-seeker';
 
 interface FeedObject {
   url: string;
@@ -385,12 +385,12 @@ interface FeedObject {
   feedTitle: string | null;
 }
 
-const options: FeedScoutOptions = {
+const options: FeedSeekerOptions = {
   timeout: 10,
   maxFeeds: 5
 };
 
-const feedScout = new FeedScout('https://example.com', options);
+const feedScout = new FeedSeeker('https://example.com', options);
 const feeds: FeedObject[] = await feedScout.metaLinks();
 ```
 
@@ -399,7 +399,7 @@ const feeds: FeedObject[] = await feedScout.metaLinks();
 ### News Aggregator
 
 ```javascript
-import FeedScout from 'feed-scout';
+import FeedSeeker from 'feed-seeker';
 
 class NewsAggregator {
   constructor() {
@@ -407,7 +407,7 @@ class NewsAggregator {
   }
 
   async addSource(url) {
-    const feedScout = new FeedScout(url);
+    const feedScout = new FeedSeeker(url);
 
     try {
       // Try multiple strategies
@@ -468,7 +468,7 @@ async function buildPodcastDirectory(podcastSites) {
   const directory = [];
 
   for (const site of podcastSites) {
-    const feedScout = new FeedScout(site, {
+    const feedScout = new FeedSeeker(site, {
       timeout: 15,  // Podcasts can be slow
       maxFeeds: 10  // Many podcasts per site
     });
@@ -515,7 +515,7 @@ class BlogMonitor {
   }
 
   async addBlog(url) {
-    const feedScout = new FeedScout(url);
+    const feedScout = new FeedSeeker(url);
 
     // Progress tracking
     feedScout.on('start', (data) => {
@@ -582,7 +582,7 @@ async function validateFeedUrls(urls) {
   for (const url of urls) {
     try {
       // Use checkFeed directly for validation
-      const feedScout = new FeedScout(url);
+      const feedScout = new FeedSeeker(url);
       await feedScout.initialize();
 
       // Try to fetch and validate the URL as a feed
@@ -599,7 +599,7 @@ async function validateFeedUrls(urls) {
       const content = await response.text();
 
       // Import checkFeed utility
-      const { default: checkFeed } = await import('feed-scout/checkFeed');
+      const { default: checkFeed } = await import('feed-seeker/checkFeed');
       const feedInfo = await checkFeed(url, content);
 
       results.push({
@@ -636,7 +636,7 @@ console.log('Validation results:', validation);
 
 ```javascript
 import express from 'express';
-import FeedScout from 'feed-scout';
+import FeedSeeker from 'feed-seeker';
 
 const app = express();
 app.use(express.json());
@@ -650,7 +650,7 @@ app.post('/api/discover-feeds', async (req, res) => {
   }
 
   try {
-    const feedScout = new FeedScout(url, {
+    const feedScout = new FeedSeeker(url, {
       timeout: 10,
       maxFeeds: 10,
       ...options
@@ -682,7 +682,7 @@ app.post('/api/comprehensive-search', async (req, res) => {
   const { url } = req.body;
 
   try {
-    const feedScout = new FeedScout(url, { timeout: 15 });
+    const feedScout = new FeedSeeker(url, { timeout: 15 });
     const allFeeds = [];
 
     // Run all search strategies
@@ -721,26 +721,26 @@ app.listen(3000, () => {
 
 ## CLI Usage
 
-Feed Scout also provides a command-line interface:
+Feed Seeker also provides a command-line interface:
 
 ```bash
 # Basic usage
-feed-scout https://example.com
+feed-seeker https://example.com
 
 # Meta search only (fastest)
-feed-scout -m https://blog.example.com
+feed-seeker -m https://blog.example.com
 
 # Comprehensive search with deep crawling
-feed-scout -d --depth 4 https://news-site.com
+feed-seeker -d --depth 4 https://news-site.com
 
 # Limit results and set timeout
-feed-scout --max-feeds 3 --timeout 10 https://slow-site.com
+feed-seeker --max-feeds 3 --timeout 10 https://slow-site.com
 
 # Keep query parameters
-feed-scout --keep-query-params https://site.com?category=tech
+feed-seeker --keep-query-params https://site.com?category=tech
 
 # Verbose output
-feed-scout -v 2 https://example.com
+feed-seeker -v 2 https://example.com
 ```
 
 ## Troubleshooting
@@ -759,7 +759,7 @@ if (feeds1.length === 0) {
 **Timeout errors:**
 ```javascript
 // Increase timeout for slow sites
-const feedScout = new FeedScout(url, { timeout: 30 });
+const feedScout = new FeedSeeker(url, { timeout: 30 });
 ```
 
 **403 Forbidden errors:**
