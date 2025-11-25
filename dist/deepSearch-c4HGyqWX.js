@@ -131,7 +131,7 @@ function Y(t) {
 function G(t) {
   return !!(t.type && M.TYPES.includes(t.type) && M.VERSIONS.includes(t.version) || t.type && t.version && t.html);
 }
-function N(t) {
+function C(t) {
   return t.replace(f.CDATA, "$1");
 }
 function E(t) {
@@ -154,10 +154,10 @@ function B(t) {
   const e = f.RSS.CHANNEL_CONTENT.exec(t);
   if (e) {
     const o = e[1], i = f.RSS.TITLE.exec(o);
-    return i ? E(N(i[1])) : null;
+    return i ? E(C(i[1])) : null;
   }
   const r = f.RSS.TITLE.exec(t);
-  return r ? E(N(r[1])) : null;
+  return r ? E(C(r[1])) : null;
 }
 function J(t) {
   if (f.RSS.VERSION.test(t)) {
@@ -173,7 +173,7 @@ function Q(t) {
     const r = f.ATOM.ENTRY.test(t), s = f.ATOM.TITLE_TAG.test(t);
     if (r && s) {
       const o = f.ATOM.TITLE_CONTENT.exec(t);
-      return { type: "atom", title: o ? E(N(o[1])) : null };
+      return { type: "atom", title: o ? E(C(o[1])) : null };
     }
   }
   return null;
@@ -196,7 +196,7 @@ const K = ["feed+json", "rss+xml", "atom+xml", "xml", "rdf+xml"], ee = ["/rss", 
 function te(t) {
   return t ? t.replace(/\s+/g, " ").trim() : null;
 }
-async function b(t, e, r, s, o = 5) {
+async function L(t, e, r, s, o = 5) {
   const i = e.options?.maxFeeds || 0;
   for (let n = 0; n < t.length; n += o) {
     if (i > 0 && r.length >= i)
@@ -256,24 +256,24 @@ async function re(t, e, r, s) {
   }
   return !1;
 }
-async function Ue(t) {
+async function Ae(t) {
   t.emit("start", { module: "metalinks", niceName: "Meta links" });
   const e = [], r = /* @__PURE__ */ new Set();
   try {
     const s = K.map((d) => `link[type="application/${d}"]`).join(", "), o = Array.from(t.document.querySelectorAll(s));
-    if (await b(o, t, e, r))
+    if (await L(o, t, e, r))
       return e;
     const n = Array.from(
       t.document.querySelectorAll('link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="xml"], link[rel="alternate"][type*="atom"], link[rel="alternate"][type*="json"]')
     );
-    if (await b(n, t, e, r))
+    if (await L(n, t, e, r))
       return e;
     const a = Array.from(
       t.document.querySelectorAll('link[rel="alternate"]')
     ).filter(
       (d) => d.href && ee.some((c) => d.href.toLowerCase().includes(c))
     );
-    return await b(a, t, e, r), e;
+    return await L(a, t, e, r), e;
   } finally {
     t.emit("end", { module: "metalinks", feeds: e });
   }
@@ -395,9 +395,18 @@ async function P(t) {
     t.emit("log", { module: "anchors", totalCount: n++, totalEndpoints: s.length }), await ae(l, i);
   }
   if (o === 0 || i.feedUrls.length < o) {
-    const l = t.document.body?.innerHTML || "", a = ne(l), d = new Set(i.feedUrls.map((u) => u.url)), c = [];
+    const l = t.document.body?.innerHTML || "", a = ne(l);
+    t.emit("log", {
+      module: "anchors",
+      message: `Phase 2: Extracted ${a.length} URLs from HTML source`
+    });
+    const d = new Set(i.feedUrls.map((u) => u.url)), c = [];
     for (const u of a)
       !d.has(u) && $(u, e) && (c.push(u), d.add(u));
+    t.emit("log", {
+      module: "anchors",
+      message: `Phase 2: Checking ${c.length} URLs after domain filtering`
+    });
     for (const u of c) {
       if (o > 0 && i.feedUrls.length >= o) {
         t.emit("log", {
@@ -443,7 +452,7 @@ async function ve(t) {
   const e = await P(t);
   return t.emit("end", { module: "anchors", feeds: e }), e;
 }
-const le = 0, L = 0, de = 3, A = "standard", q = 2083, U = 10, v = 1, I = 1e4, k = 6e4, w = [
+const le = 0, b = 0, de = 3, U = "standard", q = 2083, A = 10, v = 1, I = 1e4, k = 6e4, w = [
   // Most common standard paths (highest success rate)
   "feed",
   "rss",
@@ -783,13 +792,13 @@ function fe(t) {
   }
 }
 function ue(t) {
-  return t ? ["fast", "standard", "exhaustive", "full"].includes(t) ? t : (console.warn(`Invalid search mode "${t}". Falling back to "${A}".`), A) : A;
+  return t ? ["fast", "standard", "exhaustive", "full"].includes(t) ? t : (console.warn(`Invalid search mode "${t}". Falling back to "${U}".`), U) : U;
 }
 function he(t) {
-  return t == null ? de : !Number.isFinite(t) || t < v ? (console.warn(`Invalid concurrency value ${t}. Using minimum: ${v}.`), v) : t > U ? (console.warn(`Concurrency value ${t} exceeds maximum. Clamping to ${U}.`), U) : Math.floor(t);
+  return t == null ? de : !Number.isFinite(t) || t < v ? (console.warn(`Invalid concurrency value ${t}. Using minimum: ${v}.`), v) : t > A ? (console.warn(`Concurrency value ${t} exceeds maximum. Clamping to ${A}.`), A) : Math.floor(t);
 }
 function me(t) {
-  return t == null ? L : !Number.isFinite(t) || t < 0 ? (console.warn(`Invalid request delay ${t}. Using default: ${L}.`), L) : t > k ? (console.warn(`Request delay ${t}ms exceeds maximum. Clamping to ${k}ms.`), k) : Math.floor(t);
+  return t == null ? b : !Number.isFinite(t) || t < 0 ? (console.warn(`Invalid request delay ${t}. Using default: ${b}.`), b) : t > k ? (console.warn(`Request delay ${t}ms exceeds maximum. Clamping to ${k}ms.`), k) : Math.floor(t);
 }
 function _(t) {
   return t.length <= q;
@@ -863,8 +872,8 @@ async function Ee(t, e, r, s, o, i) {
     c += u;
     const z = n.length;
     o.emit("log", { module: "blindsearch", totalEndpoints: t.length, totalCount: c, feedsFound: z });
-    const C = me(o.options?.requestDelay);
-    C > 0 && c < t.length && await new Promise((p) => setTimeout(p, C));
+    const N = me(o.options?.requestDelay);
+    N > 0 && c < t.length && await new Promise((p) => setTimeout(p, N));
   }
   return { feeds: n, rssFound: a, atomFound: d };
 }
@@ -1410,5 +1419,5 @@ export {
   ve as c,
   Re as d,
   O as f,
-  Ue as m
+  Ae as m
 };
