@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# TypeScript source duplicates (prevent .js files alongside .ts)
+# Keep test files, config files, and standalone scripts
+/*.js
+!/vite.config.js
+!/*.config.js
+!/test-*.js
+/modules/*.js
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Code quality / Analysis
+.scannerwork/
+coverage/
+.nyc_output/
+*.lcov
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+.#*
+DEADJOE
+
+# Beads (keep JSONL, ignore SQLite DB)
+.beads/beads.db
+.beads/beads.db-shm
+.beads/beads.db-wal
+.beads/daemon.log
+.beads/daemon.pid
+.beads/daemon.lock
+.beads/bd.sock
+.beads/.local_version
+.beads/beads.left.jsonl
+.beads/beads.left.meta.json
+
+# Conflicted copies from sync tools
+*conflicted copy*
+*conflicted copy*.json
+*conflicted copy*.js
+*conflicted copy*.md
+
+# Project-specific temporary files
+/x.html
+/qwen.MD
+/sonar-project.properties
+/.claude-dev-helper
+sonarqube_analyze.sh
