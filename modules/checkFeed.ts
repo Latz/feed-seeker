@@ -11,7 +11,7 @@
  * @since 1.0.0
  */
 
-import fetchWithTimeout from './fetchWithTimeout.js';
+import fetchWithTimeout from './fetchWithTimeout.ts';
 
 /**
  * Security and validation constants

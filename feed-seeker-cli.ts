@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
 import { Command, Option } from 'commander';
-import FeedSeeker, { type FeedSeekerOptions } from './feed-seeker.js';
+import FeedSeeker, { type FeedSeekerOptions } from './feed-seeker.ts';
 import { styleText } from 'node:util';
-import { type Feed } from './modules/metaLinks.js';
-import type { StartEventData, EndEventData, LogEventData } from './types/events.js';
-import bannerText from './modules/banner.js';
+import { type Feed } from './modules/metaLinks.ts';
+import type { StartEventData, EndEventData, LogEventData } from './types/events.ts';
+import bannerText from './modules/banner.ts';
 
 // CLI-specific options that extend FeedSeekerOptions
 interface CLIOptions extends FeedSeekerOptions {
 	displayErrors?: boolean;
-	searchMode?: string;
+	searchMode?: 'fast' | 'standard' | 'exhaustive';
 }
 
 let counterLength = 0; // needed for fancy blindsearch log display
-let allModeFeeds: Record<string, unknown>[] = []; // Accumulate feeds in --all mode
+let allModeFeeds: Feed[] = []; // Accumulate feeds in --all mode
 let isAllMode = false; // Track if --all mode is active
 
 function start(...args: unknown[]): void {

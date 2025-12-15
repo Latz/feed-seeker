@@ -14,12 +14,12 @@
  */
 
 import { parseHTML } from 'linkedom';
-import metaLinks, { type Feed, type MetaLinksInstance } from './modules/metaLinks.js';
-import checkAllAnchors from './modules/anchors.js';
-import blindSearch, { type BlindSearchFeed } from './modules/blindsearch.js';
-import deepSearch, { type DeepSearchOptions } from './modules/deepSearch.js';
-import EventEmitter from './modules/eventEmitter.js';
-import fetchWithTimeout from './modules/fetchWithTimeout.js';
+import metaLinks, { type Feed, type MetaLinksInstance } from './modules/metaLinks.ts';
+import checkAllAnchors from './modules/anchors.ts';
+import blindSearch, { type BlindSearchFeed } from './modules/blindsearch.ts';
+import deepSearch, { type DeepSearchOptions } from './modules/deepSearch.ts';
+import EventEmitter from './modules/eventEmitter.ts';
+import fetchWithTimeout from './modules/fetchWithTimeout.ts';
 
 /**
  * FeedSeeker options interface
@@ -36,7 +36,7 @@ export interface FeedSeekerOptions extends DeepSearchOptions {
 	blindsearch?: boolean;
 	anchorsonly?: boolean;
 	deepsearch?: boolean;
-	searchMode?: string;
+	searchMode?: 'fast' | 'standard' | 'exhaustive';
 }
 
 /**

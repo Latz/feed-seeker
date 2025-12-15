@@ -478,9 +478,9 @@ function isValidUrlLength(url: string): boolean {
 	return url.length <= MAX_URL_LENGTH;
 }
 
-import checkFeed from './checkFeed.js';
-import { type FeedSeekerInstance } from './checkFeed.js';
-import { type MetaLinksInstance, type Feed } from './metaLinks.js';
+import checkFeed from './checkFeed.ts';
+import { type FeedSeekerInstance } from './checkFeed.ts';
+import { type MetaLinksInstance, type Feed } from './metaLinks.ts';
 
 /**
  * Interface for blind search feed results

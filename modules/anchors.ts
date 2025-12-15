@@ -11,8 +11,8 @@
  * @since 1.0.0
  */
 
-import checkFeed from './checkFeed.js';
-import { type Feed, type MetaLinksInstance } from './metaLinks.js';
+import checkFeed from './checkFeed.ts';
+import { type Feed, type MetaLinksInstance } from './metaLinks.ts';
 
 /**
  * Safely parses a URL and returns the parsed URL object or null if invalid

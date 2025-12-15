@@ -1,13 +1,13 @@
 // Deep Search - Website crawling for feed discovery
 
-import checkFeed from './checkFeed.js';
+import checkFeed from './checkFeed.ts';
 import { parseHTML } from 'linkedom';
 import tldts from 'tldts';
-import EventEmitter from './eventEmitter.js';
+import EventEmitter from './eventEmitter.ts';
 import { queue, QueueObject } from 'async';
-import fetchWithTimeout from './fetchWithTimeout.js';
-import { type FeedSeekerInstance } from './checkFeed.js';
-import { type Feed } from './metaLinks.js';
+import fetchWithTimeout from './fetchWithTimeout.ts';
+import { type FeedSeekerInstance } from './checkFeed.ts';
+import { type Feed } from './metaLinks.ts';
 
 /**
  * Checks if a URL points to a file with an excluded extension.
