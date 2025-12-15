@@ -9,7 +9,6 @@
  */
 
 import type { Feed } from '../modules/metaLinks.js';
-import type { BlindSearchFeed } from '../modules/blindsearch.js';
 
 /**
  * Event data for module start events
@@ -25,7 +24,7 @@ export interface StartEventData {
  */
 export interface EndEventData {
 	module: string;
-	feeds: Feed[] | BlindSearchFeed[];
+	feeds: Feed[];
 	visitedUrls?: number;
 }
 
@@ -87,7 +86,11 @@ export interface DeepSearchLogData {
 /**
  * Discriminated union type for all log event data
  */
-export type LogEventData = MetaLinksLogData | AnchorsLogData | BlindSearchLogData | DeepSearchLogData;
+export type LogEventData =
+	| MetaLinksLogData
+	| AnchorsLogData
+	| BlindSearchLogData
+	| DeepSearchLogData;
 
 /**
  * Type for event emitter functions

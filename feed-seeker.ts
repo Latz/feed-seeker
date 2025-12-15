@@ -16,7 +16,7 @@
 import { parseHTML } from 'linkedom';
 import metaLinks, { type Feed, type MetaLinksInstance } from './modules/metaLinks.ts';
 import checkAllAnchors from './modules/anchors.ts';
-import blindSearch, { type BlindSearchFeed } from './modules/blindsearch.ts';
+import blindSearch from './modules/blindsearch.ts';
 import deepSearch, { type DeepSearchOptions } from './modules/deepSearch.ts';
 import EventEmitter from './modules/eventEmitter.ts';
 import fetchWithTimeout from './modules/fetchWithTimeout.ts';
@@ -56,13 +56,19 @@ export interface FeedSeekerOptions extends DeepSearchOptions {
  * const feeds = await seeker.metaLinks();
  * console.log('Meta link feeds:', feeds);
  */
+/**
+ * Initialization status for FeedSeeker instance
+ */
+export type InitStatus = 'pending' | 'success' | 'error';
+
 export default class FeedSeeker extends EventEmitter implements MetaLinksInstance {
 	site: string;
 	options: FeedSeekerOptions;
 	initPromise: Promise<void> | null;
 	content?: string;
 	document!: Document;
-	private rawSite: string; // Store the raw input for validation during initialization
+	private readonly rawSite: string; // Store the raw input for validation during initialization
+	private initStatus: InitStatus = 'pending';
 
 	/**
 	 * Creates a new FeedSeeker instance
@@ -115,88 +121,141 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	}
 
 	/**
+	 * Gets the current initialization status
+	 * @returns {InitStatus} The current status: 'pending', 'success', or 'error'
+	 * @example
+	 * const seeker = new FeedSeeker('https://example.com');
+	 * await seeker.initialize();
+	 * if (seeker.getInitStatus() === 'error') {
+	 *   console.error('Failed to initialize');
+	 * }
+	 */
+	getInitStatus(): InitStatus {
+		return this.initStatus;
+	}
+
+	/**
+	 * Checks if initialization was successful
+	 * @returns {boolean} True if initialization succeeded, false otherwise
+	 * @example
+	 * const seeker = new FeedSeeker('https://example.com');
+	 * await seeker.initialize();
+	 * if (seeker.isInitialized()) {
+	 *   const feeds = await seeker.metaLinks();
+	 * }
+	 */
+	isInitialized(): boolean {
+		return this.initStatus === 'success';
+	}
+
+	/**
+	 * Creates an empty document for error states
+	 * This ensures all Document methods are available even when initialization fails
+	 * @returns {Document} An empty but valid Document object
+	 * @private
+	 */
+	private createEmptyDocument(): Document {
+		const { document } = parseHTML('<!DOCTYPE html><html><head></head><body></body></html>');
+		return document;
+	}
+
+	/**
+	 * Sets the instance to an empty state (used when initialization fails)
+	 * @private
+	 */
+	private setEmptyState(): void {
+		this.content = '';
+		this.document = this.createEmptyDocument();
+	}
+
+	/**
 	 * Initializes the FeedSeeker instance by validating the URL and fetching the site content and parsing the HTML
 	 * This method is called automatically by other methods and caches the result
 	 * Emits 'error' events if validation or fetching fails
+	 * Sets initStatus to 'success' or 'error' based on the outcome
 	 * @returns {Promise<void>} A promise that resolves when the initialization is complete
 	 * @private
 	 * @example
 	 * await seeker.initialize(); // Usually called automatically
+	 * if (seeker.getInitStatus() === 'error') {
+	 *   console.error('Initialization failed');
+	 * }
 	 */
 	async initialize(): Promise<void> {
-		if (this.initPromise === null) {
-			this.initPromise = (async () => {
-				try {
-					// Validate site parameter is not empty
-					if (!this.rawSite || typeof this.rawSite !== 'string') {
-						this.emit('error', {
-							module: 'FeedSeeker',
-							error: 'Site parameter must be a non-empty string',
-						});
-						this.content = '';
-						this.document = { querySelectorAll: () => [] } as unknown as Document;
-						this.emit('initialized');
-						return;
-					}
-
-					// Validate URL format (site should already be normalized in constructor)
-					try {
-						// eslint-disable-next-line no-new
-						new URL(this.site);
-					} catch {
-						this.emit('error', {
-							module: 'FeedSeeker',
-							error: `Invalid URL: ${this.site}`,
-						});
-						this.content = '';
-						this.document = { querySelectorAll: () => [] } as unknown as Document;
-						this.emit('initialized');
-						return;
-					}
-
-					const response = await fetchWithTimeout(this.site, this.options.timeout! * 1000);
-
-					if (!response.ok) {
-						this.emit('error', {
-							module: 'FeedSeeker',
-							error: `HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`,
-						});
-						this.content = '';
-						this.document = { querySelectorAll: () => [] } as unknown as Document;
-						this.emit('initialized');
-						return;
-					}
-
-					this.content = await response.text();
-					const { document } = parseHTML(this.content);
-					this.document = document;
-
-					this.emit('initialized');
-				} catch (error: unknown) {
-					const err = error instanceof Error ? error : new Error(String(error));
-					let errorMessage = `Failed to fetch ${this.site}`;
-					if (err.name === 'AbortError') {
-						errorMessage += ': Request timed out';
-					} else {
-						errorMessage += `: ${err.message}`;
-						const cause = (err as Error & { cause?: { code?: string; message?: string } }).cause;
-						if (cause) {
-							errorMessage += ` (cause: ${cause.code || cause.message})`;
-						}
-					}
-
+		this.initPromise ??= (async () => {
+			try {
+				// Validate site parameter is not empty
+				if (!this.rawSite || typeof this.rawSite !== 'string') {
+					this.initStatus = 'error';
 					this.emit('error', {
 						module: 'FeedSeeker',
-						error: errorMessage,
-						cause: (err as Error & { cause?: unknown }).cause,
+						error: 'Site parameter must be a non-empty string'
 					});
-
-					this.content = '';
-					this.document = { querySelectorAll: () => [] } as unknown as Document;
+					this.setEmptyState();
 					this.emit('initialized');
+					return;
 				}
-			})();
-		}
+
+				// Validate URL format (site should already be normalized in constructor)
+				try {
+					// eslint-disable-next-line no-new
+					new URL(this.site);
+				} catch {
+					this.initStatus = 'error';
+					this.emit('error', {
+						module: 'FeedSeeker',
+						error: `Invalid URL: ${this.site}`
+					});
+					this.setEmptyState();
+					this.emit('initialized');
+					return;
+				}
+
+				// Use nullish coalescing to get timeout value (default is 5 seconds from constructor)
+				const timeout = (this.options.timeout ?? 5) * 1000;
+				const response = await fetchWithTimeout(this.site, timeout);
+
+				if (!response.ok) {
+					this.initStatus = 'error';
+					this.emit('error', {
+						module: 'FeedSeeker',
+						error: `HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`
+					});
+					this.setEmptyState();
+					this.emit('initialized');
+					return;
+				}
+
+				this.content = await response.text();
+				const { document } = parseHTML(this.content);
+				this.document = document;
+
+				this.initStatus = 'success';
+				this.emit('initialized');
+			} catch (error: unknown) {
+				const err = error instanceof Error ? error : new Error(String(error));
+				let errorMessage = `Failed to fetch ${this.site}`;
+				if (err.name === 'AbortError') {
+					errorMessage += ': Request timed out';
+				} else {
+					errorMessage += `: ${err.message}`;
+					const cause = (err as Error & { cause?: { code?: string; message?: string } }).cause;
+					if (cause) {
+						errorMessage += ` (cause: ${cause.code || cause.message})`;
+					}
+				}
+
+				this.initStatus = 'error';
+				this.emit('error', {
+					module: 'FeedSeeker',
+					error: errorMessage,
+					cause: (err as Error & { cause?: unknown }).cause
+				});
+
+				this.setEmptyState();
+				this.emit('initialized');
+			}
+		})();
 
 		return this.initPromise;
 	}
@@ -232,13 +291,13 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	/**
 	 * Performs a blind search for common feed endpoints
 	 * This method tries common feed paths like /feed, /rss, /atom.xml, etc.
-	 * @returns {Promise<BlindSearchFeed[]>} A promise that resolves to an array of found feed objects
+	 * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects
 	 * @throws {Error} When network errors occur during endpoint testing
 	 * @example
 	 * const feeds = await seeker.blindSearch();
-	 * console.log(feeds); // [{ url: '...', feedType: 'rss', title: '...' }]
+	 * console.log(feeds); // [{ url: '...', type: 'rss', title: '...' }]
 	 */
-	async blindSearch(): Promise<BlindSearchFeed[]> {
+	async blindSearch(): Promise<Feed[]> {
 		await this.initialize();
 		return blindSearch(this);
 	}
@@ -261,13 +320,13 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	/**
 	 * Starts a comprehensive feed search using multiple strategies
 	 * Automatically deduplicates feeds found by multiple strategies
-	 * @returns {Promise<Array<Feed | BlindSearchFeed>>} A promise that resolves to an array of unique found feed objects
+	 * @returns {Promise<Feed[]>} A promise that resolves to an array of unique found feed objects
 	 * @example
 	 * const seeker = new FeedSeeker('https://example.com', { maxFeeds: 10 });
 	 * const feeds = await seeker.startSearch();
 	 * console.log('All feeds:', feeds);
 	 */
-	async startSearch(): Promise<Array<Feed | BlindSearchFeed>> {
+	async startSearch(): Promise<Feed[]> {
 		// Handle single strategy modes
 		const singleStrategyResult = await this.handleSingleStrategyMode();
 		if (singleStrategyResult) {
@@ -275,7 +334,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 		}
 
 		// Collect feeds from multiple strategies
-		const feedMap = new Map<string, Feed | BlindSearchFeed>();
+		const feedMap = new Map<string, Feed>();
 		await this.collectFeedsFromStrategies(feedMap);
 		await this.handleDeepSearch(feedMap);
 
@@ -288,10 +347,10 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 
 	/**
 	 * Handles single strategy search modes (deepsearchOnly, metasearch, blindsearch, anchorsonly)
-	 * @returns {Promise<Array<Feed | BlindSearchFeed> | null>} Results if a single strategy mode is active, null otherwise
+	 * @returns {Promise<Feed[] | null>} Results if a single strategy mode is active, null otherwise
 	 * @private
 	 */
-	private async handleSingleStrategyMode(): Promise<Array<Feed | BlindSearchFeed> | null> {
+	private async handleSingleStrategyMode(): Promise<Feed[] | null> {
 		const { deepsearchOnly, metasearch, blindsearch, anchorsonly } = this.options;
 
 		if (deepsearchOnly) {
@@ -315,11 +374,11 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 
 	/**
 	 * Collects feeds from multiple search strategies
-	 * @param {Map<string, Feed | BlindSearchFeed>} feedMap - Map to store deduplicated feeds
+	 * @param {Map<string, Feed>} feedMap - Map to store deduplicated feeds
 	 * @returns {Promise<void>}
 	 * @private
 	 */
-	private async collectFeedsFromStrategies(feedMap: Map<string, Feed | BlindSearchFeed>): Promise<void> {
+	private async collectFeedsFromStrategies(feedMap: Map<string, Feed>): Promise<void> {
 		const searchStrategies = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
 
 		for (const strategy of searchStrategies) {
@@ -334,15 +393,12 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 
 	/**
 	 * Adds feeds to the feed map, deduplicating by URL
-	 * @param {Map<string, Feed | BlindSearchFeed>} feedMap - Map to store feeds
-	 * @param {Array<Feed | BlindSearchFeed>} feeds - Feeds to add
+	 * @param {Map<string, Feed>} feedMap - Map to store feeds
+	 * @param {Feed[]} feeds - Feeds to add
 	 * @returns {void}
 	 * @private
 	 */
-	private addFeedsToMap(
-		feedMap: Map<string, Feed | BlindSearchFeed>,
-		feeds: Array<Feed | BlindSearchFeed>
-	): void {
+	private addFeedsToMap(feedMap: Map<string, Feed>, feeds: Feed[]): void {
 		if (!feeds || feeds.length === 0) return;
 
 		for (const feed of feeds) {
@@ -354,22 +410,22 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 
 	/**
 	 * Checks if the feed limit has been reached
-	 * @param {Map<string, Feed | BlindSearchFeed>} feedMap - Current feed map
+	 * @param {Map<string, Feed>} feedMap - Current feed map
 	 * @returns {boolean} True if limit is reached, false otherwise
 	 * @private
 	 */
-	private hasReachedLimit(feedMap: Map<string, Feed | BlindSearchFeed>): boolean {
+	private hasReachedLimit(feedMap: Map<string, Feed>): boolean {
 		const { all, maxFeeds } = this.options;
 		return !all && maxFeeds !== undefined && maxFeeds > 0 && feedMap.size >= maxFeeds;
 	}
 
 	/**
 	 * Handles deep search if enabled
-	 * @param {Map<string, Feed | BlindSearchFeed>} feedMap - Map to store feeds
+	 * @param {Map<string, Feed>} feedMap - Map to store feeds
 	 * @returns {Promise<void>}
 	 * @private
 	 */
-	private async handleDeepSearch(feedMap: Map<string, Feed | BlindSearchFeed>): Promise<void> {
+	private async handleDeepSearch(feedMap: Map<string, Feed>): Promise<void> {
 		const { deepsearch, maxFeeds } = this.options;
 
 		if (!deepsearch || (maxFeeds && feedMap.size >= maxFeeds)) {
@@ -393,11 +449,11 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 
 	/**
 	 * Gets feeds from the map with limit applied
-	 * @param {Map<string, Feed | BlindSearchFeed>} feedMap - Map containing feeds
-	 * @returns {Array<Feed | BlindSearchFeed>} Feeds with limit applied
+	 * @param {Map<string, Feed>} feedMap - Map containing feeds
+	 * @returns {Feed[]} Feeds with limit applied
 	 * @private
 	 */
-	private getFeedsWithLimit(feedMap: Map<string, Feed | BlindSearchFeed>): Array<Feed | BlindSearchFeed> {
+	private getFeedsWithLimit(feedMap: Map<string, Feed>): Feed[] {
 		const feeds = Array.from(feedMap.values());
 		const { maxFeeds } = this.options;
 

@@ -8,9 +8,11 @@
     "allowJs": true,
     "checkJs": false,
     "outDir": "./dist",
+    "declarationDir": "./dist/types",
     "rootDir": "./",
     "declaration": true,
     "declarationMap": true,
+    "emitDeclarationOnly": false,
     "sourceMap": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -20,14 +22,16 @@
     "types": ["node"]
   },
   "include": [
-    "feed-scout.ts",
-    "feed-scout-cli.ts",
+    "feed-seeker.ts",
+    "feed-seeker-cli.ts",
     "modules/**/*.ts",
-    "tests/**/*.ts"
+    "types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.old.js"
+    "tests",
+    "**/*.old.js",
+    "**/*.test.js"
   ]
 }

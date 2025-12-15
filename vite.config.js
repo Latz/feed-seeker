@@ -2,22 +2,22 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { readFileSync, writeFileSync, chmodSync, readdirSync, unlinkSync } from 'fs';
 
+// Check if we're building CLI or library based on environment variable
+const isCLI = process.env.BUILD_TARGET === 'cli';
+const entryFile = isCLI ? 'feed-seeker-cli.ts' : 'feed-seeker.ts';
+const entryName = isCLI ? 'cli' : 'index';
+
 export default defineConfig({
   build: {
+    emptyOutDir: false, // Don't clear dist folder between builds
     lib: {
-      entry: {
-        index: resolve(__dirname, 'feed-seeker.ts'),
-        cli: resolve(__dirname, 'feed-seeker-cli.ts')
-      },
+      entry: resolve(__dirname, entryFile),
       name: 'FeedSeeker',
-      fileName: (format, entryName) => {
-        if (entryName === 'index') {
-          return `feed-seeker.${format === 'es' ? 'js' : 'cjs'}`;
-        }
-        if (entryName === 'cli') {
+      fileName: (format) => {
+        if (isCLI) {
           return `feed-seeker-cli.${format === 'es' ? 'js' : 'cjs'}`;
         }
-        return `${entryName}.${format === 'es' ? 'js' : 'cjs'}`;
+        return `feed-seeker.${format === 'es' ? 'js' : 'cjs'}`;
       },
       formats: ['es', 'cjs']
     },
@@ -25,11 +25,11 @@ export default defineConfig({
       external: [
         'linkedom',
         'async',
-        'isurl-module',
-        'normalize-url',
         'parse5',
         'tldts',
         'truncate-url',
+        'commander',
+        'chalk',
         'node:events',
         'node:path',
         'node:fs',
@@ -37,6 +37,7 @@ export default defineConfig({
         'node:child_process',
         'node:util',
         'node:stream',
+        'node:url',
         'fs',
         'path',
         'url'
@@ -46,11 +47,10 @@ export default defineConfig({
           linkedom: 'linkedom',
           async: 'async',
           chalk: 'chalk',
-          'isurl-module': 'isurlModule',
-          'normalize-url': 'normalizeUrl',
           parse5: 'parse5',
           tldts: 'tldts',
-          'truncate-url': 'truncateUrl'
+          'truncate-url': 'truncateUrl',
+          commander: 'commander'
         }
       }
     }
@@ -59,23 +59,26 @@ export default defineConfig({
     {
       name: 'add-shebang-and-cleanup',
       closeBundle() {
-        const cliPath = resolve(__dirname, 'dist/feed-seeker-cli.cjs');
-        const content = readFileSync(cliPath, 'utf-8');
-        if (!content.startsWith('#!/usr/bin/env node')) {
-          writeFileSync(cliPath, '#!/usr/bin/env node\n' + content, 'utf-8');
-        }
-        // Make the CLI executable (755 permissions)
-        chmodSync(cliPath, 0o755);
-
-        // Remove unnecessary package files that Vite generates
-        const distDir = resolve(__dirname, 'dist');
-        const files = readdirSync(distDir);
-        files.forEach(file => {
-          if (file.startsWith('package-') && (file.endsWith('.js') || file.endsWith('.cjs'))) {
-            const filePath = resolve(distDir, file);
-            unlinkSync(filePath);
+        if (isCLI) {
+          const cliPath = resolve(__dirname, 'dist/feed-seeker-cli.cjs');
+          const content = readFileSync(cliPath, 'utf-8');
+          if (!content.startsWith('#!/usr/bin/env node')) {
+            writeFileSync(cliPath, '#!/usr/bin/env node\n' + content, 'utf-8');
           }
-        });
+          // Make the CLI executable (755 permissions)
+          chmodSync(cliPath, 0o755);
+
+          // Clean up package-* chunk files (only during CLI build)
+          const distDir = resolve(__dirname, 'dist');
+          const files = readdirSync(distDir);
+          files.forEach(file => {
+            if (file.startsWith('package-') && (file.endsWith('.js') || file.endsWith('.cjs'))) {
+              const filePath = resolve(distDir, file);
+              console.log(`Removing unnecessary file: ${file}`);
+              unlinkSync(filePath);
+            }
+          });
+        }
       }
     }
   ]

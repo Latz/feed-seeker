@@ -53,7 +53,7 @@ const ESSENTIAL_ENDPOINTS: string[] = [
 
 	// Query parameters
 	'?format=rss',
-	'?format=feed',
+	'?format=feed'
 ];
 
 /**
@@ -150,7 +150,7 @@ const STANDARD_ENDPOINTS: string[] = [
 	'?type=rss',
 	'?type=atom',
 	'?view=feed',
-	'?view=rss',
+	'?view=rss'
 ];
 
 /**
@@ -382,7 +382,7 @@ const COMPREHENSIVE_ENDPOINTS: string[] = [
 	'invision/feed',
 	'phpbb/feed',
 	'vbulletin/feed',
-	'xenforo/feed',
+	'xenforo/feed'
 ];
 
 /**
@@ -439,7 +439,9 @@ function validateConcurrency(concurrency: number | undefined): number {
 	}
 
 	if (concurrency > MAX_CONCURRENCY) {
-		console.warn(`Concurrency value ${concurrency} exceeds maximum. Clamping to ${MAX_CONCURRENCY}.`);
+		console.warn(
+			`Concurrency value ${concurrency} exceeds maximum. Clamping to ${MAX_CONCURRENCY}.`
+		);
 		return MAX_CONCURRENCY;
 	}
 
@@ -484,10 +486,11 @@ import { type MetaLinksInstance, type Feed } from './metaLinks.ts';
 
 /**
  * Interface for blind search feed results
+ * Note: BlindSearchFeed is now just an alias for Feed for backward compatibility.
+ * The feedType property was redundant with the type property and has been removed.
+ * @deprecated Use Feed instead. This alias will be removed in a future version.
  */
-export interface BlindSearchFeed extends Feed {
-	feedType: 'rss' | 'atom' | 'json';
-}
+export type BlindSearchFeed = Feed;
 
 /**
  * Generates all possible endpoint URLs by traversing up the URL path
@@ -498,7 +501,11 @@ export interface BlindSearchFeed extends Feed {
  * @returns {string[]} Array of potential feed URLs
  * @throws {Error} When siteUrl is invalid or too long
  */
-function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoints: string[]): string[] {
+function generateEndpointUrls(
+	siteUrl: string,
+	keepQueryParams: boolean,
+	endpoints: string[]
+): string[] {
 	// Validate URL format
 	let urlObj: URL;
 	try {
@@ -509,7 +516,9 @@ function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoin
 
 	// Security: Validate URL length to prevent memory exhaustion
 	if (!isValidUrlLength(siteUrl)) {
-		throw new Error(`URL too long (${siteUrl.length} chars). Maximum allowed: ${MAX_URL_LENGTH} characters.`);
+		throw new Error(
+			`URL too long (${siteUrl.length} chars). Maximum allowed: ${MAX_URL_LENGTH} characters.`
+		);
 	}
 
 	// Security: Validate protocol to prevent non-HTTP(S) schemes
@@ -548,7 +557,9 @@ function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoin
 
 			// Construct final URL: basePath + "/" + endpoint + queryParams (if any)
 			// Example: "https://example.com/blog" + "/" + "feed" + "?category=tech"
-			const urlWithParams = queryParams ? `${basePath}/${endpoint}${queryParams}` : `${basePath}/${endpoint}`;
+			const urlWithParams = queryParams
+				? `${basePath}/${endpoint}${queryParams}`
+				: `${basePath}/${endpoint}`;
 
 			// Security: Validate URL length before adding
 			if (isValidUrlLength(urlWithParams)) {
@@ -571,7 +582,7 @@ function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoin
  * Adds a found feed to the feeds array and updates the feed type flags
  * @param {object} feedResult - The result from checkFeed
  * @param {string} url - The URL of the found feed
- * @param {BlindSearchFeed[]} feeds - The array to add the feed to
+ * @param {Feed[]} feeds - The array to add the feed to
  * @param {boolean} rssFound - Whether an RSS feed has already been found
  * @param {boolean} atomFound - Whether an Atom feed has already been found
  * @returns {{rssFound: boolean, atomFound: boolean}} Updated flags
@@ -579,7 +590,7 @@ function generateEndpointUrls(siteUrl: string, keepQueryParams: boolean, endpoin
 function addFeed(
 	feedResult: { type: 'rss' | 'atom' | 'json'; title: string | null },
 	url: string,
-	feeds: BlindSearchFeed[],
+	feeds: Feed[],
 	rssFound: boolean,
 	atomFound: boolean
 ): { rssFound: boolean; atomFound: boolean } {
@@ -593,8 +604,7 @@ function addFeed(
 		url,
 		title: null, // No link element title in blind search (unlike metaLinks)
 		type: feedResult.type,
-		feedTitle: feedResult.title, // Actual feed title from parsing the feed
-		feedType: feedResult.type, // Included for BlindSearchFeed interface compatibility
+		feedTitle: feedResult.title // Actual feed title from parsing the feed
 	});
 
 	return { rssFound, atomFound };
@@ -638,20 +648,31 @@ function shouldContinueSearch(
  *
  * @param {MetaLinksInstance} instance - The instance object containing site information and an event emitter.
  * @param {AbortSignal} [signal] - Optional AbortSignal to cancel the search operation
- * @returns {Promise<BlindSearchFeed[]>} A promise that resolves to an array of found feed objects.
- *   Each object contains the `url` of the feed, its `feedType` ('rss' or 'atom'), and its `title` if available.
+ * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed objects.
+ *   Each object contains the `url` of the feed, its `type` ('rss', 'atom', or 'json'), and its `title` if available.
  * @throws {Error} When the operation is aborted via AbortSignal
  */
-export default async function blindSearch(instance: MetaLinksInstance, signal?: AbortSignal): Promise<BlindSearchFeed[]> {
+export default async function blindSearch(
+	instance: MetaLinksInstance,
+	signal?: AbortSignal
+): Promise<Feed[]> {
 	// Security: Validate and sanitize search mode
 	const searchMode = validateSearchMode(instance.options?.searchMode);
 	const endpoints = getEndpointsByMode(searchMode);
 
 	// Generate all possible endpoint URLs with prioritized endpoints
-	const endpointUrls = generateEndpointUrls(instance.site, instance.options?.keepQueryParams || false, endpoints);
+	const endpointUrls = generateEndpointUrls(
+		instance.site,
+		instance.options?.keepQueryParams || false,
+		endpoints
+	);
 
 	// Emit the total count so the CLI can display it
-	instance.emit('start', { module: 'blindsearch', niceName: 'Blind search', endpointUrls: endpointUrls.length });
+	instance.emit('start', {
+		module: 'blindsearch',
+		niceName: 'Blind search',
+		endpointUrls: endpointUrls.length
+	});
 
 	const shouldCheckAll = instance.options?.all || false;
 	const maxFeeds = instance.options?.maxFeeds ?? DEFAULT_MAX_FEEDS; // Maximum number of feeds to find
@@ -660,7 +681,14 @@ export default async function blindSearch(instance: MetaLinksInstance, signal?: 
 	const concurrency = validateConcurrency(instance.options?.concurrency);
 
 	// Process each URL to find feeds with concurrent batching
-	const results = await processFeeds(endpointUrls, shouldCheckAll, maxFeeds, concurrency, instance, signal);
+	const results = await processFeeds(
+		endpointUrls,
+		shouldCheckAll,
+		maxFeeds,
+		concurrency,
+		instance,
+		signal
+	);
 
 	instance.emit('end', { module: 'blindsearch', feeds: results.feeds });
 	return results.feeds;
@@ -674,7 +702,7 @@ export default async function blindSearch(instance: MetaLinksInstance, signal?: 
  * @param {number} concurrency - Number of concurrent requests to make
  * @param {MetaLinksInstance} instance - The FeedSeeker instance
  * @param {AbortSignal} [signal] - Optional AbortSignal to cancel the operation
- * @returns {Promise<{feeds: BlindSearchFeed[], rssFound: boolean, atomFound: boolean}>} A promise that resolves to an object containing feeds, rssFound, and atomFound status
+ * @returns {Promise<{feeds: Feed[], rssFound: boolean, atomFound: boolean}>} A promise that resolves to an object containing feeds, rssFound, and atomFound status
  * @throws {Error} When the operation is aborted
  */
 async function processFeeds(
@@ -684,8 +712,8 @@ async function processFeeds(
 	concurrency: number,
 	instance: MetaLinksInstance,
 	signal?: AbortSignal
-): Promise<{ feeds: BlindSearchFeed[]; rssFound: boolean; atomFound: boolean }> {
-	const feeds: BlindSearchFeed[] = [];
+): Promise<{ feeds: Feed[]; rssFound: boolean; atomFound: boolean }> {
+	const feeds: Feed[] = [];
 	const foundUrls = new Set<string>();
 	let rssFound = false;
 	let atomFound = false;
@@ -710,7 +738,7 @@ async function processFeeds(
 
 		// Process batch concurrently using Promise.allSettled (continue even if some fail)
 		const batchResults = await Promise.allSettled(
-			batch.map(url => processSingleFeedUrl(url, instance, foundUrls, feeds, rssFound, atomFound))
+			batch.map((url) => processSingleFeedUrl(url, instance, foundUrls, feeds, rssFound, atomFound))
 		);
 
 		// Process results from the batch
@@ -731,13 +759,18 @@ async function processFeeds(
 		// Emit progress for the processed batch
 		i += batchSize;
 		const feedsFound = feeds.length;
-		instance.emit('log', { module: 'blindsearch', totalEndpoints: endpointUrls.length, totalCount: i, feedsFound });
+		instance.emit('log', {
+			module: 'blindsearch',
+			totalEndpoints: endpointUrls.length,
+			totalCount: i,
+			feedsFound
+		});
 
 		// Rate limiting: Add delay between batches if configured
 		// Security: Validate and clamp delay to safe limits
 		const requestDelay = validateRequestDelay(instance.options?.requestDelay);
 		if (requestDelay > 0 && i < endpointUrls.length) {
-			await new Promise(resolve => setTimeout(resolve, requestDelay));
+			await new Promise((resolve) => setTimeout(resolve, requestDelay));
 		}
 	}
 
@@ -749,7 +782,7 @@ async function processFeeds(
  * @param {string} url - The URL to process
  * @param {MetaLinksInstance} instance - The FeedSeeker instance
  * @param {Set<string>} foundUrls - Set of already checked URLs to prevent duplicate requests
- * @param {BlindSearchFeed[]} feeds - Array of found feeds
+ * @param {Feed[]} feeds - Array of found feeds
  * @param {boolean} rssFound - Whether an RSS feed has been found
  * @param {boolean} atomFound - Whether an Atom feed has been found
  * @returns {Promise<{found: boolean, rssFound: boolean, atomFound: boolean}>} A promise that resolves to an object containing found status and updated flags
@@ -758,7 +791,7 @@ async function processSingleFeedUrl(
 	url: string,
 	instance: MetaLinksInstance,
 	foundUrls: Set<string>,
-	feeds: BlindSearchFeed[],
+	feeds: Feed[],
 	rssFound: boolean,
 	atomFound: boolean
 ): Promise<{ found: boolean; rssFound: boolean; atomFound: boolean }> {
@@ -793,18 +826,18 @@ async function processSingleFeedUrl(
 /**
  * Handles the case when maximum feeds limit is reached
  * @param {MetaLinksInstance} instance - The FeedSeeker instance
- * @param {BlindSearchFeed[]} feeds - Array of found feeds
+ * @param {Feed[]} feeds - Array of found feeds
  * @param {number} maxFeeds - Maximum number of feeds allowed
  * @returns {Promise<void>}
  */
 async function handleMaxFeedsReached(
 	instance: MetaLinksInstance,
-	feeds: BlindSearchFeed[],
+	feeds: Feed[],
 	maxFeeds: number
 ): Promise<void> {
 	instance.emit('log', {
 		module: 'blindsearch',
-		message: `Stopped due to reaching maximum feeds limit: ${feeds.length} feeds found (max ${maxFeeds} allowed).`,
+		message: `Stopped due to reaching maximum feeds limit: ${feeds.length} feeds found (max ${maxFeeds} allowed).`
 	});
 }
 
@@ -815,7 +848,11 @@ async function handleMaxFeedsReached(
  * @param {Error} error - The error that occurred
  * @returns {Promise<void>}
  */
-async function handleFeedError(instance: MetaLinksInstance, url: string, error: Error): Promise<void> {
+async function handleFeedError(
+	instance: MetaLinksInstance,
+	url: string,
+	error: Error
+): Promise<void> {
 	// Only show errors if the undocumented --show-errors flag is set
 	if (instance.options?.showErrors) {
 		instance.emit('error', {
@@ -824,7 +861,7 @@ async function handleFeedError(instance: MetaLinksInstance, url: string, error: 
 			explanation:
 				'An error occurred while trying to fetch a potential feed URL during blind search. This could be due to network timeouts, server errors, 404 not found, or invalid content.',
 			suggestion:
-				'This is normal during blind search as many URLs are tested. The search will continue with other potential feed endpoints.',
+				'This is normal during blind search as many URLs are tested. The search will continue with other potential feed endpoints.'
 		});
 	}
 }
