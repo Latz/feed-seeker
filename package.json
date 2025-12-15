@@ -4,27 +4,39 @@
 	"description": "FeedSeeker - Find RSS, Atom, and JSON feeds on any website with support for preserving query parameters",
 	"main": "dist/feed-seeker.cjs",
 	"module": "dist/feed-seeker.js",
+	"types": "dist/types/feed-seeker.d.ts",
 	"type": "module",
 	"bin": {
 		"feed-seeker": "dist/feed-seeker-cli.cjs"
 	},
 	"exports": {
 		".": {
+			"types": "./dist/types/feed-seeker.d.ts",
 			"import": "./dist/feed-seeker.js",
 			"require": "./dist/feed-seeker.cjs"
 		},
 		"./cli": {
+			"types": "./dist/types/feed-seeker-cli.d.ts",
 			"import": "./dist/feed-seeker-cli.js",
 			"require": "./dist/feed-seeker-cli.cjs"
 		}
 	},
 	"files": [
-		"dist"
+		"dist",
+		"README.md",
+		"LICENSE"
 	],
 	"scripts": {
 		"test": "node tests/run-tests.js",
 		"test:unit": "node --test tests/*.test.js",
-		"build": "vite build"
+		"clean": "rm -rf dist",
+		"typecheck": "tsc --noEmit",
+		"prebuild": "npm run clean",
+		"build": "npm run build:lib && npm run build:cli && npm run build:types",
+		"build:lib": "vite build",
+		"build:cli": "BUILD_TARGET=cli vite build",
+		"build:types": "tsc --emitDeclarationOnly --declarationDir dist/types",
+		"prepublishOnly": "npm run typecheck && npm run build && npm test"
 	},
 	"keywords": [
 		"rss",
@@ -35,7 +47,12 @@
 		"feed-discovery",
 		"web-feed",
 		"syndication",
-		"query-parameters"
+		"query-parameters",
+		"typescript",
+		"feed-detector",
+		"rss-detector",
+		"atom-feed",
+		"json-feed"
 	],
 	"author": "Your Name <your.email@example.com>",
 	"license": "MIT",
@@ -56,10 +73,14 @@
 		"tldts": "^7.0.16",
 		"truncate-url": "^3.0.0"
 	},
-	"engines": {
-		"node": ">=14.0.0"
-	},
 	"devDependencies": {
-		"vite": "^7.1.7"
+		"@types/async": "^3.2.25",
+		"@types/node": "^22.19.1",
+		"typescript": "^5.9.3",
+		"vite": "^7.1.7",
+		"vitest": "^4.0.15"
+	},
+	"engines": {
+		"node": ">=18.0.0"
 	}
 }
