@@ -1,0 +1,27 @@
+import figlet from 'figlet';
+import gradient from 'gradient-string';
+
+/**
+ * Creates a rainbow gradient banner for FeedSeeker using the Graffiti font
+ * @returns {string} Rainbow gradient banner text
+ */
+export function createBanner(): string {
+  // Use a simple ASCII art that mimics the Graffiti font style
+  // This avoids the synchronous font loading issue in the browser build
+  const asciiArt = [
+    '  _______  __   __  _______  _______  _______  ______   _______  ',
+    ' |       ||  | |  ||       ||       ||       ||    _ | |       | ',
+    ' |  _    ||  | |  ||    ___||  _____||_     _||   | || |  _____| ',
+    ' | | |   ||  | |  ||   |___ | |_____   |   |  |   |_|| | |_____  ',
+    ' | |_|   ||  | |  ||    ___||_____  |  |   |  |    __  |_____  | ',
+    ' |       ||  | |  ||   |___  _____| |  |   |  |   |  |  _____| | ',
+    ' |_______||__||__||_______||_______|  |___|  |___|  | |_______| '
+  ].join('\n');
+
+  // Apply rainbow gradient to the ASCII art
+  return gradient.rainbow(asciiArt);
+}
+
+// Default export for backward compatibility
+const bannerText = createBanner();
+export default bannerText;

@@ -1,55 +1,98 @@
 #!/usr/bin/env node
-import { Command as Y, Option as J } from "commander";
-import { parseHTML as M } from "linkedom";
+import { Command as K, Option as V } from "commander";
+import { parseHTML as N } from "linkedom";
 import k from "tldts";
-import B from "async";
-import { styleText as u } from "node:util";
+import Y from "async";
+import { styleText as h } from "node:util";
+const z = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0",
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+];
+function J() {
+  return z[Math.floor(Math.random() * z.length)];
+}
+function Q(r) {
+  return new Promise((e) => setTimeout(e, r));
+}
 async function I(r, e = {}) {
-  let t, s;
+  let t, s, o, i;
   if (typeof e == "number")
-    t = e, s = {};
+    t = e, s = 0, o = 1e3, i = {};
   else {
-    const { timeout: a = 5e3, ...d } = e;
-    t = a, s = d;
+    const {
+      timeout: n = 5e3,
+      retries: x = 0,
+      retryDelay: l = 1e3,
+      ...d
+    } = e;
+    t = n, s = x, o = l, i = d;
   }
   try {
-    const a = new URL(r);
-    if (!["http:", "https:"].includes(a.protocol))
-      throw new Error(`Invalid URL protocol: ${a.protocol}. Only http: and https: are allowed.`);
-  } catch (a) {
-    throw a instanceof TypeError ? new Error(`Invalid URL: ${r}`) : a;
+    const n = new URL(r);
+    if (!["http:", "https:"].includes(n.protocol))
+      throw new Error(`Invalid URL protocol: ${n.protocol}. Only http: and https: are allowed.`);
+  } catch (n) {
+    throw n instanceof TypeError ? new Error(`Invalid URL: ${r}`) : n;
   }
   if (t <= 0)
     throw new Error(`Invalid timeout: ${t}. Timeout must be a positive number.`);
   if (!Number.isFinite(t))
     throw new Error(`Invalid timeout: ${t}. Timeout must be a finite number.`);
-  const o = new AbortController(), i = setTimeout(() => o.abort(), t), l = {
-    ...{
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.5",
-      "Accept-Encoding": "gzip, deflate, br",
-      Connection: "keep-alive",
-      "Upgrade-Insecure-Requests": "1",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Cache-Control": "max-age=0"
-    },
-    ...s.headers || {}
-  };
-  try {
-    const a = await fetch(r, {
-      ...s,
-      signal: o.signal,
-      headers: l
-    });
-    return clearTimeout(i), a;
-  } catch (a) {
-    throw clearTimeout(i), a instanceof Error && a.name === "AbortError" ? new Error(`Request to ${r} timed out after ${t}ms`) : a;
+  let m;
+  const a = new URL(r);
+  for (let n = 0; n <= s; n++) {
+    if (n > 0) {
+      const B = o * Math.pow(2, n - 1), T = Math.random() * 500;
+      await Q(B + T);
+    }
+    const x = new AbortController(), l = setTimeout(() => x.abort(), t), f = {
+      ...{
+        "User-Agent": J(),
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        Connection: "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        DNT: "1",
+        "Cache-Control": "max-age=0",
+        Referer: a.origin + "/"
+      },
+      ...i.headers || {}
+    };
+    try {
+      const B = await fetch(r, {
+        ...i,
+        signal: x.signal,
+        headers: f
+      });
+      if (clearTimeout(l), B.status === 403 && n < s) {
+        m = new Error(`HTTP 403 Forbidden (attempt ${n + 1}/${s + 1})`);
+        continue;
+      }
+      return B;
+    } catch (B) {
+      if (clearTimeout(l), m = B, B instanceof Error && B.name === "AbortError" && (m = new Error(`Request to ${r} timed out after ${t}ms`)), n >= s)
+        break;
+    }
   }
+  throw m;
 }
-const p = {
+const u = {
   MAX_CONTENT_SIZE: 10 * 1024 * 1024,
   // 10MB maximum content size
   DEFAULT_TIMEOUT: 5,
@@ -62,7 +105,7 @@ const p = {
   TYPES: ["rich", "video", "photo", "link"],
   VERSIONS: ["1.0", "2.0"],
   URL_PATTERNS: ["/wp-json/oembed/", "/oembed"]
-}, f = {
+}, c = {
   // CDATA processing - matches XML CDATA sections: <![CDATA[content]]>
   // Used to extract clean text content from feeds that wrap content in CDATA
   CDATA: /<!\[CDATA\[(.*?)\]\]>/g,
@@ -103,7 +146,7 @@ const p = {
     TITLE_CONTENT: /<title>([\s\S]*?)<\/title>/i
   }
 };
-function G(r) {
+function Z(r) {
   let e;
   try {
     e = new URL(r);
@@ -115,117 +158,117 @@ function G(r) {
       `Invalid protocol: ${e.protocol}. Only http: and https: protocols are allowed.`
     );
 }
-function K(r) {
-  if (r.length > p.MAX_CONTENT_SIZE)
+function ee(r) {
+  if (r.length > u.MAX_CONTENT_SIZE)
     throw new Error(
-      `Content too large: ${r.length} bytes. Maximum allowed: ${p.MAX_CONTENT_SIZE} bytes.`
+      `Content too large: ${r.length} bytes. Maximum allowed: ${u.MAX_CONTENT_SIZE} bytes.`
     );
 }
-function Q(r) {
-  return r == null ? p.DEFAULT_TIMEOUT : !Number.isFinite(r) || r < p.MIN_TIMEOUT ? (console.warn(
-    `Invalid timeout value ${r}. Using minimum: ${p.MIN_TIMEOUT} seconds.`
-  ), p.MIN_TIMEOUT) : r > p.MAX_TIMEOUT ? (console.warn(
-    `Timeout value ${r} exceeds maximum. Clamping to ${p.MAX_TIMEOUT} seconds.`
-  ), p.MAX_TIMEOUT) : Math.floor(r);
+function te(r) {
+  return r == null ? u.DEFAULT_TIMEOUT : !Number.isFinite(r) || r < u.MIN_TIMEOUT ? (console.warn(
+    `Invalid timeout value ${r}. Using minimum: ${u.MIN_TIMEOUT} seconds.`
+  ), u.MIN_TIMEOUT) : r > u.MAX_TIMEOUT ? (console.warn(
+    `Timeout value ${r} exceeds maximum. Clamping to ${u.MAX_TIMEOUT} seconds.`
+  ), u.MAX_TIMEOUT) : Math.floor(r);
 }
-function Z(r) {
+function re(r) {
   return C.URL_PATTERNS.some((e) => r.includes(e));
 }
-function ee(r) {
+function se(r) {
   return !!(r.type && C.TYPES.includes(r.type) && C.VERSIONS.includes(r.version) || r.type && r.version && r.html);
 }
 function F(r) {
-  return r.replace(f.CDATA, "$1");
+  return r.replace(c.CDATA, "$1");
 }
-function x(r) {
+function _(r) {
   return r ? r.replace(/\s+/g, " ").trim() : null;
 }
-async function E(r, e = "", t) {
-  if (G(r), Z(r))
+async function y(r, e = "", t) {
+  if (Z(r), re(r))
     return null;
   if (!e) {
     if (!t)
       throw new Error("Instance parameter is required when content is not provided");
-    const i = Q(t.options.timeout) * 1e3, n = await I(r, i);
-    if (!n.ok)
-      throw new Error(`Failed to fetch ${r}: ${n.status} ${n.statusText}`);
-    e = await n.text();
+    const i = te(t.options.timeout) * 1e3, m = await I(r, i);
+    if (!m.ok)
+      throw new Error(`Failed to fetch ${r}: ${m.status} ${m.statusText}`);
+    e = await m.text();
   }
-  return K(e), re(e) || se(e) || oe(e) || null;
+  return ee(e), ie(e) || me(e) || ne(e) || null;
 }
-function te(r) {
-  const e = f.RSS.CHANNEL_CONTENT.exec(r);
+function oe(r) {
+  const e = c.RSS.CHANNEL_CONTENT.exec(r);
   if (e) {
-    const o = e[1], i = f.RSS.TITLE.exec(o);
-    return i ? x(F(i[1])) : null;
+    const o = e[1], i = c.RSS.TITLE.exec(o);
+    return i ? _(F(i[1])) : null;
   }
-  const t = f.RSS.TITLE.exec(r);
-  return t ? x(F(t[1])) : null;
+  const t = c.RSS.TITLE.exec(r);
+  return t ? _(F(t[1])) : null;
 }
-function re(r) {
-  if (f.RSS.VERSION.test(r)) {
-    const e = f.RSS.CHANNEL.test(r), t = f.RSS.ITEM.test(r), s = f.RSS.DESCRIPTION.test(r);
-    if (e && s && (t || f.RSS.CHANNEL_END.test(r)))
-      return { type: "rss", title: te(r) };
+function ie(r) {
+  if (c.RSS.VERSION.test(r)) {
+    const e = c.RSS.CHANNEL.test(r), t = c.RSS.ITEM.test(r), s = c.RSS.DESCRIPTION.test(r);
+    if (e && s && (t || c.RSS.CHANNEL_END.test(r)))
+      return { type: "rss", title: oe(r) };
   }
   return null;
 }
-function se(r) {
-  const e = f.ATOM.NAMESPACE_XMLNS.test(r) || f.ATOM.NAMESPACE_XMLNS_ATOM.test(r) || f.ATOM.NAMESPACE_ATOM_PREFIX.test(r);
-  if (f.ATOM.FEED_START.test(r) && e) {
-    const t = f.ATOM.ENTRY.test(r), s = f.ATOM.TITLE_TAG.test(r);
+function me(r) {
+  const e = c.ATOM.NAMESPACE_XMLNS.test(r) || c.ATOM.NAMESPACE_XMLNS_ATOM.test(r) || c.ATOM.NAMESPACE_ATOM_PREFIX.test(r);
+  if (c.ATOM.FEED_START.test(r) && e) {
+    const t = c.ATOM.ENTRY.test(r), s = c.ATOM.TITLE_TAG.test(r);
     if (t && s) {
-      const o = f.ATOM.TITLE_CONTENT.exec(r);
-      return { type: "atom", title: o ? x(F(o[1])) : null };
+      const o = c.ATOM.TITLE_CONTENT.exec(r);
+      return { type: "atom", title: o ? _(F(o[1])) : null };
     }
   }
   return null;
 }
-function oe(r) {
+function ne(r) {
   try {
     const e = JSON.parse(r);
-    if (ee(e))
+    if (se(e))
       return null;
     if (e.version && typeof e.version == "string" && e.version.includes("jsonfeed") || e.items && Array.isArray(e.items) || e.feed_url) {
       const t = e.title || e.name || null;
-      return { type: "json", title: typeof t == "string" ? x(t) : null };
+      return { type: "json", title: typeof t == "string" ? _(t) : null };
     }
     return null;
   } catch {
     return null;
   }
 }
-const ie = ["feed+json", "rss+xml", "atom+xml", "xml", "rdf+xml"], ne = ["/rss", "/feed", "/atom", ".rss", ".atom", ".xml", ".json"];
-function ae(r) {
+const ae = ["feed+json", "rss+xml", "atom+xml", "xml", "rdf+xml"], xe = ["/rss", "/feed", "/atom", ".rss", ".atom", ".xml", ".json"];
+function le(r) {
   return r ? r.replace(/\s+/g, " ").trim() : null;
 }
 async function L(r, e, t, s, o = 5) {
   const i = e.options?.maxFeeds || 0;
-  for (let n = 0; n < r.length; n += o) {
+  for (let m = 0; m < r.length; m += o) {
     if (i > 0 && t.length >= i)
       return !0;
-    const l = r.slice(n, n + o);
+    const a = r.slice(m, m + o);
     if ((await Promise.allSettled(
-      l.map((c) => le(c, e, t, s))
+      a.map((l) => de(l, e, t, s))
     )).some(
-      (c) => c.status === "fulfilled" && c.value === !0
+      (l) => l.status === "fulfilled" && l.value === !0
     ))
       return !0;
   }
   return !1;
 }
-async function le(r, e, t, s) {
+async function de(r, e, t, s) {
   const o = e.options?.maxFeeds || 0;
   if (!r.href) return !1;
   let i;
   try {
     i = new URL(r.href, e.site).href;
-  } catch (n) {
+  } catch (m) {
     if (e.options?.showErrors) {
-      const l = n instanceof Error ? n : new Error(String(n));
+      const a = m instanceof Error ? m : new Error(String(m));
       e.emit("error", {
         module: "metalinks",
-        error: l.message,
+        error: a.message,
         explanation: `Invalid URL found in meta link: ${r.href}. Unable to construct a valid URL.`,
         suggestion: "Check the meta link href attribute for malformed URLs."
       });
@@ -235,23 +278,23 @@ async function le(r, e, t, s) {
   if (s.has(i)) return !1;
   e.emit("log", { module: "metalinks", message: `Checking feed: ${i}` });
   try {
-    const n = await E(i, "", e);
-    if (n && (t.push({
+    const m = await y(i, "", e);
+    if (m && (t.push({
       url: i,
-      title: ae(r.title),
-      type: n.type,
-      feedTitle: n.title
+      title: le(r.title),
+      type: m.type,
+      feedTitle: m.title
     }), s.add(i), o > 0 && t.length >= o))
       return e.emit("log", {
         module: "metalinks",
         message: `Stopped due to reaching maximum feeds limit: ${t.length} feeds found (max ${o} allowed).`
       }), !0;
-  } catch (n) {
+  } catch (m) {
     if (e.options?.showErrors) {
-      const l = n instanceof Error ? n : new Error(String(n));
+      const a = m instanceof Error ? m : new Error(String(m));
       e.emit("error", {
         module: "metalinks",
-        error: l.message,
+        error: a.message,
         explanation: "An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.",
         suggestion: "Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links."
       });
@@ -259,24 +302,24 @@ async function le(r, e, t, s) {
   }
   return !1;
 }
-async function de(r) {
+async function ce(r) {
   r.emit("start", { module: "metalinks", niceName: "Meta links" });
   const e = [], t = /* @__PURE__ */ new Set();
   try {
-    const s = ie.map((d) => `link[type="application/${d}"]`).join(", "), o = Array.from(r.document.querySelectorAll(s));
+    const s = ae.map((x) => `link[type="application/${x}"]`).join(", "), o = Array.from(r.document.querySelectorAll(s));
     if (await L(o, r, e, t))
       return e;
-    const n = Array.from(
+    const m = Array.from(
       r.document.querySelectorAll('link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="xml"], link[rel="alternate"][type*="atom"], link[rel="alternate"][type*="json"]')
     );
-    if (await L(n, r, e, t))
+    if (await L(m, r, e, t))
       return e;
-    const a = Array.from(
+    const n = Array.from(
       r.document.querySelectorAll('link[rel="alternate"]')
     ).filter(
-      (d) => d.href && ne.some((c) => d.href.toLowerCase().includes(c))
+      (x) => x.href && xe.some((l) => x.href.toLowerCase().includes(l))
     );
-    return await L(a, r, e, t), e;
+    return await L(n, r, e, t), e;
   } finally {
     r.emit("end", { module: "metalinks", feeds: e });
   }
@@ -288,14 +331,14 @@ function b(r, e) {
     return null;
   }
 }
-function ce(r) {
+function Be(r) {
   const e = b(r);
   return e ? e.protocol === "http:" || e.protocol === "https:" : !1;
 }
 function fe(r) {
   return b(r) ? !1 : !r.includes("://");
 }
-function z(r, e) {
+function P(r, e) {
   const t = b(r);
   if (!t || t.hostname === e.hostname)
     return !0;
@@ -327,7 +370,7 @@ function he(r) {
 function H(r, e, t) {
   if (!r.href)
     return null;
-  if (ce(r.href))
+  if (Be(r.href))
     return r.href;
   if (fe(r.href)) {
     const s = b(r.href, e);
@@ -351,23 +394,23 @@ function ue(r) {
   }
   return Array.from(s);
 }
-async function me(r, e) {
+async function pe(r, e) {
   const { instance: t, baseUrl: s, feedUrls: o } = e, i = H(r, s, t);
   if (i)
     try {
-      const n = await E(i, "", t);
-      n && o.push({
+      const m = await y(i, "", t);
+      m && o.push({
         url: i,
         title: r.textContent?.trim() || null,
-        type: n.type,
-        feedTitle: n.title
+        type: m.type,
+        feedTitle: m.title
       });
-    } catch (n) {
+    } catch (m) {
       if (t.options?.showErrors) {
-        const l = n instanceof Error ? n : new Error(String(n));
+        const a = m instanceof Error ? m : new Error(String(m));
         t.emit("error", {
           module: "anchors",
-          error: `Error checking feed at ${i}: ${l.message}`,
+          error: `Error checking feed at ${i}: ${a.message}`,
           explanation: "An error occurred while trying to fetch and validate a potential feed URL found in an anchor tag. This could be due to network timeouts, server errors, or invalid feed content.",
           suggestion: "Check if the URL is accessible and returns valid feed content. Network connectivity issues or server problems may cause this error."
         });
@@ -377,17 +420,17 @@ async function me(r, e) {
 async function X(r) {
   await he(r);
   const e = new URL(r.site), t = r.document.querySelectorAll("a"), s = [];
-  for (const l of t) {
-    const a = H(l, e, r);
-    a && z(a, e) && s.push(l);
+  for (const a of t) {
+    const n = H(a, e, r);
+    n && P(n, e) && s.push(a);
   }
   const o = r.options?.maxFeeds || 0, i = {
     instance: r,
     baseUrl: e,
     feedUrls: []
   };
-  let n = 1;
-  for (const l of s) {
+  let m = 1;
+  for (const a of s) {
     if (o > 0 && i.feedUrls.length >= o) {
       r.emit("log", {
         module: "anchors",
@@ -395,13 +438,13 @@ async function X(r) {
       });
       break;
     }
-    r.emit("log", { module: "anchors", totalCount: n++, totalEndpoints: s.length }), await me(l, i);
+    r.emit("log", { module: "anchors", totalCount: m++, totalEndpoints: s.length }), await pe(a, i);
   }
   if (o === 0 || i.feedUrls.length < o) {
-    const l = r.document.body?.innerHTML || "", a = ue(l), d = new Set(i.feedUrls.map((h) => h.url)), c = [];
-    for (const h of a)
-      !d.has(h) && z(h, e) && (c.push(h), d.add(h));
-    for (const h of c) {
+    const a = r.document.body?.innerHTML || "", n = ue(a), x = new Set(i.feedUrls.map((d) => d.url)), l = [];
+    for (const d of n)
+      !x.has(d) && P(d, e) && (l.push(d), x.add(d));
+    for (const d of l) {
       if (o > 0 && i.feedUrls.length >= o) {
         r.emit("log", {
           module: "anchors",
@@ -411,24 +454,24 @@ async function X(r) {
       }
       r.emit("log", {
         module: "anchors",
-        totalCount: n++,
-        totalEndpoints: s.length + c.length
+        totalCount: m++,
+        totalEndpoints: s.length + l.length
       });
       try {
-        const m = await E(h, "", r);
-        m && i.feedUrls.push({
-          url: h,
+        const f = await y(d, "", r);
+        f && i.feedUrls.push({
+          url: d,
           title: null,
           // Plain-text URLs don't have anchor text
-          type: m.type,
-          feedTitle: m.title
+          type: f.type,
+          feedTitle: f.title
         });
-      } catch (m) {
+      } catch (f) {
         if (r.options?.showErrors) {
-          const T = m instanceof Error ? m : new Error(String(m));
+          const B = f instanceof Error ? f : new Error(String(f));
           r.emit("error", {
             module: "anchors",
-            error: `Error checking feed at ${h}: ${T.message}`,
+            error: `Error checking feed at ${d}: ${B.message}`,
             explanation: "An error occurred while trying to fetch and validate a potential feed URL found in page text. This could be due to network timeouts, server errors, or invalid feed content.",
             suggestion: "Check if the URL is accessible and returns valid feed content. Network connectivity issues or server problems may cause this error."
           });
@@ -438,7 +481,7 @@ async function X(r) {
   }
   return i.feedUrls;
 }
-async function pe(r) {
+async function ge(r) {
   r.emit("start", {
     module: "anchors",
     niceName: "Check all anchors"
@@ -446,7 +489,7 @@ async function pe(r) {
   const e = await X(r);
   return r.emit("end", { module: "anchors", feeds: e }), e;
 }
-const ge = 0, A = 0, we = 3, v = "standard", W = 2083, U = 10, $ = 1, P = 1e4, R = 6e4, S = [
+const we = 0, A = 0, ye = 3, v = "standard", G = 2083, M = 10, U = 1, q = 1e4, R = 6e4, E = [
   // Most common standard paths (highest success rate)
   "feed",
   "rss",
@@ -476,7 +519,7 @@ const ge = 0, A = 0, we = 3, v = "standard", W = 2083, U = 10, $ = 1, P = 1e4, R
   // Query parameters
   "?format=rss",
   "?format=feed"
-], N = [
+], $ = [
   // Extended standard paths
   "rssfeed.xml",
   "feed.rss",
@@ -560,7 +603,7 @@ const ge = 0, A = 0, we = 3, v = "standard", W = 2083, U = 10, $ = 1, P = 1e4, R
   "?type=atom",
   "?view=feed",
   "?view=rss"
-], ye = [
+], Ee = [
   // Custom and alternative paths
   "atomfeed",
   "jsonfeed",
@@ -772,65 +815,65 @@ const ge = 0, A = 0, we = 3, v = "standard", W = 2083, U = 10, $ = 1, P = 1e4, R
   "vbulletin/feed",
   "xenforo/feed"
 ];
-function Ee(r) {
+function Se(r) {
   switch (r) {
     case "fast":
-      return S;
+      return E;
     case "standard":
-      return [...S, ...N];
+      return [...E, ...$];
     case "exhaustive":
     case "full":
-      return [...S, ...N, ...ye];
+      return [...E, ...$, ...Ee];
     default:
-      return [...S, ...N];
+      return [...E, ...$];
   }
 }
-function Se(r) {
+function _e(r) {
   return r ? ["fast", "standard", "exhaustive", "full"].includes(r) ? r : (console.warn(`Invalid search mode "${r}". Falling back to "${v}".`), v) : v;
 }
-function _e(r) {
-  return r == null ? we : !Number.isFinite(r) || r < $ ? (console.warn(`Invalid concurrency value ${r}. Using minimum: ${$}.`), $) : r > U ? (console.warn(
-    `Concurrency value ${r} exceeds maximum. Clamping to ${U}.`
-  ), U) : Math.floor(r);
+function be(r) {
+  return r == null ? ye : !Number.isFinite(r) || r < U ? (console.warn(`Invalid concurrency value ${r}. Using minimum: ${U}.`), U) : r > M ? (console.warn(
+    `Concurrency value ${r} exceeds maximum. Clamping to ${M}.`
+  ), M) : Math.floor(r);
 }
-function xe(r) {
+function Te(r) {
   return r == null ? A : !Number.isFinite(r) || r < 0 ? (console.warn(`Invalid request delay ${r}. Using default: ${A}.`), A) : r > R ? (console.warn(`Request delay ${r}ms exceeds maximum. Clamping to ${R}ms.`), R) : Math.floor(r);
 }
-function q(r) {
-  return r.length <= W;
+function W(r) {
+  return r.length <= G;
 }
-function be(r, e, t) {
+function ke(r, e, t) {
   let s;
   try {
     s = new URL(r);
   } catch {
     throw new Error(`Invalid URL provided to blindSearch: ${r}`);
   }
-  if (!q(r))
+  if (!W(r))
     throw new Error(
-      `URL too long (${r.length} chars). Maximum allowed: ${W} characters.`
+      `URL too long (${r.length} chars). Maximum allowed: ${G} characters.`
     );
   if (!["http:", "https:"].includes(s.protocol))
     throw new Error(`Invalid protocol "${s.protocol}". Only http: and https: are allowed.`);
   const o = s.origin;
   let i = r;
-  const n = [];
-  let l = "";
-  for (e && (l = s.search); i.length >= o.length; ) {
-    const a = i.endsWith("/") ? i.slice(0, -1) : i;
-    for (const d of t) {
-      if (n.length >= P)
+  const m = [];
+  let a = "";
+  for (e && (a = s.search); i.length >= o.length; ) {
+    const n = i.endsWith("/") ? i.slice(0, -1) : i;
+    for (const x of t) {
+      if (m.length >= q)
         return console.warn(
-          `URL generation limit reached (${P} URLs). Stopping to prevent resource exhaustion.`
-        ), n;
-      const c = l ? `${a}/${d}${l}` : `${a}/${d}`;
-      q(c) ? n.push(c) : console.warn(`Skipping URL (too long): ${c.substring(0, 100)}...`);
+          `URL generation limit reached (${q} URLs). Stopping to prevent resource exhaustion.`
+        ), m;
+      const l = a ? `${n}/${x}${a}` : `${n}/${x}`;
+      W(l) ? m.push(l) : console.warn(`Skipping URL (too long): ${l.substring(0, 100)}...`);
     }
     i = i.slice(0, i.lastIndexOf("/"));
   }
-  return n;
+  return m;
 }
-function Te(r, e, t, s, o) {
+function Le(r, e, t, s, o) {
   return r.type === "rss" ? s = !0 : r.type === "atom" && (o = !0), t.push({
     url: e,
     title: null,
@@ -840,11 +883,11 @@ function Te(r, e, t, s, o) {
     // Actual feed title from parsing the feed
   }), { rssFound: s, atomFound: o };
 }
-function ke(r, e, t, s, o) {
+function Ae(r, e, t, s, o) {
   return r >= e ? !1 : o ? !0 : !(t && s);
 }
-async function Le(r, e) {
-  const t = Se(r.options?.searchMode), s = Ee(t), o = be(
+async function ve(r, e) {
+  const t = _e(r.options?.searchMode), s = Se(t), o = ke(
     r.site,
     r.options?.keepQueryParams || !1,
     s
@@ -854,57 +897,57 @@ async function Le(r, e) {
     niceName: "Blind search",
     endpointUrls: o.length
   });
-  const i = r.options?.all || !1, n = r.options?.maxFeeds ?? ge, l = _e(r.options?.concurrency), a = await Ae(
+  const i = r.options?.all || !1, m = r.options?.maxFeeds ?? we, a = be(r.options?.concurrency), n = await Me(
     o,
     i,
-    n,
-    l,
+    m,
+    a,
     r
   );
-  return r.emit("end", { module: "blindsearch", feeds: a.feeds }), a.feeds;
+  return r.emit("end", { module: "blindsearch", feeds: n.feeds }), n.feeds;
 }
-async function Ae(r, e, t, s, o, i) {
-  const n = [], l = /* @__PURE__ */ new Set();
-  let a = !1, d = !1, c = 0;
-  for (; ke(c, r.length, a, d, e); ) {
-    if (t > 0 && n.length >= t) {
-      await j(o, n, t);
+async function Me(r, e, t, s, o, i) {
+  const m = [], a = /* @__PURE__ */ new Set();
+  let n = !1, x = !1, l = 0;
+  for (; Ae(l, r.length, n, x, e); ) {
+    if (t > 0 && m.length >= t) {
+      await j(o, m, t);
       break;
     }
-    const h = Math.min(s, r.length - c), m = r.slice(c, c + h), T = await Promise.allSettled(
-      m.map((g) => ve(g, o, l, n, a, d))
+    const d = Math.min(s, r.length - l), f = r.slice(l, l + d), B = await Promise.allSettled(
+      f.map((p) => Ue(p, o, a, m, n, x))
     );
-    for (const g of T)
-      if (g.status === "fulfilled" && g.value.found && (a = g.value.rssFound, d = g.value.atomFound, t > 0 && n.length >= t)) {
-        await j(o, n, t), c = r.length;
+    for (const p of B)
+      if (p.status === "fulfilled" && p.value.found && (n = p.value.rssFound, x = p.value.atomFound, t > 0 && m.length >= t)) {
+        await j(o, m, t), l = r.length;
         break;
       }
-    c += h;
-    const V = n.length;
+    l += d;
+    const T = m.length;
     o.emit("log", {
       module: "blindsearch",
       totalEndpoints: r.length,
-      totalCount: c,
-      feedsFound: V
+      totalCount: l,
+      feedsFound: T
     });
-    const D = xe(o.options?.requestDelay);
-    D > 0 && c < r.length && await new Promise((g) => setTimeout(g, D));
+    const D = Te(o.options?.requestDelay);
+    D > 0 && l < r.length && await new Promise((p) => setTimeout(p, D));
   }
-  return { feeds: n, rssFound: a, atomFound: d };
+  return { feeds: m, rssFound: n, atomFound: x };
 }
-async function ve(r, e, t, s, o, i) {
+async function Ue(r, e, t, s, o, i) {
   if (t.has(r))
     return { found: !1, rssFound: o, atomFound: i };
   t.add(r);
   try {
-    const n = await E(r, "", e);
-    if (n) {
-      const l = Te(n, r, s, o, i);
-      return o = l.rssFound, i = l.atomFound, { found: !0, rssFound: o, atomFound: i };
+    const m = await y(r, "", e);
+    if (m) {
+      const a = Le(m, r, s, o, i);
+      return o = a.rssFound, i = a.atomFound, { found: !0, rssFound: o, atomFound: i };
     }
-  } catch (n) {
-    const l = n instanceof Error ? n : new Error(String(n));
-    await Ue(e, r, l);
+  } catch (m) {
+    const a = m instanceof Error ? m : new Error(String(m));
+    await Re(e, r, a);
   }
   return { found: !1, rssFound: o, atomFound: i };
 }
@@ -914,7 +957,7 @@ async function j(r, e, t) {
     message: `Stopped due to reaching maximum feeds limit: ${e.length} feeds found (max ${t} allowed).`
   });
 }
-async function Ue(r, e, t) {
+async function Re(r, e, t) {
   r.options?.showErrors && r.emit("error", {
     module: "blindsearch",
     error: `Error fetching ${e}: ${t.message}`,
@@ -922,7 +965,7 @@ async function Ue(r, e, t) {
     suggestion: "This is normal during blind search as many URLs are tested. The search will continue with other potential feed endpoints."
   });
 }
-class y {
+class w {
   /**
    * Private field storing event listeners using Map and Set for optimal performance
    * @private
@@ -949,7 +992,7 @@ class y {
    * @param {EventEmitterOptions} options - Configuration options
    */
   constructor(e = {}) {
-    this.#t = e.maxListeners ?? y.#i, this.#o = e.captureAsyncErrors ?? !0;
+    this.#t = e.maxListeners ?? w.#i, this.#o = e.captureAsyncErrors ?? !0;
   }
   /**
    * Sets the default maximum number of listeners for all new EventEmitter instances
@@ -958,7 +1001,7 @@ class y {
   static setDefaultMaxListeners(e) {
     if (typeof e != "number" || e < 0 || !Number.isInteger(e))
       throw new TypeError("Max listeners must be a non-negative integer");
-    y.#i = e;
+    w.#i = e;
   }
   /**
    * Validates event name
@@ -980,7 +1023,7 @@ class y {
    * Checks and warns if max listeners exceeded
    * @private
    */
-  #n(e) {
+  #m(e) {
     if (this.#t > 0) {
       const t = this.listenerCount(e);
       t > this.#t && console.warn(
@@ -993,7 +1036,7 @@ class y {
    * Handles Error objects, plain objects with error properties, and other types
    * @private
    */
-  #l(e) {
+  #a(e) {
     if (e instanceof Error)
       return e.message;
     if (typeof e == "object" && e !== null) {
@@ -1012,7 +1055,7 @@ class y {
    * Handles errors from listener execution
    * @private
    */
-  #a(e, t) {
+  #n(e, t) {
     if (t === "error")
       throw console.error("Error in error event listener:", e), e;
     const s = this.#e.get("error");
@@ -1035,7 +1078,7 @@ class y {
   on(e, t) {
     this.#r(e), this.#s(t);
     const s = this.#e.get(e);
-    return s ? s.add(t) : this.#e.set(e, /* @__PURE__ */ new Set([t])), this.#n(e), this;
+    return s ? s.add(t) : this.#e.set(e, /* @__PURE__ */ new Set([t])), this.#m(e), this;
   }
   /**
    * Adds an event listener to the beginning of the listeners array
@@ -1057,7 +1100,7 @@ class y {
       const o = /* @__PURE__ */ new Set([t, ...s]);
       this.#e.set(e, o);
     }
-    return this.#n(e), this;
+    return this.#m(e), this;
   }
   /**
    * Adds a one-time event listener for the specified event
@@ -1117,7 +1160,7 @@ class y {
         if (o instanceof Error)
           throw o;
         {
-          const i = this.#l(o);
+          const i = this.#a(o);
           throw new Error(`Unhandled error event: ${i}`);
         }
       }
@@ -1126,11 +1169,11 @@ class y {
     return [...s].forEach((o) => {
       try {
         const i = o(...t);
-        this.#o && i instanceof Promise && i.catch((n) => {
-          this.#a(n, e);
+        this.#o && i instanceof Promise && i.catch((m) => {
+          this.#n(m, e);
         });
       } catch (i) {
-        this.#a(i, e);
+        this.#n(i, e);
       }
     }), !0;
   }
@@ -1217,8 +1260,8 @@ class y {
     return Array.from(this.#e.keys());
   }
 }
-const { queue: $e } = B;
-function Re(r) {
+const { queue: $e } = Y;
+function Ne(r) {
   return [
     ".zip",
     ".rar",
@@ -1263,19 +1306,19 @@ function Re(r) {
     ".ogx"
   ].some((t) => r.endsWith(t));
 }
-class Ne extends y {
-  constructor(e, t = 3, s = 5, o = 1e3, i = !1, n = 5, l = 0, a = null) {
+class Ce extends w {
+  constructor(e, t = 3, s = 5, o = 1e3, i = !1, m = 5, a = 0, n = null) {
     super();
     try {
-      const d = new URL(e);
-      this.startUrl = d.href;
+      const x = new URL(e);
+      this.startUrl = x.href;
     } catch {
       throw new Error(`Invalid start URL: ${e}`);
     }
-    this.maxDepth = t, this.concurrency = s, this.maxLinks = o, this.mainDomain = k.getDomain(this.startUrl), this.checkForeignFeeds = i, this.maxErrors = n, this.maxFeeds = l, this.errorCount = 0, this.instance = a, this.queue = $e(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((d) => {
+    this.maxDepth = t, this.concurrency = s, this.maxLinks = o, this.mainDomain = k.getDomain(this.startUrl), this.checkForeignFeeds = i, this.maxErrors = m, this.maxFeeds = a, this.errorCount = 0, this.instance = n, this.queue = $e(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((x) => {
       this.errorCount < this.maxErrors && (this.errorCount++, this.emit("error", {
         module: "deepSearch",
-        error: `Async error: ${d}`,
+        error: `Async error: ${x}`,
         explanation: "An error occurred in the async queue while processing a crawling task. This could be due to network issues, invalid URLs, or server problems.",
         suggestion: "Check network connectivity and ensure the target website is accessible. The crawler will continue with other URLs."
       }), this.errorCount >= this.maxErrors && (this.queue.kill(), this.emit("log", {
@@ -1297,7 +1340,7 @@ class Ne extends y {
    */
   isValidUrl(e) {
     try {
-      const t = k.getDomain(e) === k.getDomain(this.startUrl), s = !Re(e);
+      const t = k.getDomain(e) === k.getDomain(this.startUrl), s = !Ne(e);
       return t && s;
     } catch {
       return this.errorCount < this.maxErrors && (this.errorCount++, this.emit("error", {
@@ -1361,8 +1404,8 @@ class Ne extends y {
       progress: { processed: this.visitedUrls.size, remaining: o }
     });
     try {
-      const i = await E(e, "", this.instance || void 0);
-      if (i && !this.feeds.some((n) => n.url === e)) {
+      const i = await y(e, "", this.instance || void 0);
+      if (i && !this.feeds.some((m) => m.url === e)) {
         if (this.feeds.push({ url: e, type: i.type, title: i.title, feedTitle: i.title }), this.emit("log", {
           module: "deepSearch",
           url: e,
@@ -1375,8 +1418,8 @@ class Ne extends y {
           }), !0;
       } else i || this.emit("log", { module: "deepSearch", url: e, depth: t + 1, feedCheck: { isFeed: !1 } });
     } catch (i) {
-      const n = i instanceof Error ? i : new Error(String(i));
-      return this.handleFetchError(e, t + 1, `Error checking feed: ${n.message}`);
+      const m = i instanceof Error ? i : new Error(String(i));
+      return this.handleFetchError(e, t + 1, `Error checking feed: ${m.message}`);
     }
     return t + 1 <= this.maxDepth && this.isValidUrl(e) && this.queue.push({ url: e, depth: t + 1 }), !1;
   }
@@ -1398,18 +1441,18 @@ class Ne extends y {
       this.handleFetchError(t, s, `HTTP ${o.status} ${o.statusText}`);
       return;
     }
-    const i = await o.text(), { document: n } = M(i);
-    for (const l of n.querySelectorAll("a"))
+    const i = await o.text(), { document: m } = N(i);
+    for (const a of m.querySelectorAll("a"))
       try {
-        const a = new URL(l.href, this.startUrl).href;
-        if (await this.processLink(a, s)) break;
+        const n = new URL(a.href, this.startUrl).href;
+        if (await this.processLink(n, s)) break;
       } catch {
         continue;
       }
   }
 }
-async function Me(r, e = {}, t = null) {
-  const s = new Ne(
+async function Fe(r, e = {}, t = null) {
+  const s = new Ce(
     r,
     e.depth || 3,
     5,
@@ -1429,7 +1472,7 @@ async function Me(r, e = {}, t = null) {
     });
   }), s.feeds;
 }
-class Ce extends y {
+class Ie extends w {
   /**
    * Creates a new FeedSeeker instance
    * @param {string} site - The website URL to search for feeds (protocol optional, defaults to https://)
@@ -1496,7 +1539,7 @@ class Ce extends y {
    * @private
    */
   createEmptyDocument() {
-    const { document: e } = M("<!DOCTYPE html><html><head></head><body></body></html>");
+    const { document: e } = N("<!DOCTYPE html><html><head></head><body></body></html>");
     return e;
   }
   /**
@@ -1538,7 +1581,11 @@ class Ce extends y {
           }), this.setEmptyState(), this.emit("initialized");
           return;
         }
-        const e = (this.options.timeout ?? 5) * 1e3, t = await I(this.site, e);
+        const e = (this.options.timeout ?? 5) * 1e3, t = await I(this.site, {
+          timeout: e,
+          retries: 3,
+          retryDelay: 1e3
+        });
         if (!t.ok) {
           this.initStatus = "error", this.emit("error", {
             module: "FeedSeeker",
@@ -1547,7 +1594,7 @@ class Ce extends y {
           return;
         }
         this.content = await t.text();
-        const { document: s } = M(this.content);
+        const { document: s } = N(this.content);
         this.document = s, this.initStatus = "success", this.emit("initialized");
       } catch (e) {
         const t = e instanceof Error ? e : new Error(String(e));
@@ -1577,7 +1624,7 @@ class Ce extends y {
    * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
    */
   async metaLinks() {
-    return await this.initialize(), de(this);
+    return await this.initialize(), ce(this);
   }
   /**
    * Searches for feeds by checking all anchor links on the page
@@ -1589,7 +1636,7 @@ class Ce extends y {
    * console.log(feeds); // [{ url: '...', title: '...', type: 'atom' }]
    */
   async checkAllAnchors() {
-    return await this.initialize(), pe(this);
+    return await this.initialize(), ge(this);
   }
   /**
    * Performs a blind search for common feed endpoints
@@ -1601,7 +1648,7 @@ class Ce extends y {
    * console.log(feeds); // [{ url: '...', type: 'rss', title: '...' }]
    */
   async blindSearch() {
-    return await this.initialize(), Le(this);
+    return await this.initialize(), ve(this);
   }
   /**
    * Performs a deep search by crawling the website
@@ -1613,7 +1660,7 @@ class Ce extends y {
    * console.log(feeds); // [{ url: '...', type: 'json', title: '...' }]
    */
   async deepSearch() {
-    return await this.initialize(), Me(this.site, this.options, this);
+    return await this.initialize(), Fe(this.site, this.options, this);
   }
   /**
    * Starts a comprehensive feed search using multiple strategies
@@ -1706,36 +1753,37 @@ class Ce extends y {
     return s !== void 0 && s > 0 && t.length > s ? t.slice(0, s) : t;
   }
 }
-const Fe = `___________               .____________              __                 
-_   _____/___   ____   __| _/   _____/ ____   ____ |  | __ ___________ 
- |    __)/ __ _/ __  / __ |_____  _/ __ _/ __ |  |/ // __ _  __  |     \\  ___/  ___// /_/ |/          ___/  ___/|    <  ___/|  | /
- ___  / ___  >___  >____ /_______  /___  >___  >__|_ \\___  >__|   
-     /      /     /     /       /     /     /     /    /       `;
-let _ = 0, w = [], O = !1;
-function Ie(...r) {
+const Oe = `\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;38m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m.\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;119m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;148m \x1B[39m\x1B[38;5;184m\x1B[39m\r
+\x1B[38;5;39m\\\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m \x1B[39m\x1B[38;5;39m \x1B[39m\x1B[38;5;39m \x1B[39m\x1B[38;5;38m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m/\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m|\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;119m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m|\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m|\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;148m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m\x1B[39m\r
+\x1B[38;5;39m \x1B[39m\x1B[38;5;39m|\x1B[39m\x1B[38;5;38m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m)\x1B[39m\x1B[38;5;44m/\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m\\\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m|\x1B[39m\x1B[38;5;48m\\\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m\\\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m\\\x1B[39m\x1B[38;5;119m_\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m\\\x1B[39m\x1B[38;5;118m|\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;154m|\x1B[39m\x1B[38;5;154m/\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m/\x1B[39m\x1B[38;5;154m/\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m\\\x1B[39m\x1B[38;5;148m_\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m\\\x1B[39m\x1B[38;5;184m\x1B[39m\r
+\x1B[38;5;44m \x1B[39m\x1B[38;5;44m|\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m\\\x1B[39m\x1B[38;5;44m\\\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m|\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m\\\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;119m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;118m\\\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;154m|\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m<\x1B[39m\x1B[38;5;154m\\\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;148m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m/\x1B[39m\x1B[38;5;184m|\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m|\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m\\\x1B[39m\x1B[38;5;184m/\x1B[39m\x1B[38;5;184m\x1B[39m\r
+\x1B[38;5;44m \x1B[39m\x1B[38;5;44m\\\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m/\x1B[39m\x1B[38;5;43m \x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m>\x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m>\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;119m\\\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m>\x1B[39m\x1B[38;5;118m\\\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m>\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m|\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m\\\x1B[39m\x1B[38;5;148m\\\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m>\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m|\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;178m \x1B[39m\x1B[38;5;214m\x1B[39m\r
+\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m\\\x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m\\\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m\\\x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;119m\\\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m\\\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m\\\x1B[39m\x1B[38;5;154m/\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;148m \x1B[39m\x1B[38;5;184m\\\x1B[39m\x1B[38;5;184m/\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m\\\x1B[39m\x1B[38;5;184m/\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;178m \x1B[39m\x1B[38;5;214m \x1B[39m\x1B[38;5;214m \x1B[39m\x1B[38;5;214m \x1B[39m\x1B[38;5;214m\x1B[39m`;
+let S = 0, g = [], O = !1;
+function De(...r) {
   const e = r[0];
-  _ = 0, process.stdout.write(`Starting ${e.niceName} `);
+  S = 0, process.stdout.write(`Starting ${e.niceName} `);
 }
-function Oe(...r) {
+function ze(...r) {
   const e = r[0];
-  O ? e.feeds.length === 0 ? process.stdout.write(u("yellow", ` No feeds found.
-`)) : (process.stdout.write(u("green", ` Found ${e.feeds.length} feeds.
-`)), console.log(JSON.stringify(e.feeds, null, 2)), w = w.concat(e.feeds)) : e.feeds.length === 0 ? process.stdout.write(u("yellow", ` No feeds found.
-`)) : process.stdout.write(u("green", ` Found ${e.feeds.length} feeds.
+  O ? e.feeds.length === 0 ? process.stdout.write(h("yellow", ` No feeds found.
+`)) : (process.stdout.write(h("green", ` Found ${e.feeds.length} feeds.
+`)), console.log(JSON.stringify(e.feeds, null, 2)), g = g.concat(e.feeds)) : e.feeds.length === 0 ? process.stdout.write(h("yellow", ` No feeds found.
+`)) : process.stdout.write(h("green", ` Found ${e.feeds.length} feeds.
 `));
 }
-async function De(...r) {
+async function Pe(...r) {
   const e = r[0];
   if (e.module === "metalinks" && process.stdout.write("."), (e.module === "blindsearch" || e.module === "anchors") && "totalCount" in e && "totalEndpoints" in e) {
-    _ > 0 && process.stdout.write(`\x1B[${_}D`);
+    S > 0 && process.stdout.write(`\x1B[${S}D`);
     const t = ` (${e.totalCount}/${e.totalEndpoints})`;
-    process.stdout.write(t), _ = t.length;
+    process.stdout.write(t), S = t.length;
   }
   if (e.module === "deepSearch" && "url" in e && "depth" in e && "progress" in e) {
     const t = e.progress, s = t.processed || 0, o = t.remaining || 0, i = s + o;
     try {
-      const n = new URL(e.url), l = n.hostname, a = n.pathname.length > 30 ? n.pathname.substring(0, 27) + "..." : n.pathname, d = `${l}${a}`;
-      process.stdout.write(`  [depth:${e.depth} ${s}/${i}] ${d}
+      const m = new URL(e.url), a = m.hostname, n = m.pathname.length > 30 ? m.pathname.substring(0, 27) + "..." : m.pathname, x = `${a}${n}`;
+      process.stdout.write(`  [depth:${e.depth} ${s}/${i}] ${x}
 `);
     } catch {
       process.stdout.write(`  [depth:${e.depth} ${s}/${i}]
@@ -1743,25 +1791,25 @@ async function De(...r) {
     }
   }
 }
-function ze(r, e) {
-  const t = new Ce(r, e);
-  return t.site = r, t.options = e, t.initializationError = !1, t.on("start", Ie), t.on("log", De), t.on("end", Oe), t.on("error", (...s) => {
+function qe(r, e) {
+  const t = new Ie(r, e);
+  return t.site = r, t.options = e, t.initializationError = !1, t.on("start", De), t.on("log", Pe), t.on("end", ze), t.on("error", (...s) => {
     const o = s[0];
     if (typeof o == "object" && o !== null && o.module === "FeedSeeker" && (t.initializationError = !0), o instanceof Error)
-      console.error(u("red", `
+      console.error(h("red", `
 Error for ${r}: ${o.message}`));
     else if (typeof o == "object" && o !== null) {
-      const i = o, n = typeof i.error == "string" ? i.error : String(o);
-      console.error(u("red", `
-Error for ${r}: ${n}`));
+      const i = o, m = typeof i.error == "string" ? i.error : String(o);
+      console.error(h("red", `
+Error for ${r}: ${m}`));
     } else
-      console.error(u("red", `
+      console.error(h("red", `
 Error for ${r}: ${String(o)}`));
   }), t;
 }
-async function Pe(r, e) {
+async function We(r, e) {
   r.includes("://") || (r = `https://${r}`);
-  const t = ze(r, e);
+  const t = qe(r, e);
   if (await t.initialize(), t.initializationError)
     return [];
   const s = [];
@@ -1777,25 +1825,25 @@ async function Pe(r, e) {
     ...e.deepsearch ? [() => t.deepSearch()] : []
   ), await (async () => {
     if (e.all) {
-      const n = [];
-      for (const l of s) {
-        const a = await l();
-        a.length > 0 && n.push(...a);
+      const m = [];
+      for (const a of s) {
+        const n = await a();
+        n.length > 0 && m.push(...n);
       }
-      return n;
+      return m;
     } else {
-      for (const n of s) {
-        const l = await n();
-        if (l.length > 0) return l;
+      for (const m of s) {
+        const a = await m();
+        if (a.length > 0) return a;
       }
       return [];
     }
   })();
 }
-function qe(r) {
-  const e = new Y();
+function je(r) {
+  const e = new K();
   return e.name("feed-seeker").description("Find RSS, Atom, and JSON feeds on any website with FeedSeeker."), e.command("version").description("Get version").action(async () => {
-    const s = (await import("./package-BcdWRwEt.js")).default;
+    const s = (await import("./package-Cqt61e-0.js")).default;
     process.stdout.write(`${s.version}
 `);
   }), e.argument("[site]", "The website URL to search for feeds").option("-m, --metasearch", "Meta search only").option("-b, --blindsearch", "Blind search only").option("-a, --anchorsonly", "Anchors search only").option("-d, --deepsearch", "Enable deep search").option("--all", "Execute all strategies and combine results").option("--deepsearch-only", "Deep search only").option(
@@ -1856,32 +1904,32 @@ function qe(r) {
 `).action(async (t, s) => {
     t || (e.help(), process.exit(0));
     try {
-      s.all && (O = !0, w = []), e.feeds = await Pe(t, s);
+      s.all && (O = !0, g = []), e.feeds = await We(t, s);
     } catch (o) {
       s.displayErrors ? console.error(`
-Error details:`, o) : console.error(u("red", `
+Error details:`, o) : console.error(h("red", `
 Error: ${o.message}`)), process.exit(1);
     }
-  }), e.addOption(new J("--display-errors", "Display errors").hideHelp()), e;
+  }), e.addOption(new V("--display-errors", "Display errors").hideHelp()), e;
 }
-async function je(r = process.argv) {
-  console.log(`${Fe}
+async function He(r = process.argv) {
+  console.log(`${Oe}
 `);
-  const e = qe();
-  await e.parseAsync(r), e.feeds !== void 0 && (O && w.length > 0 ? (console.log(u("yellow", `
+  const e = je();
+  await e.parseAsync(r), e.feeds !== void 0 && (O && g.length > 0 ? (console.log(h("yellow", `
 === All Strategies Complete ===`)), console.log(
-    u(
+    h(
       "green",
-      `Total: ${w.length} ${w.length === 1 ? "feed" : "feeds"} found from all strategies
+      `Total: ${g.length} ${g.length === 1 ? "feed" : "feeds"} found from all strategies
 `
     )
-  ), console.log(JSON.stringify(w, null, 2))) : e.feeds.length > 0 && console.log(JSON.stringify(e.feeds, null, 2)));
+  ), console.log(JSON.stringify(g, null, 2))) : e.feeds.length > 0 && console.log(JSON.stringify(e.feeds, null, 2)));
 }
-import.meta.url === `file://${process.argv[1]}` && je().catch((r) => {
-  console.error(u("red", `
+import.meta.url === `file://${process.argv[1]}` && He().catch((r) => {
+  console.error(h("red", `
 Error: ${r.message}`)), process.exit(1);
 });
 export {
-  qe as createProgram,
-  je as run
+  je as createProgram,
+  He as run
 };
