@@ -481,7 +481,7 @@ function isValidUrlLength(url: string): boolean {
 }
 
 import checkFeed from './checkFeed.ts';
-import { type FeedSeekerInstance } from './checkFeed.ts';
+import { type FeedSeekerInstance as _FeedSeekerInstance } from './checkFeed.ts';
 import { type MetaLinksInstance, type Feed } from './metaLinks.ts';
 
 /**
@@ -510,7 +510,7 @@ function generateEndpointUrls(
 	let urlObj: URL;
 	try {
 		urlObj = new URL(siteUrl);
-	} catch (error) {
+	} catch {
 		throw new Error(`Invalid URL provided to blindSearch: ${siteUrl}`);
 	}
 

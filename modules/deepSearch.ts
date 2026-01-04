@@ -119,7 +119,7 @@ class Crawler extends EventEmitter {
 		try {
 			const absoluteStartUrl = new URL(startUrl);
 			this.startUrl = absoluteStartUrl.href;
-		} catch (error) {
+		} catch {
 			throw new Error(`Invalid start URL: ${startUrl}`);
 		}
 		this.maxDepth = maxDepth;
@@ -199,7 +199,7 @@ class Crawler extends EventEmitter {
 			const notExcludedFile = !excludedFile(url);
 
 			return sameDomain && notExcludedFile;
-		} catch (error: unknown) {
+		} catch {
 			// URL parsing can fail for malformed URLs - handle gracefully
 			// Only process if we haven't reached the error limit yet
 			if (this.errorCount < this.maxErrors) {
@@ -378,7 +378,7 @@ class Crawler extends EventEmitter {
 				const absoluteUrl = new URL(link.href, this.startUrl).href;
 				const shouldStop = await this.processLink(absoluteUrl, depth);
 				if (shouldStop) break;
-			} catch (error) {
+			} catch {
 				// Skip malformed URLs
 				continue;
 			}

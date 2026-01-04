@@ -133,7 +133,7 @@ function validateUrl(url: string): void {
 
 	try {
 		urlObj = new URL(url);
-	} catch (error) {
+	} catch {
 		throw new Error(`Invalid URL: ${url}`);
 	}
 
@@ -401,7 +401,7 @@ function checkJson(content: string): FeedResult | null {
 			return { type: 'json', title };
 		}
 		return null;
-	} catch (error: unknown) {
+	} catch {
 		// Not valid JSON or parsing failed
 		return null;
 	}

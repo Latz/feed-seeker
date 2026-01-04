@@ -11,7 +11,9 @@ export default [
 			'coverage/**',
 			'.scannerwork/**',
 			'*.config.js',
-			'vite.config.js'
+			'vite.config.js',
+			'test-*.mjs',
+			'test-*.js'
 		]
 	},
 	js.configs.recommended,
@@ -32,7 +34,23 @@ export default [
 				clearTimeout: 'readonly',
 				setInterval: 'readonly',
 				clearInterval: 'readonly',
-				Buffer: 'readonly'
+				Buffer: 'readonly',
+				// Web/DOM API globals
+				fetch: 'readonly',
+				Response: 'readonly',
+				Request: 'readonly',
+				RequestInit: 'readonly',
+				HeadersInit: 'readonly',
+				Headers: 'readonly',
+				AbortController: 'readonly',
+				AbortSignal: 'readonly',
+				// DOM types
+				HTMLElement: 'readonly',
+				HTMLAnchorElement: 'readonly',
+				HTMLLinkElement: 'readonly',
+				NodeList: 'readonly',
+				NodeListOf: 'readonly',
+				Element: 'readonly'
 			}
 		},
 		plugins: {

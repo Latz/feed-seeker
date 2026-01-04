@@ -210,7 +210,7 @@ interface ExtendedCommand extends Command {
  * @param argv - Command line arguments (defaults to process.argv)
  * @returns Configured Command instance
  */
-export function createProgram(argv?: string[]): ExtendedCommand {
+export function createProgram(_argv?: string[]): ExtendedCommand {
 	const program: ExtendedCommand = new Command();
 	program.name(`feed-seeker`).description('Find RSS, Atom, and JSON feeds on any website with FeedSeeker.');
 	program

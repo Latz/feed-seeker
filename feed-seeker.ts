@@ -198,7 +198,6 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 
 				// Validate URL format (site should already be normalized in constructor)
 				try {
-					// eslint-disable-next-line no-new
 					new URL(this.site);
 				} catch {
 					this.initStatus = 'error';

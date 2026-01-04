@@ -23,7 +23,7 @@ import { type Feed, type MetaLinksInstance } from './metaLinks.ts';
 function parseUrlSafely(url: string, base?: string | URL): URL | null {
 	try {
 		return new URL(url, base);
-	} catch (error: unknown) {
+	} catch {
 		return null;
 	}
 }
