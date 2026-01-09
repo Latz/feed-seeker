@@ -169,6 +169,23 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	}
 
 	/**
+	 * Handles initialization failure by setting error state and emitting events
+	 * @param {string} errorMessage - The error message to emit
+	 * @param {unknown} [cause] - Optional error cause
+	 * @private
+	 */
+	private handleInitError(errorMessage: string, cause?: unknown): void {
+		this.initStatus = 'error';
+		this.emit('error', {
+			module: 'FeedSeeker',
+			error: errorMessage,
+			...(cause !== undefined && { cause })
+		});
+		this.setEmptyState();
+		this.emit('initialized');
+	}
+
+	/**
 	 * Initializes the FeedSeeker instance by validating the URL and fetching the site content and parsing the HTML
 	 * This method is called automatically by other methods and caches the result
 	 * Emits 'error' events if validation or fetching fails
@@ -186,13 +203,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 			try {
 				// Validate site parameter is not empty
 				if (!this.rawSite || typeof this.rawSite !== 'string') {
-					this.initStatus = 'error';
-					this.emit('error', {
-						module: 'FeedSeeker',
-						error: 'Site parameter must be a non-empty string'
-					});
-					this.setEmptyState();
-					this.emit('initialized');
+					this.handleInitError('Site parameter must be a non-empty string');
 					return;
 				}
 
@@ -200,28 +211,17 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 				try {
 					new URL(this.site);
 				} catch {
-					this.initStatus = 'error';
-					this.emit('error', {
-						module: 'FeedSeeker',
-						error: `Invalid URL: ${this.site}`
-					});
-					this.setEmptyState();
-					this.emit('initialized');
+					this.handleInitError(`Invalid URL: ${this.site}`);
 					return;
 				}
 
-				// Use nullish coalescing to get timeout value (default is 5 seconds from constructor)
 				const timeout = (this.options.timeout ?? 5) * 1000;
 				const response = await fetchWithTimeout(this.site, timeout);
 
 				if (!response.ok) {
-					this.initStatus = 'error';
-					this.emit('error', {
-						module: 'FeedSeeker',
-						error: `HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`
-					});
-					this.setEmptyState();
-					this.emit('initialized');
+					this.handleInitError(
+						`HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`
+					);
 					return;
 				}
 
@@ -233,30 +233,35 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 				this.emit('initialized');
 			} catch (error: unknown) {
 				const err = error instanceof Error ? error : new Error(String(error));
-				let errorMessage = `Failed to fetch ${this.site}`;
-				if (err.name === 'AbortError') {
-					errorMessage += ': Request timed out';
-				} else {
-					errorMessage += `: ${err.message}`;
-					const cause = (err as Error & { cause?: { code?: string; message?: string } }).cause;
-					if (cause) {
-						errorMessage += ` (cause: ${cause.code || cause.message})`;
-					}
-				}
-
-				this.initStatus = 'error';
-				this.emit('error', {
-					module: 'FeedSeeker',
-					error: errorMessage,
-					cause: (err as Error & { cause?: unknown }).cause
-				});
-
-				this.setEmptyState();
-				this.emit('initialized');
+				const errorMessage = this.buildErrorMessage(err);
+				const cause = (err as Error & { cause?: unknown }).cause;
+				this.handleInitError(errorMessage, cause);
 			}
 		})();
 
 		return this.initPromise;
+	}
+
+	/**
+	 * Builds an error message from an error object
+	 * @param {Error} err - The error to build a message from
+	 * @returns {string} The formatted error message
+	 * @private
+	 */
+	private buildErrorMessage(err: Error): string {
+		let message = `Failed to fetch ${this.site}`;
+
+		if (err.name === 'AbortError') {
+			return message + ': Request timed out';
+		}
+
+		message += `: ${err.message}`;
+		const cause = (err as Error & { cause?: { code?: string; message?: string } }).cause;
+		if (cause) {
+			message += ` (cause: ${cause.code || cause.message})`;
+		}
+
+		return message;
 	}
 
 	/**
@@ -312,8 +317,7 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	 */
 	async deepSearch(): Promise<Feed[]> {
 		await this.initialize();
-		const crawler = deepSearch(this.site, this.options, this);
-		return crawler;
+		return deepSearch(this.site, this.options, this);
 	}
 
 	/**
@@ -394,13 +398,10 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	 * Adds feeds to the feed map, deduplicating by URL
 	 * @param {Map<string, Feed>} feedMap - Map to store feeds
 	 * @param {Feed[]} feeds - Feeds to add
-	 * @returns {void}
 	 * @private
 	 */
 	private addFeedsToMap(feedMap: Map<string, Feed>, feeds: Feed[]): void {
-		if (!feeds || feeds.length === 0) return;
-
-		for (const feed of feeds) {
+		for (const feed of feeds ?? []) {
 			if (!feedMap.has(feed.url)) {
 				feedMap.set(feed.url, feed);
 			}
@@ -421,7 +422,6 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 	/**
 	 * Handles deep search if enabled
 	 * @param {Map<string, Feed>} feedMap - Map to store feeds
-	 * @returns {Promise<void>}
 	 * @private
 	 */
 	private async handleDeepSearch(feedMap: Map<string, Feed>): Promise<void> {
@@ -432,14 +432,11 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 		}
 
 		const deepFeeds = await this.deepSearch();
-		if (!deepFeeds || deepFeeds.length === 0) return;
 
-		for (const feed of deepFeeds) {
+		for (const feed of deepFeeds ?? []) {
 			if (!feedMap.has(feed.url)) {
 				feedMap.set(feed.url, feed);
 			}
-
-			// Stop if we've reached the limit
 			if (this.hasReachedLimit(feedMap)) {
 				break;
 			}

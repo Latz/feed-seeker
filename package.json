@@ -96,12 +96,9 @@
 	},
 	"lint-staged": {
 		"*.{ts,js}": [
-			"eslint --fix",
-			"prettier --write"
+			"eslint --fix"
 		],
-		"*.{json,md}": [
-			"prettier --write"
-		]
+		"*.{json,md}": []
 	},
 	"engines": {
 		"node": ">=18.0.0"
