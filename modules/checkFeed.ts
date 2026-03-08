@@ -226,7 +226,7 @@ function isOEmbedResponse(json: any): boolean {
  * @returns The text with CDATA tags removed
  */
 function removeCDATA(text: string): string {
-	return text.replace(FEED_PATTERNS.CDATA, '$1');
+	return text.replaceAll(FEED_PATTERNS.CDATA, '$1');
 }
 
 /**
@@ -237,7 +237,7 @@ function removeCDATA(text: string): string {
 function cleanTitle(title: string | null | undefined): string | null {
 	if (!title) return null; // Explicitly return null for falsy values
 	// Remove leading/trailing whitespace and collapse multiple whitespace characters
-	return title.replace(/\s+/g, ' ').trim();
+	return title.replaceAll(/\s+/g, ' ').trim();
 }
 
 /**

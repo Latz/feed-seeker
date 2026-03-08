@@ -101,8 +101,8 @@ function handleMetaRefreshRedirect(instance: MetaLinksInstance): Promise<Feed[]>
 		if (instance.document && typeof instance.document.querySelector === 'function') {
 			const content = instance.document.querySelector('meta[http-equiv="refresh"]')?.getAttribute('content');
 			if (content) {
-				const match = content.match(/url=(.*)/i);
-				if (match && match[1]) {
+				const match = /url=(.*)/i.exec(content);
+				if (match?.[1]) {
 					const redirectUrl = new URL(match[1], instance.site).href;
 					instance.emit('log', {
 						module: 'anchors',
@@ -228,20 +228,117 @@ async function processAnchor(anchor: HTMLAnchorElement, context: AnchorContext):
 }
 
 /**
+ * Emits a log event indicating the max feeds limit has been reached.
+ */
+function emitMaxFeedsReached(instance: MetaLinksInstance, feedCount: number, maxFeeds: number): void {
+	instance.emit('log', {
+		module: 'anchors',
+		message: `Stopped due to reaching maximum feeds limit: ${feedCount} feeds found (max ${maxFeeds} allowed).`,
+	});
+}
+
+/**
+ * Processes anchor tags in batches and appends found feeds to context.feedUrls.
+ * @returns {number} Number of anchors processed.
+ */
+async function processAnchorPhase(
+	filteredAnchors: HTMLAnchorElement[],
+	context: AnchorContext,
+	concurrency: number,
+	maxFeeds: number
+): Promise<number> {
+	let processedCount = 0;
+	for (let i = 0; i < filteredAnchors.length; i += concurrency) {
+		if (maxFeeds > 0 && context.feedUrls.length >= maxFeeds) {
+			emitMaxFeedsReached(context.instance, context.feedUrls.length, maxFeeds);
+			break;
+		}
+		const batch = filteredAnchors.slice(i, i + concurrency);
+		await Promise.allSettled(
+			batch.map(async (anchor) => {
+				if (maxFeeds > 0 && context.feedUrls.length >= maxFeeds) return;
+				processedCount++;
+				context.instance.emit('log', { module: 'anchors', totalCount: processedCount, totalEndpoints: filteredAnchors.length });
+				await processAnchor(anchor, context);
+			})
+		);
+	}
+	return processedCount;
+}
+
+/**
+ * Extracts plain-text URLs from the page body and checks them for feeds.
+ */
+async function processPlainTextPhase(
+	context: AnchorContext,
+	baseUrl: URL,
+	anchorCount: number,
+	startCount: number,
+	concurrency: number,
+	maxFeeds: number
+): Promise<void> {
+	const bodyHtml = context.instance.document.body?.innerHTML || '';
+	const plainTextUrls = extractUrlsFromText(bodyHtml);
+
+	const checkedUrls = new Set(context.feedUrls.map(feed => feed.url));
+	const urlsToCheck: string[] = [];
+	for (const url of plainTextUrls) {
+		if (!checkedUrls.has(url) && isAllowedDomain(url, baseUrl)) {
+			urlsToCheck.push(url);
+			checkedUrls.add(url);
+		}
+	}
+
+	let count = startCount;
+	const totalEndpoints = anchorCount + urlsToCheck.length;
+	for (let i = 0; i < urlsToCheck.length; i += concurrency) {
+		if (maxFeeds > 0 && context.feedUrls.length >= maxFeeds) {
+			emitMaxFeedsReached(context.instance, context.feedUrls.length, maxFeeds);
+			break;
+		}
+		const batch = urlsToCheck.slice(i, i + concurrency);
+		await Promise.allSettled(
+			batch.map(async (url) => {
+				if (maxFeeds > 0 && context.feedUrls.length >= maxFeeds) return;
+				context.instance.emit('log', { module: 'anchors', totalCount: count++, totalEndpoints });
+				try {
+					const feedResult = await checkFeed(url, '', context.instance);
+					if (feedResult) {
+						context.feedUrls.push({ url, title: null, type: feedResult.type, feedTitle: feedResult.title });
+					}
+				} catch (error: unknown) {
+					if (context.instance.options?.showErrors) {
+						const err = error instanceof Error ? error : new Error(String(error));
+						context.instance.emit('error', {
+							module: 'anchors',
+							error: `Error checking feed at ${url}: ${err.message}`,
+							explanation:
+								'An error occurred while trying to fetch and validate a potential feed URL found in page text. This could be due to network timeouts, server errors, or invalid feed content.',
+							suggestion:
+								'Check if the URL is accessible and returns valid feed content. Network connectivity issues or server problems may cause this error.',
+						});
+					}
+				}
+			})
+		);
+	}
+}
+
+/**
  * Checks all links on the page and verifies if they are feeds
  * @param {MetaLinksInstance} instance - The FeedSeeker instance containing document and site info
  * @returns {Promise<Feed[]>} A promise that resolves to an array of found feed URLs
  */
 async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
-	await handleMetaRefreshRedirect(instance);
+	const redirectResult = handleMetaRefreshRedirect(instance);
+	if (redirectResult) {
+		return redirectResult;
+	}
 
 	const baseUrl = new URL(instance.site);
-
-	// Get all anchors and filter for same-host or allowed domains in a single operation
-	const allAnchors = instance.document.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
+	const allAnchors = instance.document.querySelectorAll('a');
 	const filteredAnchors: HTMLAnchorElement[] = [];
 
-	// Process anchors one by one to avoid creating intermediate arrays
 	for (const anchor of allAnchors) {
 		const urlToCheck = getUrlFromAnchor(anchor, baseUrl, instance);
 		if (urlToCheck && isAllowedDomain(urlToCheck, baseUrl)) {
@@ -250,83 +347,15 @@ async function checkAnchors(instance: MetaLinksInstance): Promise<Feed[]> {
 	}
 
 	const maxFeeds = instance.options?.maxFeeds || 0;
-	const context: AnchorContext = {
-		instance,
-		baseUrl,
-		feedUrls: [],
-	};
+	const concurrency = instance.options?.concurrency ?? 3;
+	const context: AnchorContext = { instance, baseUrl, feedUrls: [] };
 
-	let count = 1;
-	for (const anchor of filteredAnchors) {
-		if (maxFeeds > 0 && context.feedUrls.length >= maxFeeds) {
-			instance.emit('log', {
-				module: 'anchors',
-				message: `Stopped due to reaching maximum feeds limit: ${context.feedUrls.length} feeds found (max ${maxFeeds} allowed).`,
-			});
-			break;
-		}
-		instance.emit('log', { module: 'anchors', totalCount: count++, totalEndpoints: filteredAnchors.length });
-		await processAnchor(anchor, context);
-	}
+	// Phase 1: anchor tags
+	const processedCount = await processAnchorPhase(filteredAnchors, context, concurrency, maxFeeds);
 
-	// Phase 2: Extract and process plain-text URLs from body content
+	// Phase 2: plain-text URLs in body
 	if (maxFeeds === 0 || context.feedUrls.length < maxFeeds) {
-		// Get HTML source from body to catch URLs in script tags, JSON data, etc.
-		const bodyHtml = instance.document.body?.innerHTML || '';
-		const plainTextUrls = extractUrlsFromText(bodyHtml);
-
-		// Create a set of already-checked URLs to avoid duplicates
-		const checkedUrls = new Set(context.feedUrls.map(feed => feed.url));
-
-		// Filter plain-text URLs by domain rules and deduplicate
-		const urlsToCheck: string[] = [];
-		for (const url of plainTextUrls) {
-			if (!checkedUrls.has(url) && isAllowedDomain(url, baseUrl)) {
-				urlsToCheck.push(url);
-				checkedUrls.add(url);
-			}
-		}
-
-		// Process the plain-text URLs
-		for (const url of urlsToCheck) {
-			if (maxFeeds > 0 && context.feedUrls.length >= maxFeeds) {
-				instance.emit('log', {
-					module: 'anchors',
-					message: `Stopped due to reaching maximum feeds limit: ${context.feedUrls.length} feeds found (max ${maxFeeds} allowed).`,
-				});
-				break;
-			}
-
-			instance.emit('log', {
-				module: 'anchors',
-				totalCount: count++,
-				totalEndpoints: filteredAnchors.length + urlsToCheck.length,
-			});
-
-			try {
-				const feedResult = await checkFeed(url, '', instance);
-				if (feedResult) {
-					context.feedUrls.push({
-						url: url,
-						title: null, // Plain-text URLs don't have anchor text
-						type: feedResult.type,
-						feedTitle: feedResult.title,
-					});
-				}
-			} catch (error: unknown) {
-				if (instance.options?.showErrors) {
-					const err = error instanceof Error ? error : new Error(String(error));
-					instance.emit('error', {
-						module: 'anchors',
-						error: `Error checking feed at ${url}: ${err.message}`,
-						explanation:
-							'An error occurred while trying to fetch and validate a potential feed URL found in page text. This could be due to network timeouts, server errors, or invalid feed content.',
-						suggestion:
-							'Check if the URL is accessible and returns valid feed content. Network connectivity issues or server problems may cause this error.',
-					});
-				}
-			}
-		}
+		await processPlainTextPhase(context, baseUrl, filteredAnchors.length, processedCount + 1, concurrency, maxFeeds);
 	}
 
 	return context.feedUrls;

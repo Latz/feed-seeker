@@ -89,7 +89,7 @@ export default async function fetchWithTimeout(
 	}
 
 	if (!Number.isFinite(timeout)) {
-		throw new Error(`Invalid timeout: ${timeout}. Timeout must be a finite number.`);
+		throw new TypeError(`Invalid timeout: ${timeout}. Timeout must be a finite number.`);
 	}
 
 	// Set up abort controller for timeout
@@ -99,12 +99,15 @@ export default async function fetchWithTimeout(
 	// Default browser-like headers to avoid being blocked by Cloudflare
 	const defaultHeaders: HeadersInit = {
 		'User-Agent':
-			'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+			'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
 		Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 		'Accept-Language': 'en-US,en;q=0.5',
 		'Accept-Encoding': 'gzip, deflate, br',
 		Connection: 'keep-alive',
 		'Upgrade-Insecure-Requests': '1',
+		'Sec-CH-UA': '"Chromium";v="132", "Google Chrome";v="132", "Not-A.Brand";v="99"',
+		'Sec-CH-UA-Mobile': '?0',
+		'Sec-CH-UA-Platform': '"Windows"',
 		'Sec-Fetch-Dest': 'document',
 		'Sec-Fetch-Mode': 'navigate',
 		'Sec-Fetch-Site': 'none',
@@ -114,7 +117,7 @@ export default async function fetchWithTimeout(
 	// Merge default headers with custom headers (custom headers take precedence)
 	const headers = {
 		...defaultHeaders,
-		...(fetchOptions.headers || {}),
+		...fetchOptions.headers,
 	};
 
 	try {

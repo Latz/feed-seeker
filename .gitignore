@@ -62,6 +62,9 @@ DEADJOE
 *conflicted copy*.js
 *conflicted copy*.md
 
+# Total Recall working memory (personal, session-specific)
+CLAUDE.local.md
+
 # Project-specific temporary files
 /x.html
 /qwen.MD

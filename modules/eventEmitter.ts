@@ -73,7 +73,7 @@ export default class EventEmitter {
 	 * @private
 	 * @type {Map<string, Set<EventListener>>}
 	 */
-	#events: Map<string, Set<EventListener>> = new Map();
+	readonly #events: Map<string, Set<EventListener>> = new Map();
 
 	/**
 	 * Maximum number of listeners per event (0 = unlimited)
@@ -85,7 +85,7 @@ export default class EventEmitter {
 	 * Whether to capture async errors
 	 * @private
 	 */
-	#captureAsyncErrors: boolean;
+	readonly #captureAsyncErrors: boolean;
 
 	/**
 	 * Default max listeners for all instances
@@ -186,7 +186,7 @@ export default class EventEmitter {
 		if (event === 'error') {
 			// If an error event listener throws, we can't emit another error event
 			// So we log and rethrow
-			console.error('Error in error event listener:', error);
+			console.error('Error in error event listener:', this.#serializeError(error));
 			throw error;
 		}
 
@@ -217,10 +217,10 @@ export default class EventEmitter {
 		this.#validateListener(listener);
 
 		const listeners = this.#events.get(event);
-		if (!listeners) {
-			this.#events.set(event, new Set([listener])); // Use Set for O(1) lookups
-		} else {
+		if (listeners) {
 			listeners.add(listener);
+		} else {
+			this.#events.set(event, new Set([listener])); // Use Set for O(1) lookups
 		}
 
 		this.#checkMaxListeners(event);
@@ -244,12 +244,12 @@ export default class EventEmitter {
 		this.#validateListener(listener);
 
 		const listeners = this.#events.get(event);
-		if (!listeners) {
-			this.#events.set(event, new Set([listener]));
-		} else {
+		if (listeners) {
 			// Create new Set with listener first, then existing listeners
 			const newListeners = new Set([listener, ...listeners]);
 			this.#events.set(event, newListeners);
+		} else {
+			this.#events.set(event, new Set([listener]));
 		}
 
 		this.#checkMaxListeners(event);

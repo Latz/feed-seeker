@@ -14,8 +14,11 @@ interface CLIOptions extends FeedSeekerOptions {
 }
 
 let counterLength = 0; // needed for fancy blindsearch log display
-let allModeFeeds: Feed[] = []; // Accumulate feeds in --all mode
-let isAllMode = false; // Track if --all mode is active
+
+interface CLIRunContext {
+	isAllMode: boolean;
+	allModeFeeds: Feed[];
+}
 
 function start(...args: unknown[]): void {
 	const data = args[0] as StartEventData;
@@ -23,27 +26,29 @@ function start(...args: unknown[]): void {
 	process.stdout.write(`Starting ${data.niceName} `);
 }
 
-function end(...args: unknown[]): void {
-	const data = args[0] as EndEventData;
-	if (isAllMode) {
-		// In --all mode, accumulate feeds from each strategy
-		if (data.feeds.length === 0) {
-			process.stdout.write(styleText('yellow', ' No feeds found.\n'));
+function makeEndHandler(ctx: CLIRunContext) {
+	return function end(...args: unknown[]): void {
+		const data = args[0] as EndEventData;
+		if (ctx.isAllMode) {
+			// In --all mode, accumulate feeds from each strategy
+			if (data.feeds.length === 0) {
+				process.stdout.write(styleText('yellow', ' No feeds found.\n'));
+			} else {
+				process.stdout.write(styleText('green', ` Found ${data.feeds.length} feeds.\n`));
+				// Display feeds from this strategy
+				console.log(JSON.stringify(data.feeds, null, 2));
+				// Accumulate the feeds
+				ctx.allModeFeeds = ctx.allModeFeeds.concat(data.feeds);
+			}
 		} else {
-			process.stdout.write(styleText('green', ` Found ${data.feeds.length} feeds.\n`));
-			// Display feeds from this strategy
-			console.log(JSON.stringify(data.feeds, null, 2));
-			// Accumulate the feeds
-			allModeFeeds = allModeFeeds.concat(data.feeds);
+			// Normal mode
+			if (data.feeds.length === 0) {
+				process.stdout.write(styleText('yellow', ' No feeds found.\n'));
+			} else {
+				process.stdout.write(styleText('green', ` Found ${data.feeds.length} feeds.\n`));
+			}
 		}
-	} else {
-		// Normal mode
-		if (data.feeds.length === 0) {
-			process.stdout.write(styleText('yellow', ' No feeds found.\n'));
-		} else {
-			process.stdout.write(styleText('green', ` Found ${data.feeds.length} feeds.\n`));
-		}
-	}
+	};
 }
 
 async function log(...args: unknown[]): Promise<void> {
@@ -90,7 +95,7 @@ interface FeedFinderWithError extends FeedSeeker {
 	initializationError?: boolean;
 }
 
-function initializeFeedFinder(site: string, options: FeedSeekerOptions): FeedFinderWithError {
+function initializeFeedFinder(site: string, options: FeedSeekerOptions, ctx: CLIRunContext): FeedFinderWithError {
 	const FeedFinder = new FeedSeeker(site, options) as FeedFinderWithError;
 	FeedFinder.site = site;
 	FeedFinder.options = options;
@@ -98,7 +103,7 @@ function initializeFeedFinder(site: string, options: FeedSeekerOptions): FeedFin
 
 	FeedFinder.on('start', start);
 	FeedFinder.on('log', log);
-	FeedFinder.on('end', end);
+	FeedFinder.on('end', makeEndHandler(ctx));
 
 	// Add error handler to provide user-friendly error messages with site name
 	FeedFinder.on('error', (...args: unknown[]) => {
@@ -127,13 +132,13 @@ function initializeFeedFinder(site: string, options: FeedSeekerOptions): FeedFin
 	return FeedFinder;
 }
 
-async function getFeeds(site: string, options: FeedSeekerOptions & { all?: boolean }): Promise<Feed[]> {
+async function getFeeds(site: string, options: FeedSeekerOptions & { all?: boolean }, ctx: CLIRunContext): Promise<Feed[]> {
 	// Add https:// if no protocol is specified
 	if (!site.includes('://')) {
 		site = `https://${site}`;
 	}
 
-	const FeedFinder = initializeFeedFinder(site, options);
+	const FeedFinder = initializeFeedFinder(site, options, ctx);
 
 	// Initialize the site first to check for errors
 	await FeedFinder.initialize();
@@ -198,9 +203,10 @@ async function getFeeds(site: string, options: FeedSeekerOptions & { all?: boole
 	return feeds;
 }
 
-// Extended program type to store feeds
+// Extended program type to store feeds and run context
 interface ExtendedCommand extends Command {
 	feeds?: Feed[];
+	ctx?: CLIRunContext;
 }
 
 // =======================================================================================================
@@ -304,13 +310,13 @@ export function createProgram(_argv?: string[]): ExtendedCommand {
 				process.exit(0);
 			}
 			try {
-				// Set the global flag for --all mode
-				if (options.all) {
-					isAllMode = true;
-					allModeFeeds = [];
-				}
+				const ctx: CLIRunContext = {
+					isAllMode: !!options.all,
+					allModeFeeds: [],
+				};
 				// Store the result directly on the program object
-				program.feeds = await getFeeds(site, options);
+				program.feeds = await getFeeds(site, options, ctx);
+				program.ctx = ctx;
 			} catch (error) {
 				if (options.displayErrors) {
 					console.error('\nError details:', error);
@@ -342,16 +348,17 @@ export async function run(argv: string[] = process.argv): Promise<void> {
 	await program.parseAsync(argv);
 
 	if (program.feeds !== undefined) {
-		if (isAllMode && allModeFeeds.length > 0) {
+		const ctx = program.ctx;
+		if (ctx?.isAllMode && ctx.allModeFeeds.length > 0) {
 			// Display summary for --all mode
 			console.log(styleText('yellow', '\n=== All Strategies Complete ==='));
 			console.log(
 				styleText(
 					'green',
-					`Total: ${allModeFeeds.length} ${allModeFeeds.length === 1 ? 'feed' : 'feeds'} found from all strategies\n`
+					`Total: ${ctx.allModeFeeds.length} ${ctx.allModeFeeds.length === 1 ? 'feed' : 'feeds'} found from all strategies\n`
 				)
 			);
-			console.log(JSON.stringify(allModeFeeds, null, 2));
+			console.log(JSON.stringify(ctx.allModeFeeds, null, 2));
 		} else if (program.feeds.length > 0) {
 			// Normal output for regular mode
 			console.log(JSON.stringify(program.feeds, null, 2));

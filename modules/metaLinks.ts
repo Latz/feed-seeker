@@ -31,7 +31,7 @@ const FEED_PATTERNS = ['/rss', '/feed', '/atom', '.rss', '.atom', '.xml', '.json
 function cleanTitle(title: string | null | undefined): string | null {
 	if (!title) return null;
 	// Remove leading/trailing whitespace and collapse multiple whitespace characters
-	return title.replace(/\s+/g, ' ').trim();
+	return title.replaceAll(/\s+/g, ' ').trim();
 }
 
 /**
@@ -105,14 +105,13 @@ async function processLinksInBatches(
  * @returns {Promise<boolean>} A promise that resolves to true if the maxFeeds limit is reached, false otherwise.
  * @private
  */
-async function processLink(link: HTMLLinkElement, instance: MetaLinksInstance, feeds: Feed[], foundUrls: Set<string>): Promise<boolean> {
-	const maxFeeds = instance.options?.maxFeeds || 0;
-	if (!link.href) return false;
-
-	// Construct full URL from relative or absolute href
-	let fullHref: string;
+/**
+ * Resolves a link element's href to an absolute URL, or returns null on failure.
+ */
+function resolveHref(link: HTMLLinkElement, instance: MetaLinksInstance): string | null {
+	if (!link.href) return null;
 	try {
-		fullHref = new URL(link.href, instance.site).href;
+		return new URL(link.href, instance.site).href;
 	} catch (error: unknown) {
 		if (instance.options?.showErrors) {
 			const err = error instanceof Error ? error : new Error(String(error));
@@ -123,32 +122,44 @@ async function processLink(link: HTMLLinkElement, instance: MetaLinksInstance, f
 				suggestion: 'Check the meta link href attribute for malformed URLs.',
 			});
 		}
-		return false;
+		return null;
 	}
+}
 
-	if (foundUrls.has(fullHref)) return false;
+/**
+ * Records a validated feed and returns true if the maxFeeds limit has been reached.
+ */
+function recordFeed(
+	fullHref: string,
+	link: HTMLLinkElement,
+	feedResult: { type: 'rss' | 'atom' | 'json'; title: string | null },
+	feeds: Feed[],
+	foundUrls: Set<string>,
+	instance: MetaLinksInstance
+): boolean {
+	feeds.push({ url: fullHref, title: cleanTitle(link.title), type: feedResult.type, feedTitle: feedResult.title });
+	foundUrls.add(fullHref);
+	const maxFeeds = instance.options?.maxFeeds || 0;
+	if (maxFeeds > 0 && feeds.length >= maxFeeds) {
+		instance.emit('log', {
+			module: 'metalinks',
+			message: `Stopped due to reaching maximum feeds limit: ${feeds.length} feeds found (max ${maxFeeds} allowed).`,
+		});
+		return true;
+	}
+	return false;
+}
+
+async function processLink(link: HTMLLinkElement, instance: MetaLinksInstance, feeds: Feed[], foundUrls: Set<string>): Promise<boolean> {
+	const fullHref = resolveHref(link, instance);
+	if (!fullHref || foundUrls.has(fullHref)) return false;
 
 	instance.emit('log', { module: 'metalinks', message: `Checking feed: ${fullHref}` });
 
 	try {
-		// Second parameter is the link text (empty for meta links as they don't have visible text)
 		const feedResult = await checkFeed(fullHref, '', instance);
 		if (feedResult) {
-			feeds.push({
-				url: fullHref,
-				title: cleanTitle(link.title),
-				type: feedResult.type,
-				feedTitle: feedResult.title,
-			});
-			foundUrls.add(fullHref);
-
-			if (maxFeeds > 0 && feeds.length >= maxFeeds) {
-				instance.emit('log', {
-					module: 'metalinks',
-					message: `Stopped due to reaching maximum feeds limit: ${feeds.length} feeds found (max ${maxFeeds} allowed).`,
-				});
-				return true; // maxFeeds reached
-			}
+			return recordFeed(fullHref, link, feedResult, feeds, foundUrls, instance);
 		}
 	} catch (error: unknown) {
 		if (instance.options?.showErrors) {
@@ -164,7 +175,7 @@ async function processLink(link: HTMLLinkElement, instance: MetaLinksInstance, f
 		}
 	}
 
-	return false; // maxFeeds not reached
+	return false;
 }
 
 /**
@@ -192,7 +203,7 @@ export default async function metaLinks(instance: MetaLinksInstance): Promise<Fe
 	try {
 		// 1. Check for links with specific feed `type` attributes.
 		const typeSelectors = FEED_TYPES.map(type => `link[type="application/${type}"]`).join(', ');
-		const typeLinks = Array.from(instance.document.querySelectorAll(typeSelectors) as NodeListOf<HTMLLinkElement>);
+		const typeLinks = Array.from(instance.document.querySelectorAll<HTMLLinkElement>(typeSelectors));
 
 		if (await processLinksInBatches(typeLinks, instance, feeds, foundUrls)) {
 			return feeds;
@@ -202,7 +213,7 @@ export default async function metaLinks(instance: MetaLinksInstance): Promise<Fe
 		const alternateTypeSelectors =
 			'link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="xml"], link[rel="alternate"][type*="atom"], link[rel="alternate"][type*="json"]';
 		const alternateTypeLinks = Array.from(
-			instance.document.querySelectorAll(alternateTypeSelectors) as NodeListOf<HTMLLinkElement>
+			instance.document.querySelectorAll<HTMLLinkElement>(alternateTypeSelectors)
 		);
 
 		if (await processLinksInBatches(alternateTypeLinks, instance, feeds, foundUrls)) {
@@ -211,7 +222,7 @@ export default async function metaLinks(instance: MetaLinksInstance): Promise<Fe
 
 		// 3. Check for `rel="alternate"` links with `href` patterns that suggest a feed.
 		const alternateLinks = Array.from(
-			instance.document.querySelectorAll('link[rel="alternate"]') as NodeListOf<HTMLLinkElement>
+			instance.document.querySelectorAll<HTMLLinkElement>('link[rel="alternate"]')
 		);
 		const patternLinks = alternateLinks.filter(
 			link => link.href && FEED_PATTERNS.some(pattern => link.href.toLowerCase().includes(pattern))

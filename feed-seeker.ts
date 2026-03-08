@@ -219,9 +219,12 @@ export default class FeedSeeker extends EventEmitter implements MetaLinksInstanc
 				const response = await fetchWithTimeout(this.site, timeout);
 
 				if (!response.ok) {
-					this.handleInitError(
-						`HTTP error while fetching ${this.site}: ${response.status} ${response.statusText}`
-					);
+					// For 403/401/other non-OK responses, continue with empty content
+					// so blind search can still find feeds at common paths
+					this.content = '';
+					this.document = this.createEmptyDocument();
+					this.initStatus = 'success';
+					this.emit('initialized');
 					return;
 				}
 

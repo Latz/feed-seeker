@@ -60,7 +60,9 @@ const ESSENTIAL_ENDPOINTS: string[] = [
  * Standard feed endpoints - commonly used patterns
  * Standard mode: checks essential + standard endpoints (~100 patterns)
  */
-const STANDARD_ENDPOINTS: string[] = [
+let _standardEndpoints: string[] | null = null;
+function getStandardEndpoints(): string[] {
+	_standardEndpoints ??= [
 	// Extended standard paths
 	'rssfeed.xml',
 	'feed.rss',
@@ -151,13 +153,17 @@ const STANDARD_ENDPOINTS: string[] = [
 	'?type=atom',
 	'?view=feed',
 	'?view=rss'
-];
+	];
+	return _standardEndpoints;
+}
 
 /**
  * Comprehensive feed endpoints - exhaustive search
  * Exhaustive mode: checks all endpoints including niche and specialized patterns (~350+ patterns)
  */
-const COMPREHENSIVE_ENDPOINTS: string[] = [
+let _comprehensiveEndpoints: string[] | null = null;
+function getComprehensiveEndpoints(): string[] {
+	_comprehensiveEndpoints ??= [
 	// Custom and alternative paths
 	'atomfeed',
 	'jsonfeed',
@@ -383,44 +389,48 @@ const COMPREHENSIVE_ENDPOINTS: string[] = [
 	'phpbb/feed',
 	'vbulletin/feed',
 	'xenforo/feed'
-];
+	];
+	return _comprehensiveEndpoints;
+}
+
+type SearchMode = 'fast' | 'standard' | 'exhaustive' | 'full';
 
 /**
  * Gets the appropriate endpoint list based on search mode
- * @param {'fast' | 'standard' | 'exhaustive' | 'full'} mode - The search thoroughness mode
+ * @param {SearchMode} mode - The search thoroughness mode
  * @returns {string[]} The combined endpoint list for the given mode
  */
-function getEndpointsByMode(mode: 'fast' | 'standard' | 'exhaustive' | 'full'): string[] {
+function getEndpointsByMode(mode: SearchMode): string[] {
 	switch (mode) {
 		case 'fast':
 			return ESSENTIAL_ENDPOINTS;
 		case 'standard':
-			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS];
+			return [...ESSENTIAL_ENDPOINTS, ...getStandardEndpoints()];
 		case 'exhaustive':
 		case 'full':
-			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS, ...COMPREHENSIVE_ENDPOINTS];
+			return [...ESSENTIAL_ENDPOINTS, ...getStandardEndpoints(), ...getComprehensiveEndpoints()];
 		default:
-			return [...ESSENTIAL_ENDPOINTS, ...STANDARD_ENDPOINTS];
+			return [...ESSENTIAL_ENDPOINTS, ...getStandardEndpoints()];
 	}
 }
 
 /**
  * Validates and sanitizes the search mode parameter
  * @param {string | undefined} mode - The search mode to validate
- * @returns {'fast' | 'standard' | 'exhaustive' | 'full'} A valid search mode
+ * @returns {SearchMode} A valid search mode
  */
-function validateSearchMode(mode: string | undefined): 'fast' | 'standard' | 'exhaustive' | 'full' {
+function validateSearchMode(mode: string | undefined): SearchMode {
 	if (!mode) {
-		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive' | 'full';
+		return DEFAULT_SEARCH_MODE as SearchMode;
 	}
 
-	const validModes = ['fast', 'standard', 'exhaustive', 'full'];
-	if (!validModes.includes(mode)) {
+	const validModes: SearchMode[] = ['fast', 'standard', 'exhaustive', 'full'];
+	if (!validModes.includes(mode as SearchMode)) {
 		console.warn(`Invalid search mode "${mode}". Falling back to "${DEFAULT_SEARCH_MODE}".`);
-		return DEFAULT_SEARCH_MODE as 'fast' | 'standard' | 'exhaustive' | 'full';
+		return DEFAULT_SEARCH_MODE as SearchMode;
 	}
 
-	return mode as 'fast' | 'standard' | 'exhaustive' | 'full';
+	return mode as SearchMode;
 }
 
 /**
@@ -481,7 +491,6 @@ function isValidUrlLength(url: string): boolean {
 }
 
 import checkFeed from './checkFeed.ts';
-import { type FeedSeekerInstance as _FeedSeekerInstance } from './checkFeed.ts';
 import { type MetaLinksInstance, type Feed } from './metaLinks.ts';
 
 /**
@@ -501,77 +510,71 @@ export type BlindSearchFeed = Feed;
  * @returns {string[]} Array of potential feed URLs
  * @throws {Error} When siteUrl is invalid or too long
  */
-function generateEndpointUrls(
-	siteUrl: string,
-	keepQueryParams: boolean,
-	endpoints: string[]
-): string[] {
-	// Validate URL format
+/**
+ * Validates a URL for use in blind search, throwing descriptive errors for invalid input.
+ */
+function validateBlindSearchUrl(siteUrl: string): URL {
 	let urlObj: URL;
 	try {
 		urlObj = new URL(siteUrl);
 	} catch {
 		throw new Error(`Invalid URL provided to blindSearch: ${siteUrl}`);
 	}
-
-	// Security: Validate URL length to prevent memory exhaustion
 	if (!isValidUrlLength(siteUrl)) {
 		throw new Error(
 			`URL too long (${siteUrl.length} chars). Maximum allowed: ${MAX_URL_LENGTH} characters.`
 		);
 	}
-
-	// Security: Validate protocol to prevent non-HTTP(S) schemes
 	if (!['http:', 'https:'].includes(urlObj.protocol)) {
 		throw new Error(`Invalid protocol "${urlObj.protocol}". Only http: and https: are allowed.`);
 	}
+	return urlObj;
+}
 
+/**
+ * Appends validated endpoint URLs for a single path level to the accumulator array.
+ * Returns false if the URL generation limit was hit, true otherwise.
+ */
+function appendEndpointsForPath(
+	basePath: string,
+	endpoints: string[],
+	queryParams: string,
+	endpointUrls: string[]
+): boolean {
+	for (const endpoint of endpoints) {
+		if (endpointUrls.length >= MAX_GENERATED_URLS) {
+			console.warn(
+				`URL generation limit reached (${MAX_GENERATED_URLS} URLs). Stopping to prevent resource exhaustion.`
+			);
+			return false;
+		}
+		const urlWithParams = queryParams
+			? `${basePath}/${endpoint}${queryParams}`
+			: `${basePath}/${endpoint}`;
+		if (isValidUrlLength(urlWithParams)) {
+			endpointUrls.push(urlWithParams);
+		} else {
+			console.warn(`Skipping URL (too long): ${urlWithParams.substring(0, 100)}...`);
+		}
+	}
+	return true;
+}
+
+function generateEndpointUrls(
+	siteUrl: string,
+	keepQueryParams: boolean,
+	endpoints: string[]
+): string[] {
+	const urlObj = validateBlindSearchUrl(siteUrl);
 	const origin = urlObj.origin;
+	const queryParams = keepQueryParams ? urlObj.search : '';
 	let path = siteUrl;
 	const endpointUrls: string[] = [];
 
-	// Extract query parameters if the keepQueryParams option is enabled
-	// This preserves original URL parameters like ?category=tech in feed URLs
-	let queryParams = '';
-	if (keepQueryParams) {
-		queryParams = urlObj.search; // This includes the '?' character if there are query parameters
-	}
-
-	// Path traversal algorithm: Start from specific path, work up to domain root
-	// Example: https://example.com/blog/posts → https://example.com/blog → https://example.com
-	// This strategy tries more specific locations first, then falls back to general ones
 	while (path.length >= origin.length) {
-		// Normalize path by removing trailing slash to prevent double slashes in URLs
-		// Example: "https://example.com/blog/" becomes "https://example.com/blog"
 		const basePath = path.endsWith('/') ? path.slice(0, -1) : path;
-
-		// Try each known feed endpoint at this path level
-		for (const endpoint of endpoints) {
-			// Security: Check if we've exceeded the maximum number of URLs
-			if (endpointUrls.length >= MAX_GENERATED_URLS) {
-				console.warn(
-					`URL generation limit reached (${MAX_GENERATED_URLS} URLs). Stopping to prevent resource exhaustion.`
-				);
-				return endpointUrls;
-			}
-
-			// Construct final URL: basePath + "/" + endpoint + queryParams (if any)
-			// Example: "https://example.com/blog" + "/" + "feed" + "?category=tech"
-			const urlWithParams = queryParams
-				? `${basePath}/${endpoint}${queryParams}`
-				: `${basePath}/${endpoint}`;
-
-			// Security: Validate URL length before adding
-			if (isValidUrlLength(urlWithParams)) {
-				endpointUrls.push(urlWithParams);
-			} else {
-				// Skip URLs that exceed safe length limits
-				console.warn(`Skipping URL (too long): ${urlWithParams.substring(0, 100)}...`);
-			}
-		}
-
-		// Move up one directory level by removing everything after the last "/"
-		// Example: "https://example.com/blog/posts" → "https://example.com/blog"
+		const withinLimit = appendEndpointsForPath(basePath, endpoints, queryParams, endpointUrls);
+		if (!withinLimit) return endpointUrls;
 		path = path.slice(0, path.lastIndexOf('/'));
 	}
 
@@ -719,55 +722,33 @@ async function processFeeds(
 	let atomFound = false;
 	let i = 0;
 
-	// Process URLs in concurrent batches
 	while (shouldContinueSearch(i, endpointUrls.length, rssFound, atomFound, shouldCheckAll)) {
-		// Check if the operation has been aborted
 		if (signal?.aborted) {
 			throw new Error('Blind search operation was aborted');
 		}
 
-		// Check if we've reached the maximum number of feeds
 		if (maxFeeds > 0 && feeds.length >= maxFeeds) {
 			await handleMaxFeedsReached(instance, feeds, maxFeeds);
 			break;
 		}
 
-		// Create a batch of URLs to process concurrently
 		const batchSize = Math.min(concurrency, endpointUrls.length - i);
 		const batch = endpointUrls.slice(i, i + batchSize);
 
-		// Process batch concurrently using Promise.allSettled (continue even if some fail)
 		const batchResults = await Promise.allSettled(
 			batch.map((url) => processSingleFeedUrl(url, instance, foundUrls, feeds, rssFound, atomFound))
 		);
 
-		// Process results from the batch
-		for (const result of batchResults) {
-			if (result.status === 'fulfilled' && result.value.found) {
-				rssFound = result.value.rssFound;
-				atomFound = result.value.atomFound;
+		({ rssFound, atomFound, i } = await applyBatchResults(batchResults, feeds, rssFound, atomFound, maxFeeds, instance, endpointUrls.length, i));
 
-				// Check if we've reached the maximum number of feeds after finding one
-				if (maxFeeds > 0 && feeds.length >= maxFeeds) {
-					await handleMaxFeedsReached(instance, feeds, maxFeeds);
-					i = endpointUrls.length; // Force loop to end
-					break;
-				}
-			}
-		}
-
-		// Emit progress for the processed batch
 		i += batchSize;
-		const feedsFound = feeds.length;
 		instance.emit('log', {
 			module: 'blindsearch',
 			totalEndpoints: endpointUrls.length,
 			totalCount: i,
-			feedsFound
+			feedsFound: feeds.length,
 		});
 
-		// Rate limiting: Add delay between batches if configured
-		// Security: Validate and clamp delay to safe limits
 		const requestDelay = validateRequestDelay(instance.options?.requestDelay);
 		if (requestDelay > 0 && i < endpointUrls.length) {
 			await new Promise((resolve) => setTimeout(resolve, requestDelay));
@@ -775,6 +756,34 @@ async function processFeeds(
 	}
 
 	return { feeds, rssFound, atomFound };
+}
+
+/**
+ * Applies results from a settled batch, updating feed-type flags and enforcing maxFeeds.
+ * Returns updated state: rssFound, atomFound, and i (may be advanced to end to stop loop).
+ */
+async function applyBatchResults(
+	batchResults: PromiseSettledResult<{ found: boolean; rssFound: boolean; atomFound: boolean }>[],
+	feeds: Feed[],
+	rssFound: boolean,
+	atomFound: boolean,
+	maxFeeds: number,
+	instance: MetaLinksInstance,
+	totalUrls: number,
+	i: number
+): Promise<{ rssFound: boolean; atomFound: boolean; i: number }> {
+	for (const result of batchResults) {
+		if (result.status === 'fulfilled' && result.value.found) {
+			rssFound = result.value.rssFound;
+			atomFound = result.value.atomFound;
+			if (maxFeeds > 0 && feeds.length >= maxFeeds) {
+				await handleMaxFeedsReached(instance, feeds, maxFeeds);
+				i = totalUrls; // force outer loop to end
+				break;
+			}
+		}
+	}
+	return { rssFound, atomFound, i };
 }
 
 /**

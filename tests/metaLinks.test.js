@@ -125,8 +125,8 @@ describe('metaLinks Module', () => {
       const links = document.querySelectorAll('link[rel="alternate"]');
 
       expect(links.length).toBe(2);
-      assert.strictEqual(links[0].getAttribute('type'), 'application/rss+xml');
-      assert.strictEqual(links[1].getAttribute('type'), 'application/atom+xml');
+      expect(links[0].getAttribute('type')).toBe('application/rss+xml');
+      expect(links[1].getAttribute('type')).toBe('application/atom+xml');
     });
 
     it('should handle document with no feed links', () => {
@@ -191,8 +191,8 @@ describe('metaLinks Module', () => {
       const links = document.querySelectorAll('link[rel="alternate"]');
 
       expect(links.length).toBe(2);
-      assert.strictEqual(links[0].getAttribute('title'), 'Main Feed');
-      assert.strictEqual(links[1].getAttribute('title'), 'Comments Feed');
+      expect(links[0].getAttribute('title')).toBe('Main Feed');
+      expect(links[1].getAttribute('title')).toBe('Comments Feed');
     });
   });
 
@@ -202,7 +202,7 @@ describe('metaLinks Module', () => {
       const relativeUrl = '/rss.xml';
       const absoluteUrl = new URL(relativeUrl, baseUrl).href;
 
-      assert.strictEqual(absoluteUrl, 'https://example.com/rss.xml');
+      expect(absoluteUrl).toBe('https://example.com/rss.xml');
     });
 
     it('should handle absolute URLs', () => {
@@ -210,7 +210,7 @@ describe('metaLinks Module', () => {
       const absoluteUrl = 'https://feeds.example.com/rss.xml';
       const resolvedUrl = new URL(absoluteUrl, baseUrl).href;
 
-      assert.strictEqual(resolvedUrl, 'https://feeds.example.com/rss.xml');
+      expect(resolvedUrl).toBe('https://feeds.example.com/rss.xml');
     });
 
     it('should handle protocol-relative URLs', () => {
@@ -218,7 +218,7 @@ describe('metaLinks Module', () => {
       const protocolRelativeUrl = '//feeds.example.com/rss.xml';
       const absoluteUrl = new URL(protocolRelativeUrl, baseUrl).href;
 
-      assert.strictEqual(absoluteUrl, 'https://feeds.example.com/rss.xml');
+      expect(absoluteUrl).toBe('https://feeds.example.com/rss.xml');
     });
 
     it('should preserve query parameters in URLs', () => {
@@ -226,7 +226,7 @@ describe('metaLinks Module', () => {
       const urlWithParams = '/feed?format=rss&lang=en';
       const absoluteUrl = new URL(urlWithParams, baseUrl).href;
 
-      assert.strictEqual(absoluteUrl, 'https://example.com/feed?format=rss&lang=en');
+      expect(absoluteUrl).toBe('https://example.com/feed?format=rss&lang=en');
     });
   });
 });
