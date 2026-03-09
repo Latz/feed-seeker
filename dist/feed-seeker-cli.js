@@ -4,7 +4,7 @@ import { parseHTML as N } from "linkedom";
 import T from "tldts";
 import J from "async";
 import { styleText as f } from "node:util";
-async function C(t, e = {}) {
+async function F(t, e = {}) {
   let r, s;
   if (typeof e == "number")
     r = e, s = {};
@@ -137,7 +137,7 @@ function ee(t) {
 function te(t) {
   return !!(t.type && $.TYPES.includes(t.type) && $.VERSIONS.includes(t.version) || t.type && t.version && t.html);
 }
-function F(t) {
+function C(t) {
   return t.replaceAll(c.CDATA, "$1");
 }
 function _(t) {
@@ -149,7 +149,7 @@ async function g(t, e = "", r) {
   if (!e) {
     if (!r)
       throw new Error("Instance parameter is required when content is not provided");
-    const i = Z(r.options.timeout) * 1e3, o = await C(t, i);
+    const i = Z(r.options.timeout) * 1e3, o = await F(t, i);
     if (!o.ok)
       throw new Error(`Failed to fetch ${t}: ${o.status} ${o.statusText}`);
     e = await o.text();
@@ -160,10 +160,10 @@ function re(t) {
   const e = c.RSS.CHANNEL_CONTENT.exec(t);
   if (e) {
     const n = e[1], i = c.RSS.TITLE.exec(n);
-    return i ? _(F(i[1])) : null;
+    return i ? _(C(i[1])) : null;
   }
   const r = c.RSS.TITLE.exec(t);
-  return r ? _(F(r[1])) : null;
+  return r ? _(C(r[1])) : null;
 }
 function se(t) {
   if (c.RSS.VERSION.test(t)) {
@@ -179,7 +179,7 @@ function ne(t) {
     const r = c.ATOM.ENTRY.test(t), s = c.ATOM.TITLE_TAG.test(t);
     if (r && s) {
       const n = c.ATOM.TITLE_CONTENT.exec(t);
-      return { type: "atom", title: n ? _(F(n[1])) : null };
+      return { type: "atom", title: n ? _(C(n[1])) : null };
     }
   }
   return null;
@@ -208,14 +208,13 @@ async function L(t, e, r, s, n = 5) {
     if (i > 0 && r.length >= i)
       return !0;
     const a = t.slice(o, o + n);
-    if ((await Promise.allSettled(
-      a.map((x) => ce(x, e, r, s))
-    )).some(
-      (x) => x.status === "fulfilled" && x.value === !0
-    ))
-      return !0;
+    await Promise.allSettled(
+      a.map(async (m) => {
+        i > 0 && r.length >= i || await ce(m, e, r, s);
+      })
+    );
   }
-  return !1;
+  return i > 0 && r.length >= i;
 }
 function le(t, e) {
   if (!t.href) return null;
@@ -235,7 +234,12 @@ function le(t, e) {
   }
 }
 function xe(t, e, r, s, n, i) {
-  s.push({ url: t, title: ae(e.title), type: r.type, feedTitle: r.title }), n.add(t);
+  s.push({
+    url: t,
+    title: ae(e.title),
+    type: r.type,
+    feedTitle: r.title
+  }), n.add(t);
   const o = i.options?.maxFeeds || 0;
   return o > 0 && s.length >= o ? (i.emit("log", {
     module: "metalinks",
@@ -244,30 +248,31 @@ function xe(t, e, r, s, n, i) {
 }
 async function ce(t, e, r, s) {
   const n = le(t, e);
-  if (!n || s.has(n)) return !1;
-  e.emit("log", { module: "metalinks", message: `Checking feed: ${n}` });
-  try {
-    const i = await g(n, "", e);
-    if (i)
-      return xe(n, t, i, r, s, e);
-  } catch (i) {
-    if (e.options?.showErrors) {
-      const o = i instanceof Error ? i : new Error(String(i));
-      e.emit("error", {
-        module: "metalinks",
-        error: o.message,
-        explanation: "An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.",
-        suggestion: "Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links."
-      });
+  if (!(!n || s.has(n))) {
+    e.emit("log", { module: "metalinks", message: `Checking feed: ${n}` });
+    try {
+      const i = await g(n, "", e);
+      i && xe(n, t, i, r, s, e);
+    } catch (i) {
+      if (e.options?.showErrors) {
+        const o = i instanceof Error ? i : new Error(String(i));
+        e.emit("error", {
+          module: "metalinks",
+          error: o.message,
+          explanation: "An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.",
+          suggestion: "Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links."
+        });
+      }
     }
   }
-  return !1;
 }
 async function de(t) {
   t.emit("start", { module: "metalinks", niceName: "Meta links" });
   const e = [], r = /* @__PURE__ */ new Set();
   try {
-    const s = oe.map((l) => `link[type="application/${l}"]`).join(", "), n = Array.from(t.document.querySelectorAll(s));
+    const s = oe.map((l) => `link[type="application/${l}"]`).join(", "), n = Array.from(
+      t.document.querySelectorAll(s)
+    );
     if (await L(n, t, e, r))
       return e;
     const o = Array.from(
@@ -897,9 +902,9 @@ async function $e(t, e, r, s, n, i) {
       break;
     }
     const w = Math.min(s, t.length - x), d = t.slice(x, x + w), b = await Promise.allSettled(
-      d.map((B) => Ce(B, n, a, o, m, l))
+      d.map((B) => Fe(B, n, a, o, m, l))
     );
-    ({ rssFound: m, atomFound: l, i: x } = await Fe(b, o, m, l, { maxFeeds: r, totalUrls: t.length, i: x }, n)), x += w, n.emit("log", {
+    ({ rssFound: m, atomFound: l, i: x } = await Ce(b, o, m, l, { maxFeeds: r, totalUrls: t.length, i: x }, n)), x += w, n.emit("log", {
       module: "blindsearch",
       totalEndpoints: t.length,
       totalCount: x,
@@ -910,7 +915,7 @@ async function $e(t, e, r, s, n, i) {
   }
   return { feeds: o, rssFound: m, atomFound: l };
 }
-async function Fe(t, e, r, s, n, i) {
+async function Ce(t, e, r, s, n, i) {
   let { i: o } = n;
   const { maxFeeds: a, totalUrls: m } = n;
   for (const l of t)
@@ -920,7 +925,7 @@ async function Fe(t, e, r, s, n, i) {
     }
   return { rssFound: r, atomFound: s, i: o };
 }
-async function Ce(t, e, r, s, n, i) {
+async function Fe(t, e, r, s, n, i) {
   if (r.has(t))
     return { found: !1, rssFound: n, atomFound: i };
   r.add(t);
@@ -1424,7 +1429,7 @@ class Pe extends p {
     let { url: r, depth: s } = e;
     if (!this.shouldCrawl(r, s)) return;
     this.visitedUrls.add(r);
-    const n = await C(r, this.timeout);
+    const n = await F(r, this.timeout);
     if (!n) {
       this.handleFetchError(r, s, "Failed to fetch URL - timeout or network error");
       return;
@@ -1574,7 +1579,7 @@ class qe extends p {
           this.handleInitError(`Invalid URL: ${this.site}`);
           return;
         }
-        const e = (this.options.timeout ?? 5) * 1e3, r = await C(this.site, e);
+        const e = (this.options.timeout ?? 5) * 1e3, r = await F(this.site, e);
         if (!r.ok) {
           this.content = "", this.document = this.createEmptyDocument(), this.initStatus = "success", this.emit("initialized");
           return;

@@ -2,7 +2,7 @@
 import { parseHTML as C } from "linkedom";
 import b from "tldts";
 import V from "async";
-async function F(t, e = {}) {
+async function I(t, e = {}) {
   let r, s;
   if (typeof e == "number")
     r = e, s = {};
@@ -147,7 +147,7 @@ async function w(t, e = "", r) {
   if (!e) {
     if (!r)
       throw new Error("Instance parameter is required when content is not provided");
-    const n = G(r.options.timeout) * 1e3, o = await F(t, n);
+    const n = G(r.options.timeout) * 1e3, o = await I(t, n);
     if (!o.ok)
       throw new Error(`Failed to fetch ${t}: ${o.status} ${o.statusText}`);
     e = await o.text();
@@ -206,14 +206,13 @@ async function L(t, e, r, s, i = 5) {
     if (n > 0 && r.length >= n)
       return !0;
     const l = t.slice(o, o + i);
-    if ((await Promise.allSettled(
-      l.map((c) => ae(c, e, r, s))
-    )).some(
-      (c) => c.status === "fulfilled" && c.value === !0
-    ))
-      return !0;
+    await Promise.allSettled(
+      l.map(async (a) => {
+        n > 0 && r.length >= n || await ae(a, e, r, s);
+      })
+    );
   }
-  return !1;
+  return n > 0 && r.length >= n;
 }
 function ne(t, e) {
   if (!t.href) return null;
@@ -233,7 +232,12 @@ function ne(t, e) {
   }
 }
 function oe(t, e, r, s, i, n) {
-  s.push({ url: t, title: ie(e.title), type: r.type, feedTitle: r.title }), i.add(t);
+  s.push({
+    url: t,
+    title: ie(e.title),
+    type: r.type,
+    feedTitle: r.title
+  }), i.add(t);
   const o = n.options?.maxFeeds || 0;
   return o > 0 && s.length >= o ? (n.emit("log", {
     module: "metalinks",
@@ -242,30 +246,31 @@ function oe(t, e, r, s, i, n) {
 }
 async function ae(t, e, r, s) {
   const i = ne(t, e);
-  if (!i || s.has(i)) return !1;
-  e.emit("log", { module: "metalinks", message: `Checking feed: ${i}` });
-  try {
-    const n = await w(i, "", e);
-    if (n)
-      return oe(i, t, n, r, s, e);
-  } catch (n) {
-    if (e.options?.showErrors) {
-      const o = n instanceof Error ? n : new Error(String(n));
-      e.emit("error", {
-        module: "metalinks",
-        error: o.message,
-        explanation: "An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.",
-        suggestion: "Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links."
-      });
+  if (!(!i || s.has(i))) {
+    e.emit("log", { module: "metalinks", message: `Checking feed: ${i}` });
+    try {
+      const n = await w(i, "", e);
+      n && oe(i, t, n, r, s, e);
+    } catch (n) {
+      if (e.options?.showErrors) {
+        const o = n instanceof Error ? n : new Error(String(n));
+        e.emit("error", {
+          module: "metalinks",
+          error: o.message,
+          explanation: "An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.",
+          suggestion: "Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links."
+        });
+      }
     }
   }
-  return !1;
 }
 async function le(t) {
   t.emit("start", { module: "metalinks", niceName: "Meta links" });
   const e = [], r = /* @__PURE__ */ new Set();
   try {
-    const s = re.map((d) => `link[type="application/${d}"]`).join(", "), i = Array.from(t.document.querySelectorAll(s));
+    const s = re.map((d) => `link[type="application/${d}"]`).join(", "), i = Array.from(
+      t.document.querySelectorAll(s)
+    );
     if (await L(i, t, e, r))
       return e;
     const o = Array.from(
@@ -283,7 +288,7 @@ async function le(t) {
     t.emit("end", { module: "metalinks", feeds: e });
   }
 }
-function x(t, e) {
+function T(t, e) {
   try {
     return new URL(t, e);
   } catch {
@@ -291,14 +296,14 @@ function x(t, e) {
   }
 }
 function de(t) {
-  const e = x(t);
+  const e = T(t);
   return e ? e.protocol === "http:" || e.protocol === "https:" : !1;
 }
 function ce(t) {
-  return x(t) ? !1 : !t.includes("://");
+  return T(t) ? !1 : !t.includes("://");
 }
 function D(t, e) {
-  const r = x(t);
+  const r = T(t);
   if (!r || r.hostname === e.hostname)
     return !0;
   const s = [
@@ -332,7 +337,7 @@ function P(t, e, r) {
   if (de(t.href))
     return t.href;
   if (ce(t.href)) {
-    const s = x(t.href, e);
+    const s = T(t.href, e);
     return s ? s.href : (r.emit("error", {
       module: "anchors",
       error: `Invalid relative URL: ${t.href}`,
@@ -411,9 +416,9 @@ async function pe(t, e, r, s, i, n) {
       z(t.instance, t.feedUrls.length, n);
       break;
     }
-    const T = d.slice(f, f + i);
+    const x = d.slice(f, f + i);
     await Promise.allSettled(
-      T.map(async (p) => {
+      x.map(async (p) => {
         if (!(n > 0 && t.feedUrls.length >= n)) {
           t.instance.emit("log", { module: "anchors", totalCount: c++, totalEndpoints: E });
           try {
@@ -455,7 +460,7 @@ async function ge(t) {
   const e = await q(t);
   return t.emit("end", { module: "anchors", feeds: e }), e;
 }
-const we = 0, A = 0, Ee = 3, v = "standard", j = 2083, U = 10, k = 1, I = 1e4, R = 6e4, y = [
+const we = 0, A = 0, Ee = 3, v = "standard", j = 2083, U = 10, k = 1, F = 1e4, R = 6e4, y = [
   // Most common standard paths (highest success rate)
   "feed",
   "rss",
@@ -802,10 +807,10 @@ function Se(t) {
       return [...y, ...M()];
   }
 }
-function xe(t) {
+function Te(t) {
   return t ? ["fast", "standard", "exhaustive", "full"].includes(t) ? t : (console.warn(`Invalid search mode "${t}". Falling back to "${v}".`), v) : v;
 }
-function Te(t) {
+function xe(t) {
   return t == null ? Ee : !Number.isFinite(t) || t < k ? (console.warn(`Invalid concurrency value ${t}. Using minimum: ${k}.`), k) : t > U ? (console.warn(
     `Concurrency value ${t} exceeds maximum. Clamping to ${U}.`
   ), U) : Math.floor(t);
@@ -833,9 +838,9 @@ function Le(t) {
 }
 function Ae(t, e, r, s) {
   for (const i of e) {
-    if (s.length >= I)
+    if (s.length >= F)
       return console.warn(
-        `URL generation limit reached (${I} URLs). Stopping to prevent resource exhaustion.`
+        `URL generation limit reached (${F} URLs). Stopping to prevent resource exhaustion.`
       ), !1;
     const n = r ? `${t}/${i}${r}` : `${t}/${i}`;
     H(n) ? s.push(n) : console.warn(`Skipping URL (too long): ${n.substring(0, 100)}...`);
@@ -867,7 +872,7 @@ function ke(t, e, r, s, i) {
   return t >= e ? !1 : i ? !0 : !(r && s);
 }
 async function Re(t, e) {
-  const r = xe(t.options?.searchMode), s = Se(r), i = ve(
+  const r = Te(t.options?.searchMode), s = Se(r), i = ve(
     t.site,
     t.options?.keepQueryParams || !1,
     s
@@ -877,7 +882,7 @@ async function Re(t, e) {
     niceName: "Blind search",
     endpointUrls: i.length
   });
-  const n = t.options?.all || !1, o = t.options?.maxFeeds ?? we, l = Te(t.options?.concurrency), a = await Me(
+  const n = t.options?.all || !1, o = t.options?.maxFeeds ?? we, l = xe(t.options?.concurrency), a = await Me(
     i,
     n,
     o,
@@ -894,10 +899,10 @@ async function Me(t, e, r, s, i, n) {
       await W(i, o, r);
       break;
     }
-    const E = Math.min(s, t.length - c), f = t.slice(c, c + E), T = await Promise.allSettled(
+    const E = Math.min(s, t.length - c), f = t.slice(c, c + E), x = await Promise.allSettled(
       f.map((u) => Ne(u, i, l, o, a, d))
     );
-    ({ rssFound: a, atomFound: d, i: c } = await Ce(T, o, a, d, { maxFeeds: r, totalUrls: t.length, i: c }, i)), c += E, i.emit("log", {
+    ({ rssFound: a, atomFound: d, i: c } = await Ce(x, o, a, d, { maxFeeds: r, totalUrls: t.length, i: c }, i)), c += E, i.emit("log", {
       module: "blindsearch",
       totalEndpoints: t.length,
       totalCount: c,
@@ -1242,8 +1247,8 @@ class g {
     return Array.from(this.#e.keys());
   }
 }
-const { queue: Fe } = V;
-function Ie(t) {
+const { queue: Ie } = V;
+function Fe(t) {
   return [
     ".zip",
     ".rar",
@@ -1306,7 +1311,7 @@ class _e extends g {
     } catch {
       throw new Error(`Invalid start URL: ${e}`);
     }
-    this.maxDepth = s, this.concurrency = i, this.maxLinks = n, this.mainDomain = b.getDomain(this.startUrl), this.checkForeignFeeds = o, this.maxErrors = l, this.maxFeeds = a, this.errorCount = 0, this.instance = d, this.queue = Fe(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((c) => {
+    this.maxDepth = s, this.concurrency = i, this.maxLinks = n, this.mainDomain = b.getDomain(this.startUrl), this.checkForeignFeeds = o, this.maxErrors = l, this.maxFeeds = a, this.errorCount = 0, this.instance = d, this.queue = Ie(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((c) => {
       this.emit("error", {
         module: "deepSearch",
         error: `Async error: ${c}`,
@@ -1339,7 +1344,7 @@ class _e extends g {
    */
   isValidUrl(e) {
     try {
-      const r = b.getDomain(e) === b.getDomain(this.startUrl), s = !Ie(e);
+      const r = b.getDomain(e) === b.getDomain(this.startUrl), s = !Fe(e);
       return r && s;
     } catch {
       return this.emit("error", {
@@ -1422,7 +1427,7 @@ class _e extends g {
     let { url: r, depth: s } = e;
     if (!this.shouldCrawl(r, s)) return;
     this.visitedUrls.add(r);
-    const i = await F(r, this.timeout);
+    const i = await I(r, this.timeout);
     if (!i) {
       this.handleFetchError(r, s, "Failed to fetch URL - timeout or network error");
       return;
@@ -1572,7 +1577,7 @@ class qe extends g {
           this.handleInitError(`Invalid URL: ${this.site}`);
           return;
         }
-        const e = (this.options.timeout ?? 5) * 1e3, r = await F(this.site, e);
+        const e = (this.options.timeout ?? 5) * 1e3, r = await I(this.site, e);
         if (!r.ok) {
           this.content = "", this.document = this.createEmptyDocument(), this.initStatus = "success", this.emit("initialized");
           return;

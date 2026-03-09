@@ -73,27 +73,20 @@ async function processLinksInBatches(
 	const maxFeeds = instance.options?.maxFeeds || 0;
 
 	for (let i = 0; i < links.length; i += batchSize) {
-		// Check if we've already reached the limit before starting a new batch
 		if (maxFeeds > 0 && feeds.length >= maxFeeds) {
 			return true;
 		}
 
 		const batch = links.slice(i, i + batchSize);
-		const results = await Promise.allSettled(
-			batch.map(link => processLink(link, instance, feeds, foundUrls))
+		await Promise.allSettled(
+			batch.map(async (link) => {
+				if (maxFeeds > 0 && feeds.length >= maxFeeds) return;
+				await processLink(link, instance, feeds, foundUrls);
+			})
 		);
-
-		// Check if any of the results indicate maxFeeds was reached
-		const maxFeedsReached = results.some(
-			result => result.status === 'fulfilled' && result.value === true
-		);
-
-		if (maxFeedsReached) {
-			return true;
-		}
 	}
 
-	return false;
+	return maxFeeds > 0 && feeds.length >= maxFeeds;
 }
 
 /**
@@ -102,7 +95,7 @@ async function processLinksInBatches(
  * @param {MetaLinksInstance} instance - The FeedSeeker instance.
  * @param {Array<Feed>} feeds - The array of found feeds.
  * @param {Set<string>} foundUrls - A set of URLs that have already been added.
- * @returns {Promise<boolean>} A promise that resolves to true if the maxFeeds limit is reached, false otherwise.
+ * @returns {Promise<void>} A promise that resolves when the link has been processed.
  * @private
  */
 /**
@@ -119,7 +112,7 @@ function resolveHref(link: HTMLLinkElement, instance: MetaLinksInstance): string
 				module: 'metalinks',
 				error: err.message,
 				explanation: `Invalid URL found in meta link: ${link.href}. Unable to construct a valid URL.`,
-				suggestion: 'Check the meta link href attribute for malformed URLs.',
+				suggestion: 'Check the meta link href attribute for malformed URLs.'
 			});
 		}
 		return null;
@@ -137,29 +130,39 @@ function recordFeed(
 	foundUrls: Set<string>,
 	instance: MetaLinksInstance
 ): boolean {
-	feeds.push({ url: fullHref, title: cleanTitle(link.title), type: feedResult.type, feedTitle: feedResult.title });
+	feeds.push({
+		url: fullHref,
+		title: cleanTitle(link.title),
+		type: feedResult.type,
+		feedTitle: feedResult.title
+	});
 	foundUrls.add(fullHref);
 	const maxFeeds = instance.options?.maxFeeds || 0;
 	if (maxFeeds > 0 && feeds.length >= maxFeeds) {
 		instance.emit('log', {
 			module: 'metalinks',
-			message: `Stopped due to reaching maximum feeds limit: ${feeds.length} feeds found (max ${maxFeeds} allowed).`,
+			message: `Stopped due to reaching maximum feeds limit: ${feeds.length} feeds found (max ${maxFeeds} allowed).`
 		});
 		return true;
 	}
 	return false;
 }
 
-async function processLink(link: HTMLLinkElement, instance: MetaLinksInstance, feeds: Feed[], foundUrls: Set<string>): Promise<boolean> {
+async function processLink(
+	link: HTMLLinkElement,
+	instance: MetaLinksInstance,
+	feeds: Feed[],
+	foundUrls: Set<string>
+): Promise<void> {
 	const fullHref = resolveHref(link, instance);
-	if (!fullHref || foundUrls.has(fullHref)) return false;
+	if (!fullHref || foundUrls.has(fullHref)) return;
 
 	instance.emit('log', { module: 'metalinks', message: `Checking feed: ${fullHref}` });
 
 	try {
 		const feedResult = await checkFeed(fullHref, '', instance);
 		if (feedResult) {
-			return recordFeed(fullHref, link, feedResult, feeds, foundUrls, instance);
+			recordFeed(fullHref, link, feedResult, feeds, foundUrls, instance);
 		}
 	} catch (error: unknown) {
 		if (instance.options?.showErrors) {
@@ -170,12 +173,10 @@ async function processLink(link: HTMLLinkElement, instance: MetaLinksInstance, f
 				explanation:
 					'An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.',
 				suggestion:
-					'Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links.',
+					'Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links.'
 			});
 		}
 	}
-
-	return false;
 }
 
 /**
@@ -202,8 +203,10 @@ export default async function metaLinks(instance: MetaLinksInstance): Promise<Fe
 
 	try {
 		// 1. Check for links with specific feed `type` attributes.
-		const typeSelectors = FEED_TYPES.map(type => `link[type="application/${type}"]`).join(', ');
-		const typeLinks = Array.from(instance.document.querySelectorAll<HTMLLinkElement>(typeSelectors));
+		const typeSelectors = FEED_TYPES.map((type) => `link[type="application/${type}"]`).join(', ');
+		const typeLinks = Array.from(
+			instance.document.querySelectorAll<HTMLLinkElement>(typeSelectors)
+		);
 
 		if (await processLinksInBatches(typeLinks, instance, feeds, foundUrls)) {
 			return feeds;
@@ -225,7 +228,8 @@ export default async function metaLinks(instance: MetaLinksInstance): Promise<Fe
 			instance.document.querySelectorAll<HTMLLinkElement>('link[rel="alternate"]')
 		);
 		const patternLinks = alternateLinks.filter(
-			link => link.href && FEED_PATTERNS.some(pattern => link.href.toLowerCase().includes(pattern))
+			(link) =>
+				link.href && FEED_PATTERNS.some((pattern) => link.href.toLowerCase().includes(pattern))
 		);
 
 		if (await processLinksInBatches(patternLinks, instance, feeds, foundUrls)) {
