@@ -40,13 +40,11 @@ function makeEndHandler(ctx: CLIRunContext) {
 				// Accumulate the feeds
 				ctx.allModeFeeds = ctx.allModeFeeds.concat(data.feeds);
 			}
-		} else {
+		} else if (data.feeds.length === 0) {
 			// Normal mode
-			if (data.feeds.length === 0) {
-				process.stdout.write(styleText('yellow', ' No feeds found.\n'));
-			} else {
-				process.stdout.write(styleText('green', ` Found ${data.feeds.length} feeds.\n`));
-			}
+			process.stdout.write(styleText('yellow', ' No feeds found.\n'));
+		} else {
+			process.stdout.write(styleText('green', ` Found ${data.feeds.length} feeds.\n`));
 		}
 	};
 }

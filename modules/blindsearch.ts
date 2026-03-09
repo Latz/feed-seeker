@@ -531,10 +531,6 @@ function validateBlindSearchUrl(siteUrl: string): URL {
 	return urlObj;
 }
 
-/**
- * Appends validated endpoint URLs for a single path level to the accumulator array.
- * Returns false if the URL generation limit was hit, true otherwise.
- */
 function appendEndpointsForPath(
 	basePath: string,
 	endpoints: string[],
@@ -573,8 +569,7 @@ function generateEndpointUrls(
 
 	while (path.length >= origin.length) {
 		const basePath = path.endsWith('/') ? path.slice(0, -1) : path;
-		const withinLimit = appendEndpointsForPath(basePath, endpoints, queryParams, endpointUrls);
-		if (!withinLimit) return endpointUrls;
+		if (!appendEndpointsForPath(basePath, endpoints, queryParams, endpointUrls)) break;
 		path = path.slice(0, path.lastIndexOf('/'));
 	}
 
@@ -739,7 +734,7 @@ async function processFeeds(
 			batch.map((url) => processSingleFeedUrl(url, instance, foundUrls, feeds, rssFound, atomFound))
 		);
 
-		({ rssFound, atomFound, i } = await applyBatchResults(batchResults, feeds, rssFound, atomFound, maxFeeds, instance, endpointUrls.length, i));
+		({ rssFound, atomFound, i } = await applyBatchResults(batchResults, feeds, rssFound, atomFound, { maxFeeds, totalUrls: endpointUrls.length, i }, instance));
 
 		i += batchSize;
 		instance.emit('log', {
@@ -767,11 +762,11 @@ async function applyBatchResults(
 	feeds: Feed[],
 	rssFound: boolean,
 	atomFound: boolean,
-	maxFeeds: number,
-	instance: MetaLinksInstance,
-	totalUrls: number,
-	i: number
+	ctx: { maxFeeds: number; totalUrls: number; i: number },
+	instance: MetaLinksInstance
 ): Promise<{ rssFound: boolean; atomFound: boolean; i: number }> {
+	let { i } = ctx;
+	const { maxFeeds, totalUrls } = ctx;
 	for (const result of batchResults) {
 		if (result.status === 'fulfilled' && result.value.found) {
 			rssFound = result.value.rssFound;

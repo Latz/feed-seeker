@@ -78,7 +78,7 @@ const FEED_PATTERNS = {
 	RSS: {
 		// Matches RSS root element with version attribute: <rss version="2.0">
 		// [^>]* matches any attributes before version, \s+ ensures whitespace before version
-		VERSION: /<rss[^>]*\s+version\s*=\s*["'][\d.]+["'][^>]*>/i,
+		VERSION: /<rss\s[^>]*version\s*=\s*["'][\d.]+["']/i,
 
 		// Matches RSS channel opening tag (required container for RSS content)
 		CHANNEL: /<channel[^>]*>/i,
@@ -104,7 +104,7 @@ const FEED_PATTERNS = {
 	ATOM: {
 		// Matches Atom feed opening tag with optional attributes: <feed ...>
 		// (?:\s+[^>]*)? is a non-capturing group for optional attributes
-		FEED_START: /<feed(?:\s+[^>]*)?>/i,
+		FEED_START: /<feed[\s>]/i,
 
 		// Matches Atom namespace declaration: xmlns="...atom..." or xmlns:atom="..."
 		// These patterns ensure the feed uses the Atom XML namespace

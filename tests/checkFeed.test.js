@@ -319,3 +319,112 @@ ${items}
     });
   });
 });
+
+// ─── Additional coverage tests ─────────────────────────────────────────────
+
+import { vi, beforeEach as beforeEachCoverage } from 'vitest';
+
+// Mock fetchWithTimeout to test the fetch path
+vi.mock('../modules/fetchWithTimeout.ts', () => ({
+  default: vi.fn(),
+}));
+import fetchWithTimeout from '../modules/fetchWithTimeout.ts';
+
+describe('checkFeed — oEmbed detection', () => {
+  it('returns null for oEmbed URL patterns', async () => {
+    const result = await checkFeed('https://example.com/wp-json/oembed/1.0?url=test', 'anything');
+    expect(result).toBeNull();
+  });
+
+  it('returns null for content that looks like an oEmbed response (type+version in TYPES/VERSIONS)', async () => {
+    const oembedContent = JSON.stringify({
+      type: 'rich',
+      version: '1.0',
+      title: 'Some page',
+      html: '<blockquote>...</blockquote>',
+    });
+    const result = await checkFeed('https://example.com/oembed.json', oembedContent);
+    expect(result).toBeNull();
+  });
+
+  it('returns null for oEmbed with type+version+html pattern', async () => {
+    const oembedContent = JSON.stringify({
+      type: 'video',
+      version: '1.0',
+      html: '<iframe src="..."></iframe>',
+    });
+    const result = await checkFeed('https://example.com/embed.json', oembedContent);
+    expect(result).toBeNull();
+  });
+});
+
+describe('checkFeed — JSON feed with non-string title', () => {
+  it('returns null title when json.title is a number', async () => {
+    const jsonContent = JSON.stringify({
+      version: 'https://jsonfeed.org/version/1',
+      title: 42,
+      items: [],
+    });
+    const result = await checkFeed('https://example.com/feed.json', jsonContent);
+    expect(result).not.toBeNull();
+    expect(result.type).toBe('json');
+    expect(result.title).toBeNull();
+  });
+
+  it('returns null title when json.title is an object', async () => {
+    const jsonContent = JSON.stringify({
+      items: [{ id: '1' }],
+      title: { text: 'Object Title' },
+    });
+    const result = await checkFeed('https://example.com/feed.json', jsonContent);
+    if (result) {
+      expect(result.title).toBeNull();
+    }
+  });
+});
+
+describe('checkFeed — fetch path', () => {
+  beforeEachCoverage(() => {
+    vi.clearAllMocks();
+  });
+
+  it('fetches content when content is empty string and instance is provided', async () => {
+    const rssContent = `<rss version="2.0"><channel><title>Fetched Feed</title><description>Desc</description><item><title>Item</title></item></channel></rss>`;
+    fetchWithTimeout.mockResolvedValue({ ok: true, status: 200, text: async () => rssContent });
+    const instance = { options: { timeout: 5 } };
+    const result = await checkFeed('https://example.com/feed.xml', '', instance);
+    expect(fetchWithTimeout).toHaveBeenCalledWith('https://example.com/feed.xml', 5000);
+    expect(result).not.toBeNull();
+    expect(result.type).toBe('rss');
+  });
+
+  it('throws when fetch returns non-ok response', async () => {
+    fetchWithTimeout.mockResolvedValue({ ok: false, status: 404, statusText: 'Not Found' });
+    const instance = { options: { timeout: 5 } };
+    await expect(checkFeed('https://example.com/feed.xml', '', instance)).rejects.toThrow('404');
+  });
+
+  it('throws when instance is missing and content is empty', async () => {
+    await expect(checkFeed('https://example.com/feed.xml', '')).rejects.toThrow(
+      'Instance parameter is required'
+    );
+  });
+
+  it('uses minimum timeout when timeout is 0', async () => {
+    fetchWithTimeout.mockResolvedValue({ ok: true, status: 200, text: async () => 'null' });
+    const instance = { options: { timeout: 0 } };
+    await checkFeed('https://example.com/feed.json', '', instance);
+    // timeout 0 → clamped to MIN (1s) → 1000ms
+    expect(fetchWithTimeout).toHaveBeenCalledWith('https://example.com/feed.json', 1000);
+  });
+
+  it('throws for invalid URL protocol', async () => {
+    await expect(checkFeed('ftp://example.com/feed.xml', 'content')).rejects.toThrow(
+      'Invalid protocol'
+    );
+  });
+
+  it('throws for completely invalid URL', async () => {
+    await expect(checkFeed('not-a-url', 'content')).rejects.toThrow('Invalid URL');
+  });
+});

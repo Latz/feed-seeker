@@ -1,98 +1,58 @@
 #!/usr/bin/env node
-import { Command as K, Option as V } from "commander";
+import { Command as Y, Option as G } from "commander";
 import { parseHTML as N } from "linkedom";
-import k from "tldts";
-import Y from "async";
-import { styleText as h } from "node:util";
-const z = [
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0",
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-];
-function J() {
-  return z[Math.floor(Math.random() * z.length)];
-}
-function Q(r) {
-  return new Promise((e) => setTimeout(e, r));
-}
-async function I(r, e = {}) {
-  let t, s, o, i;
+import T from "tldts";
+import J from "async";
+import { styleText as f } from "node:util";
+async function C(t, e = {}) {
+  let r, s;
   if (typeof e == "number")
-    t = e, s = 0, o = 1e3, i = {};
+    r = e, s = {};
   else {
-    const {
-      timeout: n = 5e3,
-      retries: x = 0,
-      retryDelay: l = 1e3,
-      ...d
-    } = e;
-    t = n, s = x, o = l, i = d;
+    const { timeout: m = 5e3, ...l } = e;
+    r = m, s = l;
   }
   try {
-    const n = new URL(r);
-    if (!["http:", "https:"].includes(n.protocol))
-      throw new Error(`Invalid URL protocol: ${n.protocol}. Only http: and https: are allowed.`);
-  } catch (n) {
-    throw n instanceof TypeError ? new Error(`Invalid URL: ${r}`) : n;
+    const m = new URL(t);
+    if (!["http:", "https:"].includes(m.protocol))
+      throw new Error(`Invalid URL protocol: ${m.protocol}. Only http: and https: are allowed.`);
+  } catch (m) {
+    throw m instanceof TypeError ? new Error(`Invalid URL: ${t}`) : m;
   }
-  if (t <= 0)
-    throw new Error(`Invalid timeout: ${t}. Timeout must be a positive number.`);
-  if (!Number.isFinite(t))
-    throw new Error(`Invalid timeout: ${t}. Timeout must be a finite number.`);
-  let m;
-  const a = new URL(r);
-  for (let n = 0; n <= s; n++) {
-    if (n > 0) {
-      const B = o * Math.pow(2, n - 1), T = Math.random() * 500;
-      await Q(B + T);
-    }
-    const x = new AbortController(), l = setTimeout(() => x.abort(), t), f = {
-      ...{
-        "User-Agent": J(),
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        Connection: "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"Windows"',
-        DNT: "1",
-        "Cache-Control": "max-age=0",
-        Referer: a.origin + "/"
-      },
-      ...i.headers || {}
-    };
-    try {
-      const B = await fetch(r, {
-        ...i,
-        signal: x.signal,
-        headers: f
-      });
-      if (clearTimeout(l), B.status === 403 && n < s) {
-        m = new Error(`HTTP 403 Forbidden (attempt ${n + 1}/${s + 1})`);
-        continue;
-      }
-      return B;
-    } catch (B) {
-      if (clearTimeout(l), m = B, B instanceof Error && B.name === "AbortError" && (m = new Error(`Request to ${r} timed out after ${t}ms`)), n >= s)
-        break;
-    }
+  if (r <= 0)
+    throw new TypeError(`Invalid timeout: ${r}. Timeout must be a positive number.`);
+  if (!Number.isFinite(r))
+    throw new TypeError(`Invalid timeout: ${r}. Timeout must be a finite number.`);
+  const n = new AbortController(), i = setTimeout(() => n.abort(), r), a = {
+    ...{
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.5",
+      "Accept-Encoding": "gzip, deflate, br",
+      Connection: "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+      "Sec-CH-UA": '"Chromium";v="132", "Google Chrome";v="132", "Not-A.Brand";v="99"',
+      "Sec-CH-UA-Mobile": "?0",
+      "Sec-CH-UA-Platform": '"Windows"',
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "none",
+      "Cache-Control": "max-age=0"
+    },
+    ...s.headers
+  };
+  try {
+    const m = await fetch(t, {
+      ...s,
+      signal: n.signal,
+      headers: a
+    });
+    return clearTimeout(i), m;
+  } catch (m) {
+    throw clearTimeout(i), m instanceof Error && m.name === "AbortError" ? new Error(`Request to ${t} timed out after ${r}ms`) : m;
   }
-  throw m;
 }
-const u = {
+const h = {
   MAX_CONTENT_SIZE: 10 * 1024 * 1024,
   // 10MB maximum content size
   DEFAULT_TIMEOUT: 5,
@@ -101,7 +61,7 @@ const u = {
   // Maximum timeout in seconds (60 seconds)
   MIN_TIMEOUT: 1
   // Minimum timeout in seconds
-}, C = {
+}, $ = {
   TYPES: ["rich", "video", "photo", "link"],
   VERSIONS: ["1.0", "2.0"],
   URL_PATTERNS: ["/wp-json/oembed/", "/oembed"]
@@ -113,7 +73,7 @@ const u = {
   RSS: {
     // Matches RSS root element with version attribute: <rss version="2.0">
     // [^>]* matches any attributes before version, \s+ ensures whitespace before version
-    VERSION: /<rss[^>]*\s+version\s*=\s*["'][\d.]+["'][^>]*>/i,
+    VERSION: /<rss\s[^>]*version\s*=\s*["'][\d.]+["']/i,
     // Matches RSS channel opening tag (required container for RSS content)
     CHANNEL: /<channel[^>]*>/i,
     // Matches RSS item opening tag (individual feed entries)
@@ -132,7 +92,7 @@ const u = {
   ATOM: {
     // Matches Atom feed opening tag with optional attributes: <feed ...>
     // (?:\s+[^>]*)? is a non-capturing group for optional attributes
-    FEED_START: /<feed(?:\s+[^>]*)?>/i,
+    FEED_START: /<feed[\s>]/i,
     // Matches Atom namespace declaration: xmlns="...atom..." or xmlns:atom="..."
     // These patterns ensure the feed uses the Atom XML namespace
     NAMESPACE_XMLNS: /<feed[^>]*xmlns[^>]*atom/i,
@@ -146,155 +106,156 @@ const u = {
     TITLE_CONTENT: /<title>([\s\S]*?)<\/title>/i
   }
 };
-function Z(r) {
+function K(t) {
   let e;
   try {
-    e = new URL(r);
+    e = new URL(t);
   } catch {
-    throw new Error(`Invalid URL: ${r}`);
+    throw new Error(`Invalid URL: ${t}`);
   }
   if (!["http:", "https:"].includes(e.protocol))
     throw new Error(
       `Invalid protocol: ${e.protocol}. Only http: and https: protocols are allowed.`
     );
 }
-function ee(r) {
-  if (r.length > u.MAX_CONTENT_SIZE)
+function Q(t) {
+  if (t.length > h.MAX_CONTENT_SIZE)
     throw new Error(
-      `Content too large: ${r.length} bytes. Maximum allowed: ${u.MAX_CONTENT_SIZE} bytes.`
+      `Content too large: ${t.length} bytes. Maximum allowed: ${h.MAX_CONTENT_SIZE} bytes.`
     );
 }
-function te(r) {
-  return r == null ? u.DEFAULT_TIMEOUT : !Number.isFinite(r) || r < u.MIN_TIMEOUT ? (console.warn(
-    `Invalid timeout value ${r}. Using minimum: ${u.MIN_TIMEOUT} seconds.`
-  ), u.MIN_TIMEOUT) : r > u.MAX_TIMEOUT ? (console.warn(
-    `Timeout value ${r} exceeds maximum. Clamping to ${u.MAX_TIMEOUT} seconds.`
-  ), u.MAX_TIMEOUT) : Math.floor(r);
+function Z(t) {
+  return t == null ? h.DEFAULT_TIMEOUT : !Number.isFinite(t) || t < h.MIN_TIMEOUT ? (console.warn(
+    `Invalid timeout value ${t}. Using minimum: ${h.MIN_TIMEOUT} seconds.`
+  ), h.MIN_TIMEOUT) : t > h.MAX_TIMEOUT ? (console.warn(
+    `Timeout value ${t} exceeds maximum. Clamping to ${h.MAX_TIMEOUT} seconds.`
+  ), h.MAX_TIMEOUT) : Math.floor(t);
 }
-function re(r) {
-  return C.URL_PATTERNS.some((e) => r.includes(e));
+function ee(t) {
+  return $.URL_PATTERNS.some((e) => t.includes(e));
 }
-function se(r) {
-  return !!(r.type && C.TYPES.includes(r.type) && C.VERSIONS.includes(r.version) || r.type && r.version && r.html);
+function te(t) {
+  return !!(t.type && $.TYPES.includes(t.type) && $.VERSIONS.includes(t.version) || t.type && t.version && t.html);
 }
-function F(r) {
-  return r.replace(c.CDATA, "$1");
+function F(t) {
+  return t.replaceAll(c.CDATA, "$1");
 }
-function _(r) {
-  return r ? r.replace(/\s+/g, " ").trim() : null;
+function _(t) {
+  return t ? t.replaceAll(/\s+/g, " ").trim() : null;
 }
-async function y(r, e = "", t) {
-  if (Z(r), re(r))
+async function g(t, e = "", r) {
+  if (K(t), ee(t))
     return null;
   if (!e) {
-    if (!t)
+    if (!r)
       throw new Error("Instance parameter is required when content is not provided");
-    const i = te(t.options.timeout) * 1e3, m = await I(r, i);
-    if (!m.ok)
-      throw new Error(`Failed to fetch ${r}: ${m.status} ${m.statusText}`);
-    e = await m.text();
+    const i = Z(r.options.timeout) * 1e3, o = await C(t, i);
+    if (!o.ok)
+      throw new Error(`Failed to fetch ${t}: ${o.status} ${o.statusText}`);
+    e = await o.text();
   }
-  return ee(e), ie(e) || me(e) || ne(e) || null;
+  return Q(e), se(e) || ne(e) || ie(e) || null;
 }
-function oe(r) {
-  const e = c.RSS.CHANNEL_CONTENT.exec(r);
+function re(t) {
+  const e = c.RSS.CHANNEL_CONTENT.exec(t);
   if (e) {
-    const o = e[1], i = c.RSS.TITLE.exec(o);
+    const n = e[1], i = c.RSS.TITLE.exec(n);
     return i ? _(F(i[1])) : null;
   }
-  const t = c.RSS.TITLE.exec(r);
-  return t ? _(F(t[1])) : null;
+  const r = c.RSS.TITLE.exec(t);
+  return r ? _(F(r[1])) : null;
 }
-function ie(r) {
-  if (c.RSS.VERSION.test(r)) {
-    const e = c.RSS.CHANNEL.test(r), t = c.RSS.ITEM.test(r), s = c.RSS.DESCRIPTION.test(r);
-    if (e && s && (t || c.RSS.CHANNEL_END.test(r)))
-      return { type: "rss", title: oe(r) };
+function se(t) {
+  if (c.RSS.VERSION.test(t)) {
+    const e = c.RSS.CHANNEL.test(t), r = c.RSS.ITEM.test(t), s = c.RSS.DESCRIPTION.test(t);
+    if (e && s && (r || c.RSS.CHANNEL_END.test(t)))
+      return { type: "rss", title: re(t) };
   }
   return null;
 }
-function me(r) {
-  const e = c.ATOM.NAMESPACE_XMLNS.test(r) || c.ATOM.NAMESPACE_XMLNS_ATOM.test(r) || c.ATOM.NAMESPACE_ATOM_PREFIX.test(r);
-  if (c.ATOM.FEED_START.test(r) && e) {
-    const t = c.ATOM.ENTRY.test(r), s = c.ATOM.TITLE_TAG.test(r);
-    if (t && s) {
-      const o = c.ATOM.TITLE_CONTENT.exec(r);
-      return { type: "atom", title: o ? _(F(o[1])) : null };
+function ne(t) {
+  const e = c.ATOM.NAMESPACE_XMLNS.test(t) || c.ATOM.NAMESPACE_XMLNS_ATOM.test(t) || c.ATOM.NAMESPACE_ATOM_PREFIX.test(t);
+  if (c.ATOM.FEED_START.test(t) && e) {
+    const r = c.ATOM.ENTRY.test(t), s = c.ATOM.TITLE_TAG.test(t);
+    if (r && s) {
+      const n = c.ATOM.TITLE_CONTENT.exec(t);
+      return { type: "atom", title: n ? _(F(n[1])) : null };
     }
   }
   return null;
 }
-function ne(r) {
+function ie(t) {
   try {
-    const e = JSON.parse(r);
-    if (se(e))
+    const e = JSON.parse(t);
+    if (te(e))
       return null;
     if (e.version && typeof e.version == "string" && e.version.includes("jsonfeed") || e.items && Array.isArray(e.items) || e.feed_url) {
-      const t = e.title || e.name || null;
-      return { type: "json", title: typeof t == "string" ? _(t) : null };
+      const r = e.title || e.name || null;
+      return { type: "json", title: typeof r == "string" ? _(r) : null };
     }
     return null;
   } catch {
     return null;
   }
 }
-const ae = ["feed+json", "rss+xml", "atom+xml", "xml", "rdf+xml"], xe = ["/rss", "/feed", "/atom", ".rss", ".atom", ".xml", ".json"];
-function le(r) {
-  return r ? r.replace(/\s+/g, " ").trim() : null;
+const oe = ["feed+json", "rss+xml", "atom+xml", "xml", "rdf+xml"], me = ["/rss", "/feed", "/atom", ".rss", ".atom", ".xml", ".json"];
+function ae(t) {
+  return t ? t.replaceAll(/\s+/g, " ").trim() : null;
 }
-async function L(r, e, t, s, o = 5) {
+async function L(t, e, r, s, n = 5) {
   const i = e.options?.maxFeeds || 0;
-  for (let m = 0; m < r.length; m += o) {
-    if (i > 0 && t.length >= i)
+  for (let o = 0; o < t.length; o += n) {
+    if (i > 0 && r.length >= i)
       return !0;
-    const a = r.slice(m, m + o);
+    const a = t.slice(o, o + n);
     if ((await Promise.allSettled(
-      a.map((l) => de(l, e, t, s))
+      a.map((x) => ce(x, e, r, s))
     )).some(
-      (l) => l.status === "fulfilled" && l.value === !0
+      (x) => x.status === "fulfilled" && x.value === !0
     ))
       return !0;
   }
   return !1;
 }
-async function de(r, e, t, s) {
-  const o = e.options?.maxFeeds || 0;
-  if (!r.href) return !1;
-  let i;
+function le(t, e) {
+  if (!t.href) return null;
   try {
-    i = new URL(r.href, e.site).href;
-  } catch (m) {
+    return new URL(t.href, e.site).href;
+  } catch (r) {
     if (e.options?.showErrors) {
-      const a = m instanceof Error ? m : new Error(String(m));
+      const s = r instanceof Error ? r : new Error(String(r));
       e.emit("error", {
         module: "metalinks",
-        error: a.message,
-        explanation: `Invalid URL found in meta link: ${r.href}. Unable to construct a valid URL.`,
+        error: s.message,
+        explanation: `Invalid URL found in meta link: ${t.href}. Unable to construct a valid URL.`,
         suggestion: "Check the meta link href attribute for malformed URLs."
       });
     }
-    return !1;
+    return null;
   }
-  if (s.has(i)) return !1;
-  e.emit("log", { module: "metalinks", message: `Checking feed: ${i}` });
+}
+function xe(t, e, r, s, n, i) {
+  s.push({ url: t, title: ae(e.title), type: r.type, feedTitle: r.title }), n.add(t);
+  const o = i.options?.maxFeeds || 0;
+  return o > 0 && s.length >= o ? (i.emit("log", {
+    module: "metalinks",
+    message: `Stopped due to reaching maximum feeds limit: ${s.length} feeds found (max ${o} allowed).`
+  }), !0) : !1;
+}
+async function ce(t, e, r, s) {
+  const n = le(t, e);
+  if (!n || s.has(n)) return !1;
+  e.emit("log", { module: "metalinks", message: `Checking feed: ${n}` });
   try {
-    const m = await y(i, "", e);
-    if (m && (t.push({
-      url: i,
-      title: le(r.title),
-      type: m.type,
-      feedTitle: m.title
-    }), s.add(i), o > 0 && t.length >= o))
-      return e.emit("log", {
-        module: "metalinks",
-        message: `Stopped due to reaching maximum feeds limit: ${t.length} feeds found (max ${o} allowed).`
-      }), !0;
-  } catch (m) {
+    const i = await g(n, "", e);
+    if (i)
+      return xe(n, t, i, r, s, e);
+  } catch (i) {
     if (e.options?.showErrors) {
-      const a = m instanceof Error ? m : new Error(String(m));
+      const o = i instanceof Error ? i : new Error(String(i));
       e.emit("error", {
         module: "metalinks",
-        error: a.message,
+        error: o.message,
         explanation: "An error occurred while trying to fetch and validate a feed URL found in a meta link tag. This could be due to network issues, server problems, or invalid feed content.",
         suggestion: "Check if the meta link URL is accessible and returns valid feed content. The search will continue with other meta links."
       });
@@ -302,45 +263,45 @@ async function de(r, e, t, s) {
   }
   return !1;
 }
-async function ce(r) {
-  r.emit("start", { module: "metalinks", niceName: "Meta links" });
-  const e = [], t = /* @__PURE__ */ new Set();
+async function de(t) {
+  t.emit("start", { module: "metalinks", niceName: "Meta links" });
+  const e = [], r = /* @__PURE__ */ new Set();
   try {
-    const s = ae.map((x) => `link[type="application/${x}"]`).join(", "), o = Array.from(r.document.querySelectorAll(s));
-    if (await L(o, r, e, t))
+    const s = oe.map((l) => `link[type="application/${l}"]`).join(", "), n = Array.from(t.document.querySelectorAll(s));
+    if (await L(n, t, e, r))
+      return e;
+    const o = Array.from(
+      t.document.querySelectorAll('link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="xml"], link[rel="alternate"][type*="atom"], link[rel="alternate"][type*="json"]')
+    );
+    if (await L(o, t, e, r))
       return e;
     const m = Array.from(
-      r.document.querySelectorAll('link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="xml"], link[rel="alternate"][type*="atom"], link[rel="alternate"][type*="json"]')
-    );
-    if (await L(m, r, e, t))
-      return e;
-    const n = Array.from(
-      r.document.querySelectorAll('link[rel="alternate"]')
+      t.document.querySelectorAll('link[rel="alternate"]')
     ).filter(
-      (x) => x.href && xe.some((l) => x.href.toLowerCase().includes(l))
+      (l) => l.href && me.some((x) => l.href.toLowerCase().includes(x))
     );
-    return await L(n, r, e, t), e;
+    return await L(m, t, e, r), e;
   } finally {
-    r.emit("end", { module: "metalinks", feeds: e });
+    t.emit("end", { module: "metalinks", feeds: e });
   }
 }
-function b(r, e) {
+function S(t, e) {
   try {
-    return new URL(r, e);
+    return new URL(t, e);
   } catch {
     return null;
   }
 }
-function Be(r) {
-  const e = b(r);
+function Be(t) {
+  const e = S(t);
   return e ? e.protocol === "http:" || e.protocol === "https:" : !1;
 }
-function fe(r) {
-  return b(r) ? !1 : !r.includes("://");
+function fe(t) {
+  return S(t) ? !1 : !t.includes("://");
 }
-function P(r, e) {
-  const t = b(r);
-  if (!t || t.hostname === e.hostname)
+function P(t, e) {
+  const r = S(t);
+  if (!r || r.hostname === e.hostname)
     return !0;
   const s = [
     // Google FeedBurner (most common feed hosting service)
@@ -349,66 +310,68 @@ function P(r, e) {
     "feedproxy.google.com",
     "feeds2.feedburner.com"
   ];
-  return s.includes(t.hostname) || s.some((o) => t.hostname.endsWith("." + o));
+  return s.includes(r.hostname) || s.some((n) => r.hostname.endsWith("." + n));
 }
-function he(r) {
-  if (r.options.followMetaRefresh && r.document && typeof r.document.querySelector == "function") {
-    const e = r.document.querySelector('meta[http-equiv="refresh"]')?.getAttribute("content");
+function he(t) {
+  if (t.options.followMetaRefresh && t.document && typeof t.document.querySelector == "function") {
+    const e = t.document.querySelector('meta[http-equiv="refresh"]')?.getAttribute("content");
     if (e) {
-      const t = e.match(/url=(.*)/i);
-      if (t && t[1]) {
-        const s = new URL(t[1], r.site).href;
-        return r.emit("log", {
+      const r = /url=(.*)/i.exec(e);
+      if (r?.[1]) {
+        const s = new URL(r[1], t.site).href;
+        return t.emit("log", {
           module: "anchors",
           message: `Following meta refresh redirect to ${s}`
-        }), X({ ...r, site: s });
+        }), j({ ...t, site: s });
       }
     }
   }
   return null;
 }
-function H(r, e, t) {
-  if (!r.href)
+function z(t, e, r) {
+  if (!t.href)
     return null;
-  if (Be(r.href))
-    return r.href;
-  if (fe(r.href)) {
-    const s = b(r.href, e);
-    return s ? s.href : (t.emit("error", {
+  if (Be(t.href))
+    return t.href;
+  if (fe(t.href)) {
+    const s = S(t.href, e);
+    return s ? s.href : (r.emit("error", {
       module: "anchors",
-      error: `Invalid relative URL: ${r.href}`,
+      error: `Invalid relative URL: ${t.href}`,
       explanation: "A relative URL found in an anchor tag could not be resolved against the base URL. This may be due to malformed relative path syntax.",
       suggestion: 'Check the anchor href attribute for proper relative path format (e.g., "./feed.xml", "../rss.xml", or "/feed").'
     }), null);
   }
   return null;
 }
-function ue(r) {
-  const e = /https?:\/\/[^\s"'<>)]+/gi, t = r.match(e);
-  if (!t)
+function ue(t) {
+  const e = /https?:\/\/[^\s"'<>)]+/gi, r = t.match(e);
+  if (!r)
     return [];
   const s = /* @__PURE__ */ new Set();
-  for (const o of t) {
-    const i = o.replace(/[.,;:!?]+$/, "");
+  for (const n of r) {
+    let i = n;
+    for (; i.length > 0 && ".,;:!?".includes(i.at(-1)); )
+      i = i.slice(0, -1);
     s.add(i);
   }
   return Array.from(s);
 }
-async function pe(r, e) {
-  const { instance: t, baseUrl: s, feedUrls: o } = e, i = H(r, s, t);
+async function pe(t, e) {
+  const { instance: r, baseUrl: s, feedUrls: n } = e, i = z(t, s, r);
   if (i)
     try {
-      const m = await y(i, "", t);
-      m && o.push({
+      const o = await g(i, "", r);
+      o && n.push({
         url: i,
-        title: r.textContent?.trim() || null,
-        type: m.type,
-        feedTitle: m.title
+        title: t.textContent?.trim() || null,
+        type: o.type,
+        feedTitle: o.title
       });
-    } catch (m) {
-      if (t.options?.showErrors) {
-        const a = m instanceof Error ? m : new Error(String(m));
-        t.emit("error", {
+    } catch (o) {
+      if (r.options?.showErrors) {
+        const a = o instanceof Error ? o : new Error(String(o));
+        r.emit("error", {
           module: "anchors",
           error: `Error checking feed at ${i}: ${a.message}`,
           explanation: "An error occurred while trying to fetch and validate a potential feed URL found in an anchor tag. This could be due to network timeouts, server errors, or invalid feed content.",
@@ -417,79 +380,84 @@ async function pe(r, e) {
       }
     }
 }
-async function X(r) {
-  await he(r);
-  const e = new URL(r.site), t = r.document.querySelectorAll("a"), s = [];
-  for (const a of t) {
-    const n = H(a, e, r);
-    n && P(n, e) && s.push(a);
-  }
-  const o = r.options?.maxFeeds || 0, i = {
-    instance: r,
-    baseUrl: e,
-    feedUrls: []
-  };
-  let m = 1;
-  for (const a of s) {
-    if (o > 0 && i.feedUrls.length >= o) {
-      r.emit("log", {
-        module: "anchors",
-        message: `Stopped due to reaching maximum feeds limit: ${i.feedUrls.length} feeds found (max ${o} allowed).`
-      });
+function q(t, e, r) {
+  t.emit("log", {
+    module: "anchors",
+    message: `Stopped due to reaching maximum feeds limit: ${e} feeds found (max ${r} allowed).`
+  });
+}
+async function ge(t, e, r, s) {
+  let n = 0;
+  for (let i = 0; i < t.length; i += r) {
+    if (s > 0 && e.feedUrls.length >= s) {
+      q(e.instance, e.feedUrls.length, s);
       break;
     }
-    r.emit("log", { module: "anchors", totalCount: m++, totalEndpoints: s.length }), await pe(a, i);
+    const o = t.slice(i, i + r);
+    await Promise.allSettled(
+      o.map(async (a) => {
+        s > 0 && e.feedUrls.length >= s || (n++, e.instance.emit("log", { module: "anchors", totalCount: n, totalEndpoints: t.length }), await pe(a, e));
+      })
+    );
   }
-  if (o === 0 || i.feedUrls.length < o) {
-    const a = r.document.body?.innerHTML || "", n = ue(a), x = new Set(i.feedUrls.map((d) => d.url)), l = [];
-    for (const d of n)
-      !x.has(d) && P(d, e) && (l.push(d), x.add(d));
-    for (const d of l) {
-      if (o > 0 && i.feedUrls.length >= o) {
-        r.emit("log", {
-          module: "anchors",
-          message: `Stopped due to reaching maximum feeds limit: ${i.feedUrls.length} feeds found (max ${o} allowed).`
-        });
-        break;
-      }
-      r.emit("log", {
-        module: "anchors",
-        totalCount: m++,
-        totalEndpoints: s.length + l.length
-      });
-      try {
-        const f = await y(d, "", r);
-        f && i.feedUrls.push({
-          url: d,
-          title: null,
-          // Plain-text URLs don't have anchor text
-          type: f.type,
-          feedTitle: f.title
-        });
-      } catch (f) {
-        if (r.options?.showErrors) {
-          const B = f instanceof Error ? f : new Error(String(f));
-          r.emit("error", {
-            module: "anchors",
-            error: `Error checking feed at ${d}: ${B.message}`,
-            explanation: "An error occurred while trying to fetch and validate a potential feed URL found in page text. This could be due to network timeouts, server errors, or invalid feed content.",
-            suggestion: "Check if the URL is accessible and returns valid feed content. Network connectivity issues or server problems may cause this error."
-          });
-        }
-      }
-    }
-  }
-  return i.feedUrls;
+  return n;
 }
-async function ge(r) {
-  r.emit("start", {
+async function we(t, e, r, s, n, i) {
+  const o = t.instance.document.body?.innerHTML || "", a = ue(o), m = new Set(t.feedUrls.map((d) => d.url)), l = [];
+  for (const d of a)
+    !m.has(d) && P(d, e) && (l.push(d), m.add(d));
+  let x = s;
+  const w = r + l.length;
+  for (let d = 0; d < l.length; d += n) {
+    if (i > 0 && t.feedUrls.length >= i) {
+      q(t.instance, t.feedUrls.length, i);
+      break;
+    }
+    const b = l.slice(d, d + n);
+    await Promise.allSettled(
+      b.map(async (u) => {
+        if (!(i > 0 && t.feedUrls.length >= i)) {
+          t.instance.emit("log", { module: "anchors", totalCount: x++, totalEndpoints: w });
+          try {
+            const B = await g(u, "", t.instance);
+            B && t.feedUrls.push({ url: u, title: null, type: B.type, feedTitle: B.title });
+          } catch (B) {
+            if (t.instance.options?.showErrors) {
+              const V = B instanceof Error ? B : new Error(String(B));
+              t.instance.emit("error", {
+                module: "anchors",
+                error: `Error checking feed at ${u}: ${V.message}`,
+                explanation: "An error occurred while trying to fetch and validate a potential feed URL found in page text. This could be due to network timeouts, server errors, or invalid feed content.",
+                suggestion: "Check if the URL is accessible and returns valid feed content. Network connectivity issues or server problems may cause this error."
+              });
+            }
+          }
+        }
+      })
+    );
+  }
+}
+async function j(t) {
+  const e = he(t);
+  if (e)
+    return e;
+  const r = new URL(t.site), s = t.document.querySelectorAll("a"), n = [];
+  for (const l of s) {
+    const x = z(l, r, t);
+    x && P(x, r) && n.push(l);
+  }
+  const i = t.options?.maxFeeds || 0, o = t.options?.concurrency ?? 3, a = { instance: t, baseUrl: r, feedUrls: [] }, m = await ge(n, a, o, i);
+  return (i === 0 || a.feedUrls.length < i) && await we(a, r, n.length, m + 1, o, i), a.feedUrls;
+}
+async function ye(t) {
+  t.emit("start", {
     module: "anchors",
     niceName: "Check all anchors"
   });
-  const e = await X(r);
-  return r.emit("end", { module: "anchors", feeds: e }), e;
+  const e = await j(t);
+  return t.emit("end", { module: "anchors", feeds: e }), e;
 }
-const we = 0, A = 0, ye = 3, v = "standard", G = 2083, M = 10, U = 1, q = 1e4, R = 6e4, E = [
+const Ee = 0, k = 0, _e = 3, A = "standard", H = 2083, v = 10, U = 1, I = 1e4, M = 6e4, y = [
   // Most common standard paths (highest success rate)
   "feed",
   "rss",
@@ -519,453 +487,470 @@ const we = 0, A = 0, ye = 3, v = "standard", G = 2083, M = 10, U = 1, q = 1e4, R
   // Query parameters
   "?format=rss",
   "?format=feed"
-], $ = [
-  // Extended standard paths
-  "rssfeed.xml",
-  "feed.rss",
-  "feed.atom",
-  "feeds/",
-  "rss/",
-  "index.rss",
-  "index.atom",
-  "rss/index.xml",
-  "atom/index.xml",
-  "syndication/",
-  "rssfeed.rdf",
-  "&_rss=1",
-  // Blog platforms
-  "blog/atom",
-  "blog/feeds",
-  "blog?format=rss",
-  "blog-feed.xml",
-  "weblog/atom",
-  "weblog/rss",
-  // WordPress extended
-  "?format=feed",
-  "feed/rdf/",
-  "feed/rss2/",
-  "wp-atom.php",
-  "wp-feed.php",
-  "wp-rdf.php",
-  "wp-rss.php",
-  "wp-rss2.php",
-  "index.php?format=feed",
-  // News and articles
-  "articles/feed",
-  "atom/news/",
-  "latest.rss",
-  "news.xml",
-  "news/atom",
-  "rss/articles/",
-  "rss/latest/",
-  "rss/news/",
-  "rss/news/rss.xml",
-  "rss/rss.php",
-  // API style
-  "api/feed",
-  "api/rss",
-  "api/atom",
-  "api/rss.xml",
-  "api/feed.xml",
-  "api/v1/feed",
-  "api/v2/feed",
-  "v1/feed",
-  "v2/feed",
-  // CMS and frameworks
-  "feed.aspx",
-  "rss.aspx",
-  "rss.cfm",
-  "feed.jsp",
-  "feed.pl",
-  "feed.py",
-  "feed.rb",
-  "feed/atom",
-  "feed/rdf",
-  "feed/atom.rss",
-  "feed/atom.xml",
-  "feed/rss.xml",
-  "feed/rss2",
-  "posts.rss",
-  // Static site generators
-  "_site/feed.xml",
-  "build/feed.xml",
-  "dist/feed.xml",
-  "out/feed.xml",
-  // Query parameters
-  "?atom=1",
-  "?rss=1",
-  "?feed=atom",
-  "?feed=rss",
-  "?format=atom",
-  "?output=rss",
-  "?output=atom",
-  "?type=rss",
-  "?type=atom",
-  "?view=feed",
-  "?view=rss"
-], Ee = [
-  // Custom and alternative paths
-  "atomfeed",
-  "jsonfeed",
-  "newsfeed",
-  "rssfeed",
-  "feeds.json",
-  "feeds.php",
-  "feeds.xml",
-  ".json",
-  ".opml",
-  ".rdf",
-  "opml",
-  "opml/",
-  "rdf",
-  "rdf/",
-  // Additional modern formats
-  "feed.cml",
-  "feed.csv",
-  "feed.txt",
-  "feed.yaml",
-  "feed.yml",
-  // Complex query parameters
-  "?download=atom",
-  "?download=rss",
-  "?export=atom",
-  "?export=rss",
-  "?syndicate=atom",
-  "?syndicate=rss",
-  // Specialized CMS paths
-  "export/rss.xml",
-  "extern.php?action=feed&type=atom",
-  "external?type=rss2",
-  "index.php?action=.xml;type=rss",
-  "public/feed.xml",
-  "spip.php?page=backend",
-  "spip.php?page=backend-breve",
-  "spip.php?page=backend-sites",
-  "syndicate/rss.xml",
-  "syndication.php",
-  "xml",
-  "sitenews",
-  "api/mobile/feed",
-  // E-commerce and product feeds
-  "catalog.xml",
-  // product catalogs
-  "catalog/feed",
-  "deals.xml",
-  // deal/sale feeds
-  "deals/feed",
-  "inventory.rss",
-  // inventory updates
-  "inventory/feed",
-  "products.rss",
-  // product feeds
-  "products/atom",
-  "products/rss",
-  "promotions/feed",
-  "specials/feed",
-  // Podcast and media feeds
-  "audio/feed",
-  "episodes.rss",
-  // episodic content
-  "episodes/feed",
-  "gallery.rss",
-  // image galleries
-  "media/feed",
-  "podcast.rss",
-  // audio content
-  "podcast/atom",
-  "podcast/rss",
-  "podcasts/feed",
-  "shows/feed",
-  "video/feed",
-  "videos.rss",
-  // video content
-  // Social media and community feeds
-  "comments/feed",
-  "community/feed",
-  "discussions/feed",
-  "forum.rss",
-  // forum posts
-  "forum/atom",
-  "forum/rss",
-  "reviews/feed",
-  // Event and calendar feeds
-  "agenda/feed",
-  "calendar/feed",
-  "events.rss",
-  // calendar events
-  "events/feed",
-  "schedule/feed",
-  // Job and career feeds
-  "careers/feed",
-  "jobs.rss",
-  // job listings
-  "jobs/feed",
-  "opportunities/feed",
-  "vacancies/feed",
-  // Content management systems
-  "content/feed",
-  "documents/feed",
-  "pages/feed",
-  "resources/feed",
-  // Newsletter and email feeds
-  "emails/feed",
-  "mailinglist/feed",
-  "newsletter/feed",
-  "subscription/feed",
-  // Category and tag feeds
-  "category/*/feed",
-  "tag/*/feed",
-  "tags/feed",
-  "topics/feed",
-  // User and author feeds
-  "author/*/feed",
-  "profile/*/feed",
-  "user/*/feed",
-  // Time-based feeds
-  "archive/feed",
-  "daily/feed",
-  "monthly/feed",
-  "weekly/feed",
-  "yearly/feed",
-  // Specialized content feeds
-  "announcements/feed",
-  "changelog/feed",
-  "press/feed",
-  "updates/feed",
-  "revisions/feed",
-  // Mobile and app feeds
-  "app/feed",
-  "mobile/feed",
-  // Regional and local feeds
-  "international/feed",
-  "local/feed",
-  "national/feed",
-  "regional/feed",
-  // Industry specific feeds
-  "education/feed",
-  "entertainment/feed",
-  "finance/feed",
-  "health/feed",
-  "industry/feed",
-  "market/feed",
-  "science/feed",
-  "sector/feed",
-  "sports/feed",
-  "technology/feed",
-  // Aggregation and compilation feeds
-  "aggregate/feed",
-  "all/feed",
-  "combined/feed",
-  "compilation/feed",
-  "everything/feed",
-  // International variations
-  "actualites/feed",
-  "nachrichten/feed",
-  "nieuws/feed",
-  "noticias/feed",
-  "novosti/feed",
-  // Headless CMS feeds
-  "cms/feed",
-  "contentful/feed",
-  "sanity/feed",
-  "strapi/feed",
-  // Documentation feeds
-  "docs/feed",
-  "documentation/feed",
-  "help/feed",
-  "kb/feed",
-  "support/feed",
-  "wiki/feed",
-  // Repository and code feeds
-  "branches/feed",
-  "commits/feed",
-  "issues/feed",
-  "pull-requests/feed",
-  "releases/feed",
-  "tags/feed",
-  // Analytics and tracking feeds
-  "analytics/feed",
-  "metrics/feed",
-  "reports/feed",
-  "stats/feed",
-  // Multi-language feeds
-  "de/feed",
-  "en/feed",
-  "es/feed",
-  "fr/feed",
-  "it/feed",
-  "ja/feed",
-  "ko/feed",
-  "pt/feed",
-  "ru/feed",
-  "zh/feed",
-  // Specialized platforms
-  "drupal/feed",
-  "joomla/feed",
-  "magento/feed",
-  "opencart/feed",
-  "prestashop/feed",
-  "shopify/feed",
-  "typo3/feed",
-  "woocommerce/feed",
-  // Social and community platforms
-  "discourse/feed",
-  "invision/feed",
-  "phpbb/feed",
-  "vbulletin/feed",
-  "xenforo/feed"
 ];
-function Se(r) {
-  switch (r) {
+let O = null;
+function R() {
+  return O ??= [
+    // Extended standard paths
+    "rssfeed.xml",
+    "feed.rss",
+    "feed.atom",
+    "feeds/",
+    "rss/",
+    "index.rss",
+    "index.atom",
+    "rss/index.xml",
+    "atom/index.xml",
+    "syndication/",
+    "rssfeed.rdf",
+    "&_rss=1",
+    // Blog platforms
+    "blog/atom",
+    "blog/feeds",
+    "blog?format=rss",
+    "blog-feed.xml",
+    "weblog/atom",
+    "weblog/rss",
+    // WordPress extended
+    "?format=feed",
+    "feed/rdf/",
+    "feed/rss2/",
+    "wp-atom.php",
+    "wp-feed.php",
+    "wp-rdf.php",
+    "wp-rss.php",
+    "wp-rss2.php",
+    "index.php?format=feed",
+    // News and articles
+    "articles/feed",
+    "atom/news/",
+    "latest.rss",
+    "news.xml",
+    "news/atom",
+    "rss/articles/",
+    "rss/latest/",
+    "rss/news/",
+    "rss/news/rss.xml",
+    "rss/rss.php",
+    // API style
+    "api/feed",
+    "api/rss",
+    "api/atom",
+    "api/rss.xml",
+    "api/feed.xml",
+    "api/v1/feed",
+    "api/v2/feed",
+    "v1/feed",
+    "v2/feed",
+    // CMS and frameworks
+    "feed.aspx",
+    "rss.aspx",
+    "rss.cfm",
+    "feed.jsp",
+    "feed.pl",
+    "feed.py",
+    "feed.rb",
+    "feed/atom",
+    "feed/rdf",
+    "feed/atom.rss",
+    "feed/atom.xml",
+    "feed/rss.xml",
+    "feed/rss2",
+    "posts.rss",
+    // Static site generators
+    "_site/feed.xml",
+    "build/feed.xml",
+    "dist/feed.xml",
+    "out/feed.xml",
+    // Query parameters
+    "?atom=1",
+    "?rss=1",
+    "?feed=atom",
+    "?feed=rss",
+    "?format=atom",
+    "?output=rss",
+    "?output=atom",
+    "?type=rss",
+    "?type=atom",
+    "?view=feed",
+    "?view=rss"
+  ], O;
+}
+let D = null;
+function Se() {
+  return D ??= [
+    // Custom and alternative paths
+    "atomfeed",
+    "jsonfeed",
+    "newsfeed",
+    "rssfeed",
+    "feeds.json",
+    "feeds.php",
+    "feeds.xml",
+    ".json",
+    ".opml",
+    ".rdf",
+    "opml",
+    "opml/",
+    "rdf",
+    "rdf/",
+    // Additional modern formats
+    "feed.cml",
+    "feed.csv",
+    "feed.txt",
+    "feed.yaml",
+    "feed.yml",
+    // Complex query parameters
+    "?download=atom",
+    "?download=rss",
+    "?export=atom",
+    "?export=rss",
+    "?syndicate=atom",
+    "?syndicate=rss",
+    // Specialized CMS paths
+    "export/rss.xml",
+    "extern.php?action=feed&type=atom",
+    "external?type=rss2",
+    "index.php?action=.xml;type=rss",
+    "public/feed.xml",
+    "spip.php?page=backend",
+    "spip.php?page=backend-breve",
+    "spip.php?page=backend-sites",
+    "syndicate/rss.xml",
+    "syndication.php",
+    "xml",
+    "sitenews",
+    "api/mobile/feed",
+    // E-commerce and product feeds
+    "catalog.xml",
+    // product catalogs
+    "catalog/feed",
+    "deals.xml",
+    // deal/sale feeds
+    "deals/feed",
+    "inventory.rss",
+    // inventory updates
+    "inventory/feed",
+    "products.rss",
+    // product feeds
+    "products/atom",
+    "products/rss",
+    "promotions/feed",
+    "specials/feed",
+    // Podcast and media feeds
+    "audio/feed",
+    "episodes.rss",
+    // episodic content
+    "episodes/feed",
+    "gallery.rss",
+    // image galleries
+    "media/feed",
+    "podcast.rss",
+    // audio content
+    "podcast/atom",
+    "podcast/rss",
+    "podcasts/feed",
+    "shows/feed",
+    "video/feed",
+    "videos.rss",
+    // video content
+    // Social media and community feeds
+    "comments/feed",
+    "community/feed",
+    "discussions/feed",
+    "forum.rss",
+    // forum posts
+    "forum/atom",
+    "forum/rss",
+    "reviews/feed",
+    // Event and calendar feeds
+    "agenda/feed",
+    "calendar/feed",
+    "events.rss",
+    // calendar events
+    "events/feed",
+    "schedule/feed",
+    // Job and career feeds
+    "careers/feed",
+    "jobs.rss",
+    // job listings
+    "jobs/feed",
+    "opportunities/feed",
+    "vacancies/feed",
+    // Content management systems
+    "content/feed",
+    "documents/feed",
+    "pages/feed",
+    "resources/feed",
+    // Newsletter and email feeds
+    "emails/feed",
+    "mailinglist/feed",
+    "newsletter/feed",
+    "subscription/feed",
+    // Category and tag feeds
+    "category/*/feed",
+    "tag/*/feed",
+    "tags/feed",
+    "topics/feed",
+    // User and author feeds
+    "author/*/feed",
+    "profile/*/feed",
+    "user/*/feed",
+    // Time-based feeds
+    "archive/feed",
+    "daily/feed",
+    "monthly/feed",
+    "weekly/feed",
+    "yearly/feed",
+    // Specialized content feeds
+    "announcements/feed",
+    "changelog/feed",
+    "press/feed",
+    "updates/feed",
+    "revisions/feed",
+    // Mobile and app feeds
+    "app/feed",
+    "mobile/feed",
+    // Regional and local feeds
+    "international/feed",
+    "local/feed",
+    "national/feed",
+    "regional/feed",
+    // Industry specific feeds
+    "education/feed",
+    "entertainment/feed",
+    "finance/feed",
+    "health/feed",
+    "industry/feed",
+    "market/feed",
+    "science/feed",
+    "sector/feed",
+    "sports/feed",
+    "technology/feed",
+    // Aggregation and compilation feeds
+    "aggregate/feed",
+    "all/feed",
+    "combined/feed",
+    "compilation/feed",
+    "everything/feed",
+    // International variations
+    "actualites/feed",
+    "nachrichten/feed",
+    "nieuws/feed",
+    "noticias/feed",
+    "novosti/feed",
+    // Headless CMS feeds
+    "cms/feed",
+    "contentful/feed",
+    "sanity/feed",
+    "strapi/feed",
+    // Documentation feeds
+    "docs/feed",
+    "documentation/feed",
+    "help/feed",
+    "kb/feed",
+    "support/feed",
+    "wiki/feed",
+    // Repository and code feeds
+    "branches/feed",
+    "commits/feed",
+    "issues/feed",
+    "pull-requests/feed",
+    "releases/feed",
+    "tags/feed",
+    // Analytics and tracking feeds
+    "analytics/feed",
+    "metrics/feed",
+    "reports/feed",
+    "stats/feed",
+    // Multi-language feeds
+    "de/feed",
+    "en/feed",
+    "es/feed",
+    "fr/feed",
+    "it/feed",
+    "ja/feed",
+    "ko/feed",
+    "pt/feed",
+    "ru/feed",
+    "zh/feed",
+    // Specialized platforms
+    "drupal/feed",
+    "joomla/feed",
+    "magento/feed",
+    "opencart/feed",
+    "prestashop/feed",
+    "shopify/feed",
+    "typo3/feed",
+    "woocommerce/feed",
+    // Social and community platforms
+    "discourse/feed",
+    "invision/feed",
+    "phpbb/feed",
+    "vbulletin/feed",
+    "xenforo/feed"
+  ], D;
+}
+function be(t) {
+  switch (t) {
     case "fast":
-      return E;
+      return y;
     case "standard":
-      return [...E, ...$];
+      return [...y, ...R()];
     case "exhaustive":
     case "full":
-      return [...E, ...$, ...Ee];
+      return [...y, ...R(), ...Se()];
     default:
-      return [...E, ...$];
+      return [...y, ...R()];
   }
 }
-function _e(r) {
-  return r ? ["fast", "standard", "exhaustive", "full"].includes(r) ? r : (console.warn(`Invalid search mode "${r}". Falling back to "${v}".`), v) : v;
+function Te(t) {
+  return t ? ["fast", "standard", "exhaustive", "full"].includes(t) ? t : (console.warn(`Invalid search mode "${t}". Falling back to "${A}".`), A) : A;
 }
-function be(r) {
-  return r == null ? ye : !Number.isFinite(r) || r < U ? (console.warn(`Invalid concurrency value ${r}. Using minimum: ${U}.`), U) : r > M ? (console.warn(
-    `Concurrency value ${r} exceeds maximum. Clamping to ${M}.`
-  ), M) : Math.floor(r);
+function Le(t) {
+  return t == null ? _e : !Number.isFinite(t) || t < U ? (console.warn(`Invalid concurrency value ${t}. Using minimum: ${U}.`), U) : t > v ? (console.warn(
+    `Concurrency value ${t} exceeds maximum. Clamping to ${v}.`
+  ), v) : Math.floor(t);
 }
-function Te(r) {
-  return r == null ? A : !Number.isFinite(r) || r < 0 ? (console.warn(`Invalid request delay ${r}. Using default: ${A}.`), A) : r > R ? (console.warn(`Request delay ${r}ms exceeds maximum. Clamping to ${R}ms.`), R) : Math.floor(r);
+function ke(t) {
+  return t == null ? k : !Number.isFinite(t) || t < 0 ? (console.warn(`Invalid request delay ${t}. Using default: ${k}.`), k) : t > M ? (console.warn(`Request delay ${t}ms exceeds maximum. Clamping to ${M}ms.`), M) : Math.floor(t);
 }
-function W(r) {
-  return r.length <= G;
+function W(t) {
+  return t.length <= H;
 }
-function ke(r, e, t) {
-  let s;
+function Ae(t) {
+  let e;
   try {
-    s = new URL(r);
+    e = new URL(t);
   } catch {
-    throw new Error(`Invalid URL provided to blindSearch: ${r}`);
+    throw new Error(`Invalid URL provided to blindSearch: ${t}`);
   }
-  if (!W(r))
+  if (!W(t))
     throw new Error(
-      `URL too long (${r.length} chars). Maximum allowed: ${G} characters.`
+      `URL too long (${t.length} chars). Maximum allowed: ${H} characters.`
     );
-  if (!["http:", "https:"].includes(s.protocol))
-    throw new Error(`Invalid protocol "${s.protocol}". Only http: and https: are allowed.`);
-  const o = s.origin;
-  let i = r;
-  const m = [];
-  let a = "";
-  for (e && (a = s.search); i.length >= o.length; ) {
-    const n = i.endsWith("/") ? i.slice(0, -1) : i;
-    for (const x of t) {
-      if (m.length >= q)
-        return console.warn(
-          `URL generation limit reached (${q} URLs). Stopping to prevent resource exhaustion.`
-        ), m;
-      const l = a ? `${n}/${x}${a}` : `${n}/${x}`;
-      W(l) ? m.push(l) : console.warn(`Skipping URL (too long): ${l.substring(0, 100)}...`);
-    }
-    i = i.slice(0, i.lastIndexOf("/"));
-  }
-  return m;
+  if (!["http:", "https:"].includes(e.protocol))
+    throw new Error(`Invalid protocol "${e.protocol}". Only http: and https: are allowed.`);
+  return e;
 }
-function Le(r, e, t, s, o) {
-  return r.type === "rss" ? s = !0 : r.type === "atom" && (o = !0), t.push({
+function ve(t, e, r, s) {
+  for (const n of e) {
+    if (s.length >= I)
+      return console.warn(
+        `URL generation limit reached (${I} URLs). Stopping to prevent resource exhaustion.`
+      ), !1;
+    const i = r ? `${t}/${n}${r}` : `${t}/${n}`;
+    W(i) ? s.push(i) : console.warn(`Skipping URL (too long): ${i.substring(0, 100)}...`);
+  }
+  return !0;
+}
+function Ue(t, e, r) {
+  const s = Ae(t), n = s.origin, i = e ? s.search : "";
+  let o = t;
+  const a = [];
+  for (; o.length >= n.length; ) {
+    const m = o.endsWith("/") ? o.slice(0, -1) : o;
+    if (!ve(m, r, i, a)) break;
+    o = o.slice(0, o.lastIndexOf("/"));
+  }
+  return a;
+}
+function Me(t, e, r, s, n) {
+  return t.type === "rss" ? s = !0 : t.type === "atom" && (n = !0), r.push({
     url: e,
     title: null,
     // No link element title in blind search (unlike metaLinks)
-    type: r.type,
-    feedTitle: r.title
+    type: t.type,
+    feedTitle: t.title
     // Actual feed title from parsing the feed
-  }), { rssFound: s, atomFound: o };
+  }), { rssFound: s, atomFound: n };
 }
-function Ae(r, e, t, s, o) {
-  return r >= e ? !1 : o ? !0 : !(t && s);
+function Re(t, e, r, s, n) {
+  return t >= e ? !1 : n ? !0 : !(r && s);
 }
-async function ve(r, e) {
-  const t = _e(r.options?.searchMode), s = Se(t), o = ke(
-    r.site,
-    r.options?.keepQueryParams || !1,
+async function Ne(t, e) {
+  const r = Te(t.options?.searchMode), s = be(r), n = Ue(
+    t.site,
+    t.options?.keepQueryParams || !1,
     s
   );
-  r.emit("start", {
+  t.emit("start", {
     module: "blindsearch",
     niceName: "Blind search",
-    endpointUrls: o.length
+    endpointUrls: n.length
   });
-  const i = r.options?.all || !1, m = r.options?.maxFeeds ?? we, a = be(r.options?.concurrency), n = await Me(
-    o,
+  const i = t.options?.all || !1, o = t.options?.maxFeeds ?? Ee, a = Le(t.options?.concurrency), m = await $e(
+    n,
     i,
-    m,
+    o,
     a,
-    r
+    t
   );
-  return r.emit("end", { module: "blindsearch", feeds: n.feeds }), n.feeds;
+  return t.emit("end", { module: "blindsearch", feeds: m.feeds }), m.feeds;
 }
-async function Me(r, e, t, s, o, i) {
-  const m = [], a = /* @__PURE__ */ new Set();
-  let n = !1, x = !1, l = 0;
-  for (; Ae(l, r.length, n, x, e); ) {
-    if (t > 0 && m.length >= t) {
-      await j(o, m, t);
+async function $e(t, e, r, s, n, i) {
+  const o = [], a = /* @__PURE__ */ new Set();
+  let m = !1, l = !1, x = 0;
+  for (; Re(x, t.length, m, l, e); ) {
+    if (r > 0 && o.length >= r) {
+      await X(n, o, r);
       break;
     }
-    const d = Math.min(s, r.length - l), f = r.slice(l, l + d), B = await Promise.allSettled(
-      f.map((p) => Ue(p, o, a, m, n, x))
+    const w = Math.min(s, t.length - x), d = t.slice(x, x + w), b = await Promise.allSettled(
+      d.map((B) => Ce(B, n, a, o, m, l))
     );
-    for (const p of B)
-      if (p.status === "fulfilled" && p.value.found && (n = p.value.rssFound, x = p.value.atomFound, t > 0 && m.length >= t)) {
-        await j(o, m, t), l = r.length;
-        break;
-      }
-    l += d;
-    const T = m.length;
-    o.emit("log", {
+    ({ rssFound: m, atomFound: l, i: x } = await Fe(b, o, m, l, { maxFeeds: r, totalUrls: t.length, i: x }, n)), x += w, n.emit("log", {
       module: "blindsearch",
-      totalEndpoints: r.length,
-      totalCount: l,
-      feedsFound: T
+      totalEndpoints: t.length,
+      totalCount: x,
+      feedsFound: o.length
     });
-    const D = Te(o.options?.requestDelay);
-    D > 0 && l < r.length && await new Promise((p) => setTimeout(p, D));
+    const u = ke(n.options?.requestDelay);
+    u > 0 && x < t.length && await new Promise((B) => setTimeout(B, u));
   }
-  return { feeds: m, rssFound: n, atomFound: x };
+  return { feeds: o, rssFound: m, atomFound: l };
 }
-async function Ue(r, e, t, s, o, i) {
-  if (t.has(r))
-    return { found: !1, rssFound: o, atomFound: i };
-  t.add(r);
-  try {
-    const m = await y(r, "", e);
-    if (m) {
-      const a = Le(m, r, s, o, i);
-      return o = a.rssFound, i = a.atomFound, { found: !0, rssFound: o, atomFound: i };
+async function Fe(t, e, r, s, n, i) {
+  let { i: o } = n;
+  const { maxFeeds: a, totalUrls: m } = n;
+  for (const l of t)
+    if (l.status === "fulfilled" && l.value.found && (r = l.value.rssFound, s = l.value.atomFound, a > 0 && e.length >= a)) {
+      await X(i, e, a), o = m;
+      break;
     }
-  } catch (m) {
-    const a = m instanceof Error ? m : new Error(String(m));
-    await Re(e, r, a);
-  }
-  return { found: !1, rssFound: o, atomFound: i };
+  return { rssFound: r, atomFound: s, i: o };
 }
-async function j(r, e, t) {
-  r.emit("log", {
+async function Ce(t, e, r, s, n, i) {
+  if (r.has(t))
+    return { found: !1, rssFound: n, atomFound: i };
+  r.add(t);
+  try {
+    const o = await g(t, "", e);
+    if (o) {
+      const a = Me(o, t, s, n, i);
+      return n = a.rssFound, i = a.atomFound, { found: !0, rssFound: n, atomFound: i };
+    }
+  } catch (o) {
+    const a = o instanceof Error ? o : new Error(String(o));
+    await Ie(e, t, a);
+  }
+  return { found: !1, rssFound: n, atomFound: i };
+}
+async function X(t, e, r) {
+  t.emit("log", {
     module: "blindsearch",
-    message: `Stopped due to reaching maximum feeds limit: ${e.length} feeds found (max ${t} allowed).`
+    message: `Stopped due to reaching maximum feeds limit: ${e.length} feeds found (max ${r} allowed).`
   });
 }
-async function Re(r, e, t) {
-  r.options?.showErrors && r.emit("error", {
+async function Ie(t, e, r) {
+  t.options?.showErrors && t.emit("error", {
     module: "blindsearch",
-    error: `Error fetching ${e}: ${t.message}`,
+    error: `Error fetching ${e}: ${r.message}`,
     explanation: "An error occurred while trying to fetch a potential feed URL during blind search. This could be due to network timeouts, server errors, 404 not found, or invalid content.",
     suggestion: "This is normal during blind search as many URLs are tested. The search will continue with other potential feed endpoints."
   });
 }
-class w {
+class p {
   /**
    * Private field storing event listeners using Map and Set for optimal performance
    * @private
@@ -981,7 +966,7 @@ class w {
    * Whether to capture async errors
    * @private
    */
-  #o;
+  #n;
   /**
    * Default max listeners for all instances
    * @private
@@ -992,7 +977,7 @@ class w {
    * @param {EventEmitterOptions} options - Configuration options
    */
   constructor(e = {}) {
-    this.#t = e.maxListeners ?? w.#i, this.#o = e.captureAsyncErrors ?? !0;
+    this.#t = e.maxListeners ?? p.#i, this.#n = e.captureAsyncErrors ?? !0;
   }
   /**
    * Sets the default maximum number of listeners for all new EventEmitter instances
@@ -1001,7 +986,7 @@ class w {
   static setDefaultMaxListeners(e) {
     if (typeof e != "number" || e < 0 || !Number.isInteger(e))
       throw new TypeError("Max listeners must be a non-negative integer");
-    w.#i = e;
+    p.#i = e;
   }
   /**
    * Validates event name
@@ -1023,11 +1008,11 @@ class w {
    * Checks and warns if max listeners exceeded
    * @private
    */
-  #m(e) {
+  #o(e) {
     if (this.#t > 0) {
-      const t = this.listenerCount(e);
-      t > this.#t && console.warn(
-        `Warning: Possible EventEmitter memory leak detected. ${t} ${e} listeners added. Use emitter.setMaxListeners() to increase limit`
+      const r = this.listenerCount(e);
+      r > this.#t && console.warn(
+        `Warning: Possible EventEmitter memory leak detected. ${r} ${e} listeners added. Use emitter.setMaxListeners() to increase limit`
       );
     }
   }
@@ -1036,15 +1021,15 @@ class w {
    * Handles Error objects, plain objects with error properties, and other types
    * @private
    */
-  #a(e) {
+  #m(e) {
     if (e instanceof Error)
       return e.message;
     if (typeof e == "object" && e !== null) {
-      const t = e;
-      if (typeof t.error == "string") return t.error;
-      if (typeof t.message == "string") return t.message;
+      const r = e;
+      if (typeof r.error == "string") return r.error;
+      if (typeof r.message == "string") return r.message;
       try {
-        return JSON.stringify(t);
+        return JSON.stringify(r);
       } catch {
         return String(e);
       }
@@ -1055,14 +1040,14 @@ class w {
    * Handles errors from listener execution
    * @private
    */
-  #n(e, t) {
-    if (t === "error")
-      throw console.error("Error in error event listener:", e), e;
+  #a(e, r) {
+    if (r === "error")
+      throw console.error("Error in error event listener:", this.#m(e)), e;
     const s = this.#e.get("error");
     if (s && s.size > 0)
-      this.emit("error", e, t);
+      this.emit("error", e, r);
     else
-      throw console.error(`Unhandled error in event listener for '${t}':`, e), e;
+      throw console.error(`Unhandled error in event listener for '${r}':`, e), e;
   }
   /**
    * Adds an event listener for the specified event
@@ -1075,10 +1060,10 @@ class w {
    *   console.log('Received data:', payload);
    * });
    */
-  on(e, t) {
-    this.#r(e), this.#s(t);
+  on(e, r) {
+    this.#r(e), this.#s(r);
     const s = this.#e.get(e);
-    return s ? s.add(t) : this.#e.set(e, /* @__PURE__ */ new Set([t])), this.#m(e), this;
+    return s ? s.add(r) : this.#e.set(e, /* @__PURE__ */ new Set([r])), this.#o(e), this;
   }
   /**
    * Adds an event listener to the beginning of the listeners array
@@ -1091,16 +1076,15 @@ class w {
    *   console.log('This runs first');
    * });
    */
-  prependListener(e, t) {
-    this.#r(e), this.#s(t);
+  prependListener(e, r) {
+    this.#r(e), this.#s(r);
     const s = this.#e.get(e);
-    if (!s)
-      this.#e.set(e, /* @__PURE__ */ new Set([t]));
-    else {
-      const o = /* @__PURE__ */ new Set([t, ...s]);
-      this.#e.set(e, o);
-    }
-    return this.#m(e), this;
+    if (s) {
+      const n = /* @__PURE__ */ new Set([r, ...s]);
+      this.#e.set(e, n);
+    } else
+      this.#e.set(e, /* @__PURE__ */ new Set([r]));
+    return this.#o(e), this;
   }
   /**
    * Adds a one-time event listener for the specified event
@@ -1117,12 +1101,12 @@ class w {
    * emitter.emit('init'); // Triggers listener
    * emitter.emit('init'); // Does nothing - listener was removed
    */
-  once(e, t) {
-    this.#r(e), this.#s(t);
-    const s = ((...o) => {
-      this.off(e, s), t(...o);
+  once(e, r) {
+    this.#r(e), this.#s(r);
+    const s = ((...n) => {
+      this.off(e, s), r(...n);
     });
-    return s.originalListener = t, this.on(e, s);
+    return s.originalListener = r, this.on(e, s);
   }
   /**
    * Adds a one-time event listener to the beginning of the listeners array
@@ -1131,12 +1115,12 @@ class w {
    * @returns {EventEmitter} The instance for method chaining
    * @throws {TypeError} When event is not a non-empty string or listener is not a function
    */
-  prependOnceListener(e, t) {
-    this.#r(e), this.#s(t);
-    const s = ((...o) => {
-      this.off(e, s), t(...o);
+  prependOnceListener(e, r) {
+    this.#r(e), this.#s(r);
+    const s = ((...n) => {
+      this.off(e, s), r(...n);
     });
-    return s.originalListener = t, this.prependListener(e, s);
+    return s.originalListener = r, this.prependListener(e, s);
   }
   /**
    * Emits an event, calling all listeners registered for that event
@@ -1152,28 +1136,28 @@ class w {
    * const hasListeners = emitter.emit('test');
    * console.log(hasListeners); // true if listeners exist, false otherwise
    */
-  emit(e, ...t) {
+  emit(e, ...r) {
     const s = this.#e.get(e);
     if (!s || s.size === 0) {
       if (e === "error") {
-        const o = t[0];
-        if (o instanceof Error)
-          throw o;
+        const n = r[0];
+        if (n instanceof Error)
+          throw n;
         {
-          const i = this.#a(o);
+          const i = this.#m(n);
           throw new Error(`Unhandled error event: ${i}`);
         }
       }
       return !1;
     }
-    return [...s].forEach((o) => {
+    return [...s].forEach((n) => {
       try {
-        const i = o(...t);
-        this.#o && i instanceof Promise && i.catch((m) => {
-          this.#n(m, e);
+        const i = n(...r);
+        this.#n && i instanceof Promise && i.catch((o) => {
+          this.#a(o, e);
         });
       } catch (i) {
-        this.#n(i, e);
+        this.#a(i, e);
       }
     }), !0;
   }
@@ -1187,10 +1171,10 @@ class w {
    * emitter.on('test', handler);
    * emitter.off('test', handler); // Removes the specific handler
    */
-  off(e, t) {
+  off(e, r) {
     const s = this.#e.get(e);
-    return s ? ([...s].forEach((o) => {
-      (o === t || o.originalListener === t) && s.delete(o);
+    return s ? ([...s].forEach((n) => {
+      (n === r || n.originalListener === r) && s.delete(n);
     }), s.size === 0 && this.#e.delete(e), this) : this;
   }
   /**
@@ -1224,8 +1208,8 @@ class w {
    * @returns {number} The number of listeners for the event
    */
   listenerCount(e) {
-    const t = this.#e.get(e);
-    return t ? t.size : 0;
+    const r = this.#e.get(e);
+    return r ? r.size : 0;
   }
   /**
    * Returns a copy of the array of listeners for the specified event
@@ -1237,8 +1221,8 @@ class w {
    * console.log(`There are ${listeners.length} listeners`);
    */
   listeners(e) {
-    const t = this.#e.get(e);
-    return t ? [...t].map((s) => s.originalListener || s) : [];
+    const r = this.#e.get(e);
+    return r ? [...r].map((s) => s.originalListener || s) : [];
   }
   /**
    * Returns a copy of the array of listeners for the specified event,
@@ -1249,8 +1233,8 @@ class w {
    * const rawListeners = emitter.rawListeners('data');
    */
   rawListeners(e) {
-    const t = this.#e.get(e);
-    return t ? [...t] : [];
+    const r = this.#e.get(e);
+    return r ? [...r] : [];
   }
   /**
    * Returns an array of event names that have listeners
@@ -1260,8 +1244,8 @@ class w {
     return Array.from(this.#e.keys());
   }
 }
-const { queue: $e } = Y;
-function Ne(r) {
+const { queue: Oe } = J;
+function De(t) {
   return [
     ".zip",
     ".rar",
@@ -1304,10 +1288,19 @@ function Ne(r) {
     ".ogg",
     ".ogv",
     ".ogx"
-  ].some((t) => r.endsWith(t));
+  ].some((r) => t.endsWith(r));
 }
-class Ce extends w {
-  constructor(e, t = 3, s = 5, o = 1e3, i = !1, m = 5, a = 0, n = null) {
+class Pe extends p {
+  constructor(e, r = {}) {
+    const {
+      maxDepth: s = 3,
+      concurrency: n = 5,
+      maxLinks: i = 1e3,
+      checkForeignFeeds: o = !1,
+      maxErrors: a = 5,
+      maxFeeds: m = 0,
+      instance: l = null
+    } = r;
     super();
     try {
       const x = new URL(e);
@@ -1315,17 +1308,25 @@ class Ce extends w {
     } catch {
       throw new Error(`Invalid start URL: ${e}`);
     }
-    this.maxDepth = t, this.concurrency = s, this.maxLinks = o, this.mainDomain = k.getDomain(this.startUrl), this.checkForeignFeeds = i, this.maxErrors = m, this.maxFeeds = a, this.errorCount = 0, this.instance = n, this.queue = $e(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((x) => {
-      this.errorCount < this.maxErrors && (this.errorCount++, this.emit("error", {
+    this.maxDepth = s, this.concurrency = n, this.maxLinks = i, this.mainDomain = T.getDomain(this.startUrl), this.checkForeignFeeds = o, this.maxErrors = a, this.maxFeeds = m, this.errorCount = 0, this.instance = l, this.queue = Oe(this.crawlPage.bind(this), this.concurrency), this.visitedUrls = /* @__PURE__ */ new Set(), this.timeout = 5e3, this.maxLinksReachedMessageEmitted = !1, this.feeds = [], this.queue.error((x) => {
+      this.emit("error", {
         module: "deepSearch",
         error: `Async error: ${x}`,
         explanation: "An error occurred in the async queue while processing a crawling task. This could be due to network issues, invalid URLs, or server problems.",
         suggestion: "Check network connectivity and ensure the target website is accessible. The crawler will continue with other URLs."
-      }), this.errorCount >= this.maxErrors && (this.queue.kill(), this.emit("log", {
-        module: "deepSearch",
-        message: `Stopped due to ${this.errorCount} errors (max ${this.maxErrors} allowed).`
-      })));
+      }), this.incrementError();
     });
+  }
+  /**
+   * Increments the error counter and kills the queue if the limit is reached.
+   * @returns {boolean} True if the error limit has been reached, false otherwise.
+   * @private
+   */
+  incrementError() {
+    return this.errorCount >= this.maxErrors ? !0 : (this.errorCount++, this.errorCount >= this.maxErrors ? (this.queue.kill(), this.emit("log", {
+      module: "deepSearch",
+      message: `Stopped due to ${this.errorCount} errors (max ${this.maxErrors} allowed).`
+    }), !0) : !1);
   }
   /**
    * Starts the crawling process
@@ -1340,18 +1341,15 @@ class Ce extends w {
    */
   isValidUrl(e) {
     try {
-      const t = k.getDomain(e) === k.getDomain(this.startUrl), s = !Ne(e);
-      return t && s;
+      const r = T.getDomain(e) === T.getDomain(this.startUrl), s = !De(e);
+      return r && s;
     } catch {
-      return this.errorCount < this.maxErrors && (this.errorCount++, this.emit("error", {
+      return this.emit("error", {
         module: "deepSearch",
         error: `Invalid URL: ${e}`,
         explanation: "A URL encountered during crawling could not be parsed or validated. This may be due to malformed URL syntax or unsupported URL schemes.",
         suggestion: "This is usually caused by broken links on the website. The crawler will skip this URL and continue with others."
-      }), this.errorCount >= this.maxErrors && (this.queue.kill(), this.emit("log", {
-        module: "deepSearch",
-        message: `Stopped due to ${this.errorCount} errors (max ${this.maxErrors} allowed).`
-      }))), !1;
+      }), this.incrementError(), !1;
     }
   }
   /**
@@ -1361,8 +1359,8 @@ class Ce extends w {
    * @returns {boolean} True if the crawl should continue, false otherwise.
    * @private
    */
-  shouldCrawl(e, t) {
-    return t > this.maxDepth || this.visitedUrls.has(e) ? !1 : this.visitedUrls.size >= this.maxLinks ? (this.maxLinksReachedMessageEmitted || (this.emit("log", {
+  shouldCrawl(e, r) {
+    return r > this.maxDepth || this.visitedUrls.has(e) ? !1 : this.visitedUrls.size >= this.maxLinks ? (this.maxLinksReachedMessageEmitted || (this.emit("log", {
       module: "deepSearch",
       message: `Max links limit of ${this.maxLinks} reached. Stopping deep search.`
     }), this.maxLinksReachedMessageEmitted = !0), !1) : this.isValidUrl(e);
@@ -1375,11 +1373,8 @@ class Ce extends w {
    * @returns {boolean} True if the crawl should stop, false otherwise.
    * @private
    */
-  handleFetchError(e, t, s) {
-    return this.errorCount < this.maxErrors && (this.errorCount++, this.emit("log", { module: "deepSearch", url: e, depth: t, error: s }), this.errorCount >= this.maxErrors) ? (this.queue.kill(), this.emit("log", {
-      module: "deepSearch",
-      message: `Stopped due to ${this.errorCount} errors (max ${this.maxErrors} allowed).`
-    }), !0) : !1;
+  handleFetchError(e, r, s) {
+    return this.emit("log", { module: "deepSearch", url: e, depth: r, error: s }), this.incrementError();
   }
   /**
    * Processes a single link found on a page, checking if it's a feed.
@@ -1388,40 +1383,37 @@ class Ce extends w {
    * @returns {Promise<boolean>} True if the crawl should stop, false otherwise.
    * @private
    */
-  async processLink(e, t) {
+  /**
+   * Records a found feed and returns true if the max feeds limit has been reached.
+   */
+  recordFeed(e, r, s) {
+    return this.feeds.some((n) => n.url === e) ? !1 : (this.feeds.push({ url: e, type: s.type, title: s.title, feedTitle: s.title }), this.emit("log", { module: "deepSearch", url: e, depth: r + 1, feedCheck: { isFeed: !0, type: s.type } }), this.maxFeeds > 0 && this.feeds.length >= this.maxFeeds ? (this.queue.kill(), this.emit("log", {
+      module: "deepSearch",
+      message: `Stopped due to reaching maximum feeds limit: ${this.feeds.length} feeds found (max ${this.maxFeeds} allowed).`
+    }), !0) : !1);
+  }
+  async processLink(e, r) {
     if (this.visitedUrls.has(e)) return !1;
     if (this.visitedUrls.size >= this.maxLinks)
-      return this.maxLinksReachedMessageEmitted || (this.emit("log", {
-        module: "deepSearch",
-        message: `Max links limit of ${this.maxLinks} reached. Stopping deep search.`
-      }), this.maxLinksReachedMessageEmitted = !0), !0;
-    if (!(this.isValidUrl(e) || this.checkForeignFeeds)) return !1;
-    const o = this.queue.length();
+      return this.maxLinksReachedMessageEmitted || (this.emit("log", { module: "deepSearch", message: `Max links limit of ${this.maxLinks} reached. Stopping deep search.` }), this.maxLinksReachedMessageEmitted = !0), !0;
+    if (!this.isValidUrl(e) && !this.checkForeignFeeds) return !1;
     this.emit("log", {
       module: "deepSearch",
       url: e,
-      depth: t,
-      progress: { processed: this.visitedUrls.size, remaining: o }
+      depth: r,
+      progress: { processed: this.visitedUrls.size, remaining: this.queue.length() }
     });
     try {
-      const i = await y(e, "", this.instance || void 0);
-      if (i && !this.feeds.some((m) => m.url === e)) {
-        if (this.feeds.push({ url: e, type: i.type, title: i.title, feedTitle: i.title }), this.emit("log", {
-          module: "deepSearch",
-          url: e,
-          depth: t + 1,
-          feedCheck: { isFeed: !0, type: i.type }
-        }), this.maxFeeds > 0 && this.feeds.length >= this.maxFeeds)
-          return this.queue.kill(), this.emit("log", {
-            module: "deepSearch",
-            message: `Stopped due to reaching maximum feeds limit: ${this.feeds.length} feeds found (max ${this.maxFeeds} allowed).`
-          }), !0;
-      } else i || this.emit("log", { module: "deepSearch", url: e, depth: t + 1, feedCheck: { isFeed: !1 } });
-    } catch (i) {
-      const m = i instanceof Error ? i : new Error(String(i));
-      return this.handleFetchError(e, t + 1, `Error checking feed: ${m.message}`);
+      const s = await g(e, "", this.instance || void 0);
+      if (s) {
+        if (this.recordFeed(e, r, s)) return !0;
+      } else
+        this.emit("log", { module: "deepSearch", url: e, depth: r + 1, feedCheck: { isFeed: !1 } });
+    } catch (s) {
+      const n = s instanceof Error ? s : new Error(String(s));
+      return this.handleFetchError(e, r + 1, `Error checking feed: ${n.message}`);
     }
-    return t + 1 <= this.maxDepth && this.isValidUrl(e) && this.queue.push({ url: e, depth: t + 1 }), !1;
+    return r + 1 <= this.maxDepth && this.isValidUrl(e) && this.queue.push({ url: e, depth: r + 1 }), !1;
   }
   /**
    * Crawls a single page, extracting links and checking for feeds
@@ -1429,50 +1421,44 @@ class Ce extends w {
    * @returns {Promise<void>} A promise that resolves when the page has been crawled
    */
   async crawlPage(e) {
-    let { url: t, depth: s } = e;
-    if (!this.shouldCrawl(t, s)) return;
-    this.visitedUrls.add(t);
-    const o = await I(t, this.timeout);
-    if (!o) {
-      this.handleFetchError(t, s, "Failed to fetch URL - timeout or network error");
+    let { url: r, depth: s } = e;
+    if (!this.shouldCrawl(r, s)) return;
+    this.visitedUrls.add(r);
+    const n = await C(r, this.timeout);
+    if (!n) {
+      this.handleFetchError(r, s, "Failed to fetch URL - timeout or network error");
       return;
     }
-    if (!o.ok) {
-      this.handleFetchError(t, s, `HTTP ${o.status} ${o.statusText}`);
+    if (!n.ok) {
+      this.handleFetchError(r, s, `HTTP ${n.status} ${n.statusText}`);
       return;
     }
-    const i = await o.text(), { document: m } = N(i);
-    for (const a of m.querySelectorAll("a"))
+    const i = await n.text(), { document: o } = N(i);
+    for (const a of o.querySelectorAll("a"))
       try {
-        const n = new URL(a.href, this.startUrl).href;
-        if (await this.processLink(n, s)) break;
+        const m = new URL(a.href, this.startUrl).href;
+        if (await this.processLink(m, s)) break;
       } catch {
         continue;
       }
   }
 }
-async function Fe(r, e = {}, t = null) {
-  const s = new Ce(
-    r,
-    e.depth || 3,
-    5,
-    e.maxLinks || 1e3,
-    !!e.checkForeignFeeds,
-    // Whether to check foreign domains for feeds
-    e.maxErrors || 5,
-    // Maximum number of errors before stopping
-    e.maxFeeds || 0,
-    // Maximum number of feeds before stopping (0 = no limit)
-    t
-    // Pass the FeedSeeker instance to the crawler
-  );
-  return s.timeout = (e.timeout || 5) * 1e3, t && t.emit && (s.on("start", (o) => t.emit("start", o)), s.on("log", (o) => t.emit("log", o)), s.on("error", (o) => t.emit("error", o)), s.on("end", (o) => t.emit("end", o))), s.start(), await new Promise((o) => {
+async function ze(t, e = {}, r = null) {
+  const s = new Pe(t, {
+    maxDepth: e.depth || 3,
+    maxLinks: e.maxLinks || 1e3,
+    checkForeignFeeds: !!e.checkForeignFeeds,
+    maxErrors: e.maxErrors || 5,
+    maxFeeds: e.maxFeeds || 0,
+    instance: r
+  });
+  return s.timeout = (e.timeout || 5) * 1e3, r?.emit && (s.on("start", (n) => r.emit("start", n)), s.on("log", (n) => r.emit("log", n)), s.on("error", (n) => r.emit("error", n)), s.on("end", (n) => r.emit("end", n))), s.start(), await new Promise((n) => {
     s.queue.drain(() => {
-      s.emit("end", { module: "deepSearch", feeds: s.feeds, visitedUrls: s.visitedUrls.size }), o();
+      s.emit("end", { module: "deepSearch", feeds: s.feeds, visitedUrls: s.visitedUrls.size }), n();
     });
   }), s.feeds;
 }
-class Ie extends w {
+class qe extends p {
   /**
    * Creates a new FeedSeeker instance
    * @param {string} site - The website URL to search for feeds (protocol optional, defaults to https://)
@@ -1490,20 +1476,20 @@ class Ie extends w {
    * });
    * seeker.on('error', (error) => console.error(error));
    */
-  constructor(e, t = {}) {
+  constructor(e, r = {}) {
     super(), this.initStatus = "pending", this.rawSite = e;
     let s = e;
     s.includes("://") || (s = `https://${s}`);
     try {
-      const o = new URL(s);
-      this.site = o.pathname === "/" ? o.origin : o.href;
+      const n = new URL(s);
+      this.site = n.pathname === "/" ? n.origin : n.href;
     } catch {
       this.site = s;
     }
     this.options = {
       timeout: 5,
       // Default timeout of 5 seconds
-      ...t
+      ...r
     }, this.initPromise = null;
   }
   /**
@@ -1550,6 +1536,19 @@ class Ie extends w {
     this.content = "", this.document = this.createEmptyDocument();
   }
   /**
+   * Handles initialization failure by setting error state and emitting events
+   * @param {string} errorMessage - The error message to emit
+   * @param {unknown} [cause] - Optional error cause
+   * @private
+   */
+  handleInitError(e, r) {
+    this.initStatus = "error", this.emit("error", {
+      module: "FeedSeeker",
+      error: e,
+      ...r !== void 0 && { cause: r }
+    }), this.setEmptyState(), this.emit("initialized");
+  }
+  /**
    * Initializes the FeedSeeker instance by validating the URL and fetching the site content and parsing the HTML
    * This method is called automatically by other methods and caches the result
    * Emits 'error' events if validation or fetching fails
@@ -1566,53 +1565,42 @@ class Ie extends w {
     return this.initPromise ??= (async () => {
       try {
         if (!this.rawSite || typeof this.rawSite != "string") {
-          this.initStatus = "error", this.emit("error", {
-            module: "FeedSeeker",
-            error: "Site parameter must be a non-empty string"
-          }), this.setEmptyState(), this.emit("initialized");
+          this.handleInitError("Site parameter must be a non-empty string");
           return;
         }
         try {
           new URL(this.site);
         } catch {
-          this.initStatus = "error", this.emit("error", {
-            module: "FeedSeeker",
-            error: `Invalid URL: ${this.site}`
-          }), this.setEmptyState(), this.emit("initialized");
+          this.handleInitError(`Invalid URL: ${this.site}`);
           return;
         }
-        const e = (this.options.timeout ?? 5) * 1e3, t = await I(this.site, {
-          timeout: e,
-          retries: 3,
-          retryDelay: 1e3
-        });
-        if (!t.ok) {
-          this.initStatus = "error", this.emit("error", {
-            module: "FeedSeeker",
-            error: `HTTP error while fetching ${this.site}: ${t.status} ${t.statusText}`
-          }), this.setEmptyState(), this.emit("initialized");
+        const e = (this.options.timeout ?? 5) * 1e3, r = await C(this.site, e);
+        if (!r.ok) {
+          this.content = "", this.document = this.createEmptyDocument(), this.initStatus = "success", this.emit("initialized");
           return;
         }
-        this.content = await t.text();
+        this.content = await r.text();
         const { document: s } = N(this.content);
         this.document = s, this.initStatus = "success", this.emit("initialized");
       } catch (e) {
-        const t = e instanceof Error ? e : new Error(String(e));
-        let s = `Failed to fetch ${this.site}`;
-        if (t.name === "AbortError")
-          s += ": Request timed out";
-        else {
-          s += `: ${t.message}`;
-          const o = t.cause;
-          o && (s += ` (cause: ${o.code || o.message})`);
-        }
-        this.initStatus = "error", this.emit("error", {
-          module: "FeedSeeker",
-          error: s,
-          cause: t.cause
-        }), this.setEmptyState(), this.emit("initialized");
+        const r = e instanceof Error ? e : new Error(String(e)), s = this.buildErrorMessage(r), n = r.cause;
+        this.handleInitError(s, n);
       }
     })(), this.initPromise;
+  }
+  /**
+   * Builds an error message from an error object
+   * @param {Error} err - The error to build a message from
+   * @returns {string} The formatted error message
+   * @private
+   */
+  buildErrorMessage(e) {
+    let r = `Failed to fetch ${this.site}`;
+    if (e.name === "AbortError")
+      return r + ": Request timed out";
+    r += `: ${e.message}`;
+    const s = e.cause;
+    return s && (r += ` (cause: ${s.code || s.message})`), r;
   }
   /**
    * Searches for feeds using meta links in the page (link tags in head)
@@ -1624,7 +1612,7 @@ class Ie extends w {
    * console.log(feeds); // [{ url: '...', title: '...', type: 'rss' }]
    */
   async metaLinks() {
-    return await this.initialize(), ce(this);
+    return await this.initialize(), de(this);
   }
   /**
    * Searches for feeds by checking all anchor links on the page
@@ -1636,7 +1624,7 @@ class Ie extends w {
    * console.log(feeds); // [{ url: '...', title: '...', type: 'atom' }]
    */
   async checkAllAnchors() {
-    return await this.initialize(), ge(this);
+    return await this.initialize(), ye(this);
   }
   /**
    * Performs a blind search for common feed endpoints
@@ -1648,7 +1636,7 @@ class Ie extends w {
    * console.log(feeds); // [{ url: '...', type: 'rss', title: '...' }]
    */
   async blindSearch() {
-    return await this.initialize(), ve(this);
+    return await this.initialize(), Ne(this);
   }
   /**
    * Performs a deep search by crawling the website
@@ -1660,7 +1648,7 @@ class Ie extends w {
    * console.log(feeds); // [{ url: '...', type: 'json', title: '...' }]
    */
   async deepSearch() {
-    return await this.initialize(), Fe(this.site, this.options, this);
+    return await this.initialize(), ze(this.site, this.options, this);
   }
   /**
    * Starts a comprehensive feed search using multiple strategies
@@ -1675,9 +1663,9 @@ class Ie extends w {
     const e = await this.handleSingleStrategyMode();
     if (e)
       return e;
-    const t = /* @__PURE__ */ new Map();
-    await this.collectFeedsFromStrategies(t), await this.handleDeepSearch(t);
-    const s = this.getFeedsWithLimit(t);
+    const r = /* @__PURE__ */ new Map();
+    await this.collectFeedsFromStrategies(r), await this.handleDeepSearch(r);
+    const s = this.getFeedsWithLimit(r);
     return this.emit("end", { module: "all", feeds: s }), s;
   }
   /**
@@ -1686,8 +1674,8 @@ class Ie extends w {
    * @private
    */
   async handleSingleStrategyMode() {
-    const { deepsearchOnly: e, metasearch: t, blindsearch: s, anchorsonly: o } = this.options;
-    return e ? this.deepSearch() : t ? this.metaLinks() : s ? this.blindSearch() : o ? this.checkAllAnchors() : null;
+    const { deepsearchOnly: e, metasearch: r, blindsearch: s, anchorsonly: n } = this.options;
+    return e ? this.deepSearch() : r ? this.metaLinks() : s ? this.blindSearch() : n ? this.checkAllAnchors() : null;
   }
   /**
    * Collects feeds from multiple search strategies
@@ -1696,10 +1684,10 @@ class Ie extends w {
    * @private
    */
   async collectFeedsFromStrategies(e) {
-    const t = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
-    for (const s of t) {
-      const o = await s.call(this);
-      if (this.addFeedsToMap(e, o), this.hasReachedLimit(e))
+    const r = [this.metaLinks, this.checkAllAnchors, this.blindSearch];
+    for (const s of r) {
+      const n = await s.call(this);
+      if (this.addFeedsToMap(e, n), this.hasReachedLimit(e))
         break;
     }
   }
@@ -1707,13 +1695,11 @@ class Ie extends w {
    * Adds feeds to the feed map, deduplicating by URL
    * @param {Map<string, Feed>} feedMap - Map to store feeds
    * @param {Feed[]} feeds - Feeds to add
-   * @returns {void}
    * @private
    */
-  addFeedsToMap(e, t) {
-    if (!(!t || t.length === 0))
-      for (const s of t)
-        e.has(s.url) || e.set(s.url, s);
+  addFeedsToMap(e, r) {
+    for (const s of r ?? [])
+      e.has(s.url) || e.set(s.url, s);
   }
   /**
    * Checks if the feed limit has been reached
@@ -1722,25 +1708,22 @@ class Ie extends w {
    * @private
    */
   hasReachedLimit(e) {
-    const { all: t, maxFeeds: s } = this.options;
-    return !t && s !== void 0 && s > 0 && e.size >= s;
+    const { all: r, maxFeeds: s } = this.options;
+    return !r && s !== void 0 && s > 0 && e.size >= s;
   }
   /**
    * Handles deep search if enabled
    * @param {Map<string, Feed>} feedMap - Map to store feeds
-   * @returns {Promise<void>}
    * @private
    */
   async handleDeepSearch(e) {
-    const { deepsearch: t, maxFeeds: s } = this.options;
-    if (!t || s && e.size >= s)
+    const { deepsearch: r, maxFeeds: s } = this.options;
+    if (!r || s && e.size >= s)
       return;
-    const o = await this.deepSearch();
-    if (!(!o || o.length === 0)) {
-      for (const i of o)
-        if (e.has(i.url) || e.set(i.url, i), this.hasReachedLimit(e))
-          break;
-    }
+    const n = await this.deepSearch();
+    for (const i of n ?? [])
+      if (e.has(i.url) || e.set(i.url, i), this.hasReachedLimit(e))
+        break;
   }
   /**
    * Gets feeds from the map with limit applied
@@ -1749,41 +1732,43 @@ class Ie extends w {
    * @private
    */
   getFeedsWithLimit(e) {
-    const t = Array.from(e.values()), { maxFeeds: s } = this.options;
-    return s !== void 0 && s > 0 && t.length > s ? t.slice(0, s) : t;
+    const r = Array.from(e.values()), { maxFeeds: s } = this.options;
+    return s !== void 0 && s > 0 && r.length > s ? r.slice(0, s) : r;
   }
 }
-const Oe = `\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;38m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m.\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;119m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;148m \x1B[39m\x1B[38;5;184m\x1B[39m\r
+const je = `\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;38m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m.\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;119m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;148m \x1B[39m\x1B[38;5;184m\x1B[39m\r
 \x1B[38;5;39m\\\x1B[39m\x1B[38;5;39m_\x1B[39m\x1B[38;5;39m \x1B[39m\x1B[38;5;39m \x1B[39m\x1B[38;5;39m \x1B[39m\x1B[38;5;38m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m/\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m|\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;119m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m|\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m|\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;148m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m\x1B[39m\r
 \x1B[38;5;39m \x1B[39m\x1B[38;5;39m|\x1B[39m\x1B[38;5;38m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m)\x1B[39m\x1B[38;5;44m/\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m\\\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m|\x1B[39m\x1B[38;5;48m\\\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m\\\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m\\\x1B[39m\x1B[38;5;119m_\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m\\\x1B[39m\x1B[38;5;118m|\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;154m|\x1B[39m\x1B[38;5;154m/\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m/\x1B[39m\x1B[38;5;154m/\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m\\\x1B[39m\x1B[38;5;148m_\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m\\\x1B[39m\x1B[38;5;184m\x1B[39m\r
 \x1B[38;5;44m \x1B[39m\x1B[38;5;44m|\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m\\\x1B[39m\x1B[38;5;44m\\\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m|\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m\\\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;119m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;118m\\\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;154m|\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m<\x1B[39m\x1B[38;5;154m\\\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;148m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m/\x1B[39m\x1B[38;5;184m|\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m|\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m\\\x1B[39m\x1B[38;5;184m/\x1B[39m\x1B[38;5;184m\x1B[39m\r
 \x1B[38;5;44m \x1B[39m\x1B[38;5;44m\\\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m_\x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m/\x1B[39m\x1B[38;5;43m \x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m>\x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m>\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;48m_\x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m_\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;119m\\\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m>\x1B[39m\x1B[38;5;118m\\\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;118m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m>\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m|\x1B[39m\x1B[38;5;154m_\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m\\\x1B[39m\x1B[38;5;148m\\\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m>\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m_\x1B[39m\x1B[38;5;184m|\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;178m \x1B[39m\x1B[38;5;214m\x1B[39m\r
 \x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;44m \x1B[39m\x1B[38;5;43m\\\x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m \x1B[39m\x1B[38;5;49m\\\x1B[39m\x1B[38;5;49m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m\\\x1B[39m\x1B[38;5;48m/\x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;48m \x1B[39m\x1B[38;5;84m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m\\\x1B[39m\x1B[38;5;83m/\x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;83m \x1B[39m\x1B[38;5;119m\\\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;118m\\\x1B[39m\x1B[38;5;118m/\x1B[39m\x1B[38;5;118m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m\\\x1B[39m\x1B[38;5;154m/\x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;154m \x1B[39m\x1B[38;5;148m \x1B[39m\x1B[38;5;184m\\\x1B[39m\x1B[38;5;184m/\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m\\\x1B[39m\x1B[38;5;184m/\x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;184m \x1B[39m\x1B[38;5;178m \x1B[39m\x1B[38;5;214m \x1B[39m\x1B[38;5;214m \x1B[39m\x1B[38;5;214m \x1B[39m\x1B[38;5;214m\x1B[39m`;
-let S = 0, g = [], O = !1;
-function De(...r) {
-  const e = r[0];
-  S = 0, process.stdout.write(`Starting ${e.niceName} `);
+let E = 0;
+function He(...t) {
+  const e = t[0];
+  E = 0, process.stdout.write(`Starting ${e.niceName} `);
 }
-function ze(...r) {
-  const e = r[0];
-  O ? e.feeds.length === 0 ? process.stdout.write(h("yellow", ` No feeds found.
-`)) : (process.stdout.write(h("green", ` Found ${e.feeds.length} feeds.
-`)), console.log(JSON.stringify(e.feeds, null, 2)), g = g.concat(e.feeds)) : e.feeds.length === 0 ? process.stdout.write(h("yellow", ` No feeds found.
-`)) : process.stdout.write(h("green", ` Found ${e.feeds.length} feeds.
+function We(t) {
+  return function(...r) {
+    const s = r[0];
+    t.isAllMode ? s.feeds.length === 0 ? process.stdout.write(f("yellow", ` No feeds found.
+`)) : (process.stdout.write(f("green", ` Found ${s.feeds.length} feeds.
+`)), console.log(JSON.stringify(s.feeds, null, 2)), t.allModeFeeds = t.allModeFeeds.concat(s.feeds)) : s.feeds.length === 0 ? process.stdout.write(f("yellow", ` No feeds found.
+`)) : process.stdout.write(f("green", ` Found ${s.feeds.length} feeds.
 `));
+  };
 }
-async function Pe(...r) {
-  const e = r[0];
+async function Xe(...t) {
+  const e = t[0];
   if (e.module === "metalinks" && process.stdout.write("."), (e.module === "blindsearch" || e.module === "anchors") && "totalCount" in e && "totalEndpoints" in e) {
-    S > 0 && process.stdout.write(`\x1B[${S}D`);
-    const t = ` (${e.totalCount}/${e.totalEndpoints})`;
-    process.stdout.write(t), S = t.length;
+    E > 0 && process.stdout.write(`\x1B[${E}D`);
+    const r = ` (${e.totalCount}/${e.totalEndpoints})`;
+    process.stdout.write(r), E = r.length;
   }
   if (e.module === "deepSearch" && "url" in e && "depth" in e && "progress" in e) {
-    const t = e.progress, s = t.processed || 0, o = t.remaining || 0, i = s + o;
+    const r = e.progress, s = r.processed || 0, n = r.remaining || 0, i = s + n;
     try {
-      const m = new URL(e.url), a = m.hostname, n = m.pathname.length > 30 ? m.pathname.substring(0, 27) + "..." : m.pathname, x = `${a}${n}`;
-      process.stdout.write(`  [depth:${e.depth} ${s}/${i}] ${x}
+      const o = new URL(e.url), a = o.hostname, m = o.pathname.length > 30 ? o.pathname.substring(0, 27) + "..." : o.pathname, l = `${a}${m}`;
+      process.stdout.write(`  [depth:${e.depth} ${s}/${i}] ${l}
 `);
     } catch {
       process.stdout.write(`  [depth:${e.depth} ${s}/${i}]
@@ -1791,66 +1776,66 @@ async function Pe(...r) {
     }
   }
 }
-function qe(r, e) {
-  const t = new Ie(r, e);
-  return t.site = r, t.options = e, t.initializationError = !1, t.on("start", De), t.on("log", Pe), t.on("end", ze), t.on("error", (...s) => {
-    const o = s[0];
-    if (typeof o == "object" && o !== null && o.module === "FeedSeeker" && (t.initializationError = !0), o instanceof Error)
-      console.error(h("red", `
-Error for ${r}: ${o.message}`));
-    else if (typeof o == "object" && o !== null) {
-      const i = o, m = typeof i.error == "string" ? i.error : String(o);
-      console.error(h("red", `
-Error for ${r}: ${m}`));
+function Ve(t, e, r) {
+  const s = new qe(t, e);
+  return s.site = t, s.options = e, s.initializationError = !1, s.on("start", He), s.on("log", Xe), s.on("end", We(r)), s.on("error", (...n) => {
+    const i = n[0];
+    if (typeof i == "object" && i !== null && i.module === "FeedSeeker" && (s.initializationError = !0), i instanceof Error)
+      console.error(f("red", `
+Error for ${t}: ${i.message}`));
+    else if (typeof i == "object" && i !== null) {
+      const o = i, a = typeof o.error == "string" ? o.error : String(i);
+      console.error(f("red", `
+Error for ${t}: ${a}`));
     } else
-      console.error(h("red", `
-Error for ${r}: ${String(o)}`));
-  }), t;
+      console.error(f("red", `
+Error for ${t}: ${String(i)}`));
+  }), s;
 }
-async function We(r, e) {
-  r.includes("://") || (r = `https://${r}`);
-  const t = qe(r, e);
-  if (await t.initialize(), t.initializationError)
+async function Ye(t, e, r) {
+  t.includes("://") || (t = `https://${t}`);
+  const s = Ve(t, e, r);
+  if (await s.initialize(), s.initializationError)
     return [];
-  const s = [];
-  return e.metasearch ? s.push(() => t.metaLinks()) : e.anchorsonly ? s.push(() => t.checkAllAnchors()) : e.blindsearch ? s.push(() => t.blindSearch()) : e.deepsearchOnly ? s.push(() => t.deepSearch()) : e.all ? s.push(
-    () => t.metaLinks(),
-    () => t.checkAllAnchors(),
-    () => t.blindSearch(),
-    () => t.deepSearch()
-  ) : s.push(
-    () => t.metaLinks(),
-    () => t.checkAllAnchors(),
-    () => t.blindSearch(),
-    ...e.deepsearch ? [() => t.deepSearch()] : []
+  const n = [];
+  return e.metasearch ? n.push(() => s.metaLinks()) : e.anchorsonly ? n.push(() => s.checkAllAnchors()) : e.blindsearch ? n.push(() => s.blindSearch()) : e.deepsearchOnly ? n.push(() => s.deepSearch()) : e.all ? n.push(
+    () => s.metaLinks(),
+    () => s.checkAllAnchors(),
+    () => s.blindSearch(),
+    () => s.deepSearch()
+  ) : n.push(
+    () => s.metaLinks(),
+    () => s.checkAllAnchors(),
+    () => s.blindSearch(),
+    ...e.deepsearch ? [() => s.deepSearch()] : []
   ), await (async () => {
     if (e.all) {
-      const m = [];
-      for (const a of s) {
-        const n = await a();
-        n.length > 0 && m.push(...n);
+      const a = [];
+      for (const m of n) {
+        const l = await m();
+        l.length > 0 && a.push(...l);
       }
-      return m;
+      return a;
     } else {
-      for (const m of s) {
-        const a = await m();
-        if (a.length > 0) return a;
+      for (const a of n) {
+        const m = await a();
+        if (m.length > 0) return m;
       }
       return [];
     }
   })();
 }
-function je(r) {
-  const e = new K();
+function Ge(t) {
+  const e = new Y();
   return e.name("feed-seeker").description("Find RSS, Atom, and JSON feeds on any website with FeedSeeker."), e.command("version").description("Get version").action(async () => {
-    const s = (await import("./package-Cqt61e-0.js")).default;
+    const s = (await import("./package-DxC7lVBq.js")).default;
     process.stdout.write(`${s.version}
 `);
   }), e.argument("[site]", "The website URL to search for feeds").option("-m, --metasearch", "Meta search only").option("-b, --blindsearch", "Blind search only").option("-a, --anchorsonly", "Anchors search only").option("-d, --deepsearch", "Enable deep search").option("--all", "Execute all strategies and combine results").option("--deepsearch-only", "Deep search only").option(
     "--depth <number>",
     "Depth of deep search",
-    (t) => {
-      const s = parseInt(t, 10);
+    (r) => {
+      const s = parseInt(r, 10);
       if (Number.isNaN(s) || s < 1)
         throw new Error("Depth must be a positive number (minimum 1)");
       return s;
@@ -1859,8 +1844,8 @@ function je(r) {
   ).option(
     "--max-links <number>",
     "Maximum number of links to process during deep search",
-    (t) => {
-      const s = parseInt(t, 10);
+    (r) => {
+      const s = parseInt(r, 10);
       if (Number.isNaN(s) || s < 1)
         throw new Error("Max links must be a positive number (minimum 1)");
       return s;
@@ -1869,8 +1854,8 @@ function je(r) {
   ).option(
     "--timeout <seconds>",
     "Timeout for fetch requests in seconds",
-    (t) => {
-      const s = parseInt(t, 10);
+    (r) => {
+      const s = parseInt(r, 10);
       if (Number.isNaN(s) || s < 1)
         throw new Error("Timeout must be a positive number (minimum 1 second)");
       return s;
@@ -1879,8 +1864,8 @@ function je(r) {
   ).option("--keep-query-params", "Keep query parameters from the original URL when searching").option("--check-foreign-feeds", "Check if foreign domain URLs are feeds (but don't crawl them)").option(
     "--max-errors <number>",
     "Stop after a certain number of errors",
-    (t) => {
-      const s = parseInt(t, 10);
+    (r) => {
+      const s = parseInt(r, 10);
       if (Number.isNaN(s) || s < 0)
         throw new Error("Max errors must be a non-negative number");
       return s;
@@ -1889,8 +1874,8 @@ function je(r) {
   ).option(
     "--max-feeds <number>",
     "Stop search after finding a certain number of feeds",
-    (t) => {
-      const s = parseInt(t, 10);
+    (r) => {
+      const s = parseInt(r, 10);
       if (Number.isNaN(s) || s < 0)
         throw new Error("Max feeds must be a non-negative number");
       return s;
@@ -1901,35 +1886,42 @@ function je(r) {
     "Search mode for blind search: fast (~25), standard (~100), or full (~350+)",
     "standard"
   ).description(`Find feeds for site
-`).action(async (t, s) => {
-    t || (e.help(), process.exit(0));
+`).action(async (r, s) => {
+    r || (e.help(), process.exit(0));
     try {
-      s.all && (O = !0, g = []), e.feeds = await We(t, s);
-    } catch (o) {
+      const n = {
+        isAllMode: !!s.all,
+        allModeFeeds: []
+      };
+      e.feeds = await Ye(r, s, n), e.ctx = n;
+    } catch (n) {
       s.displayErrors ? console.error(`
-Error details:`, o) : console.error(h("red", `
-Error: ${o.message}`)), process.exit(1);
+Error details:`, n) : console.error(f("red", `
+Error: ${n.message}`)), process.exit(1);
     }
-  }), e.addOption(new V("--display-errors", "Display errors").hideHelp()), e;
+  }), e.addOption(new G("--display-errors", "Display errors").hideHelp()), e;
 }
-async function He(r = process.argv) {
-  console.log(`${Oe}
+async function Je(t = process.argv) {
+  console.log(`${je}
 `);
-  const e = je();
-  await e.parseAsync(r), e.feeds !== void 0 && (O && g.length > 0 ? (console.log(h("yellow", `
+  const e = Ge();
+  if (await e.parseAsync(t), e.feeds !== void 0) {
+    const r = e.ctx;
+    r?.isAllMode && r.allModeFeeds.length > 0 ? (console.log(f("yellow", `
 === All Strategies Complete ===`)), console.log(
-    h(
-      "green",
-      `Total: ${g.length} ${g.length === 1 ? "feed" : "feeds"} found from all strategies
+      f(
+        "green",
+        `Total: ${r.allModeFeeds.length} ${r.allModeFeeds.length === 1 ? "feed" : "feeds"} found from all strategies
 `
-    )
-  ), console.log(JSON.stringify(g, null, 2))) : e.feeds.length > 0 && console.log(JSON.stringify(e.feeds, null, 2)));
+      )
+    ), console.log(JSON.stringify(r.allModeFeeds, null, 2))) : e.feeds.length > 0 && console.log(JSON.stringify(e.feeds, null, 2));
+  }
 }
-import.meta.url === `file://${process.argv[1]}` && He().catch((r) => {
-  console.error(h("red", `
-Error: ${r.message}`)), process.exit(1);
+import.meta.url === `file://${process.argv[1]}` && Je().catch((t) => {
+  console.error(f("red", `
+Error: ${t.message}`)), process.exit(1);
 });
 export {
-  je as createProgram,
-  He as run
+  Ge as createProgram,
+  Je as run
 };

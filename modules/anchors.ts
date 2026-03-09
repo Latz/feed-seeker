@@ -172,7 +172,11 @@ function extractUrlsFromText(text: string): string[] {
 	const uniqueUrls = new Set<string>();
 	for (const url of matches) {
 		// Remove trailing punctuation that's likely not part of the URL
-		const cleaned = url.replace(/[.,;:!?]+$/, '');
+		// Using a loop instead of regex to avoid potential ReDoS via backtracking
+		let cleaned = url;
+		while (cleaned.length > 0 && '.,;:!?'.includes(cleaned.at(-1)!)) {
+			cleaned = cleaned.slice(0, -1);
+		}
 		uniqueUrls.add(cleaned);
 	}
 

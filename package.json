@@ -2,9 +2,6 @@
 	"name": "feedseeker",
 	"version": "1.0.0",
 	"description": "FeedSeeker - Find RSS, Atom, and JSON feeds on any website with support for preserving query parameters",
-	"main": "dist/feed-seeker.cjs",
-	"module": "dist/feed-seeker.js",
-	"types": "dist/types/feed-seeker.d.ts",
 	"type": "module",
 	"bin": {
 		"feed-seeker": "dist/feed-seeker-cli.cjs"
@@ -29,19 +26,18 @@
 	"scripts": {
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage",
-		"test:unit": "node --test tests/*.test.js",
 		"clean": "rm -rf dist",
 		"typecheck": "tsc --noEmit",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"format": "prettier --write \"**/*.{ts,js,json,md}\"",
 		"format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
-		"prebuild": "npm run clean",
-		"build": "npm run build:lib && npm run build:cli && npm run build:types",
+		"prebuild": "pnpm run clean",
+		"build": "pnpm run build:lib && pnpm run build:cli && pnpm run build:types",
 		"build:lib": "vite build",
 		"build:cli": "BUILD_TARGET=cli vite build",
 		"build:types": "tsc --emitDeclarationOnly --declarationDir dist/types",
-		"prepublishOnly": "npm run typecheck && npm run build && npm test",
+		"prepublishOnly": "pnpm run typecheck && pnpm run build && pnpm test",
 		"prepare": "husky"
 	},
 	"keywords": [
@@ -72,12 +68,8 @@
 	"homepage": "https://github.com/Latz/feed-seeker#readme",
 	"dependencies": {
 		"async": "^3.2.6",
-		"chalk": "^5.6.2",
 		"commander": "^14.0.1",
-		"figlet": "^1.9.4",
-		"gradient-string": "^3.0.0",
 		"linkedom": "^0.18.7",
-		"parse5": "^7.2.1",
 		"tldts": "^7.0.16",
 		"truncate-url": "^3.0.0"
 	},
@@ -97,12 +89,9 @@
 		"vitest": "^4.0.15"
 	},
 	"lint-staged": {
-		"*.{ts,js}": [
-			"eslint --fix"
-		],
-		"*.{json,md}": []
+		"*.{ts,js}": ["eslint --fix"]
 	},
 	"engines": {
-		"node": ">=18.0.0"
+		"node": ">=22.0.0"
 	}
 }

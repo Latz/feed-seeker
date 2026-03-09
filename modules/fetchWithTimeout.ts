@@ -85,7 +85,7 @@ export default async function fetchWithTimeout(
 
 	// Validate timeout
 	if (timeout <= 0) {
-		throw new Error(`Invalid timeout: ${timeout}. Timeout must be a positive number.`);
+		throw new TypeError(`Invalid timeout: ${timeout}. Timeout must be a positive number.`);
 	}
 
 	if (!Number.isFinite(timeout)) {
